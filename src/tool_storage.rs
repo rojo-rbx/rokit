@@ -1,16 +1,16 @@
 use std::borrow::Cow;
+use std::cell::OnceCell;
 use std::collections::BTreeSet;
 use std::env::current_dir;
 use std::env::{consts::EXE_SUFFIX, current_exe};
 use std::fmt::Write;
-use std::io::{self, BufWriter, Read};
+use std::fs::{self, File};
+use std::io::{self, BufWriter, IsTerminal, Read};
 use std::io::{Seek, Write as _};
 use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context};
-use fs_err::File;
 use itertools::{Either, Itertools};
-use once_cell::unsync::OnceCell;
 
 use crate::auth::AuthManifest;
 use crate::home::Home;
@@ -33,10 +33,10 @@ pub struct ToolStorage {
 impl ToolStorage {
     pub fn new(home: &Home) -> anyhow::Result<Self> {
         let storage_dir = home.path().join("tool-storage");
-        fs_err::create_dir_all(&storage_dir)?;
+        fs::create_dir_all(&storage_dir)?;
 
         let bin_dir = home.path().join("bin");
-        fs_err::create_dir_all(&bin_dir)?;
+        fs::create_dir_all(&bin_dir)?;
 
         let auth = AuthManifest::load(home)?;
 
@@ -99,14 +99,14 @@ impl ToolStorage {
         log::debug!("Copying own executable into temp dir");
         let source_dir = tempfile::tempdir()?;
         let source_path = source_dir.path().join(self_name);
-        fs_err::copy(&self_path, &source_path)?;
+        fs::copy(&self_path, &source_path)?;
         let self_path = source_path;
 
         let junk_dir = tempfile::tempdir()?;
         let aftman_name = format!("aftman{EXE_SUFFIX}");
         let mut found_aftman = false;
 
-        for entry in fs_err::read_dir(&self.bin_dir)? {
+        for entry in fs::read_dir(&self.bin_dir)? {
             let entry = entry?;
             let path = entry.path();
             let name = path.file_name().unwrap().to_str().unwrap();
@@ -119,15 +119,15 @@ impl ToolStorage {
 
             // Copy the executable into a temp directory so that we can replace
             // it even if it's currently running.
-            fs_err::rename(&path, junk_dir.path().join(name))?;
-            fs_err::copy(&self_path, path)?;
+            fs::rename(&path, junk_dir.path().join(name))?;
+            fs::copy(&self_path, path)?;
         }
 
         // If we didn't find and update Aftman already, install it.
         if !found_aftman {
             log::info!("Installing Aftman...");
             let aftman_path = self.bin_dir.join(aftman_name);
-            fs_err::copy(&self_path, aftman_path)?;
+            fs::copy(&self_path, aftman_path)?;
         }
 
         log::info!("Updated Aftman binaries successfully!");
@@ -347,7 +347,7 @@ impl ToolStorage {
             if mode == TrustMode::Check {
                 // If the terminal isn't interactive, tell the user that they
                 // need to open an interactive terminal to trust this tool.
-                if atty::isnt(atty::Stream::Stderr) {
+                if !io::stderr().is_terminal() {
                     bail!(
                         "Tool {name} has never been installed. \
                          Run `aftman add {name}` in your terminal to install it and trust this tool.",
@@ -390,7 +390,7 @@ impl ToolStorage {
     fn install_executable(&self, id: &ToolId, mut contents: impl Read) -> anyhow::Result<()> {
         let output_path = self.exe_path(id);
 
-        fs_err::create_dir_all(output_path.parent().unwrap())?;
+        fs::create_dir_all(output_path.parent().unwrap())?;
 
         let mut output = BufWriter::new(File::create(&output_path)?);
         io::copy(&mut contents, &mut output)?;
@@ -412,7 +412,7 @@ impl ToolStorage {
         let output_path = self.exe_path(id);
         let expected_name = format!("{}{EXE_SUFFIX}", id.name().name());
 
-        fs_err::create_dir_all(output_path.parent().unwrap())?;
+        fs::create_dir_all(output_path.parent().unwrap())?;
 
         // If there is an executable with an exact name match, install that one.
         let mut zip = zip::ZipArchive::new(artifact)?;
@@ -448,7 +448,7 @@ impl ToolStorage {
         let link_name = format!("{}{}", alias.as_ref(), EXE_SUFFIX);
         let link_path = self.bin_dir.join(link_name);
 
-        fs_err::copy(self_path, link_path).context("Failed to create Aftman alias")?;
+        fs::copy(self_path, link_path).context("Failed to create Aftman alias")?;
         Ok(())
     }
 
@@ -469,7 +469,7 @@ pub struct InstalledToolsCache {
 
 impl InstalledToolsCache {
     pub fn read(path: &Path) -> anyhow::Result<Self> {
-        let contents = match fs_err::read_to_string(path) {
+        let contents = match fs::read_to_string(path) {
             Ok(v) => v,
             Err(err) => {
                 if err.kind() == io::ErrorKind::NotFound {
@@ -497,7 +497,7 @@ impl InstalledToolsCache {
             writeln!(&mut output, "{}", tool).unwrap();
         }
 
-        fs_err::write(path, output)?;
+        fs::write(path, output)?;
         Ok(())
     }
 }

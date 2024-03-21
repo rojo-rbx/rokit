@@ -1,5 +1,6 @@
 use std::collections::BTreeSet;
 use std::fmt::Write;
+use std::fs;
 use std::io;
 
 use anyhow::bail;
@@ -28,7 +29,7 @@ impl TrustCache {
     pub fn read(home: &Home) -> anyhow::Result<Self> {
         let path = home.path().join("trusted.txt");
 
-        let contents = match fs_err::read_to_string(path) {
+        let contents = match fs::read_to_string(path) {
             Ok(v) => v,
             Err(err) => {
                 if err.kind() == io::ErrorKind::NotFound {
@@ -57,7 +58,7 @@ impl TrustCache {
             }
 
             let path = home.path().join("trusted.txt");
-            fs_err::write(path, output)?;
+            fs::write(path, output)?;
 
             return Ok(true);
         }

@@ -1,10 +1,10 @@
 #![allow(unused)]
 
+use std::fs::OpenOptions;
 use std::io::{self, BufWriter, Write};
 use std::path::Path;
 
 use anyhow::bail;
-use fs_err::OpenOptions;
 
 pub fn write_only_new(path: &Path, contents: &str) -> anyhow::Result<()> {
     let mut file = match OpenOptions::new().create_new(true).write(true).open(path) {

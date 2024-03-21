@@ -1,3 +1,4 @@
+use std::fs;
 use std::io;
 
 use anyhow::{bail, format_err, Context};
@@ -25,7 +26,7 @@ impl AuthManifest {
     /// Create an empty global auth manifest if there isn't one already.
     pub fn init(home: &Home) -> anyhow::Result<()> {
         let base_dir = home.path();
-        fs_err::create_dir_all(base_dir)?;
+        fs::create_dir_all(base_dir)?;
 
         let manifest_path = base_dir.join(MANIFEST_FILE_NAME);
         write_if_not_exists(&manifest_path, DEFAULT_MANIFEST.trim())?;
@@ -37,7 +38,7 @@ impl AuthManifest {
     pub fn load(home: &Home) -> anyhow::Result<Option<AuthManifest>> {
         let file_path = home.path().join(MANIFEST_FILE_NAME);
 
-        let contents = match fs_err::read_to_string(&file_path) {
+        let contents = match fs::read_to_string(&file_path) {
             Ok(contents) => contents,
             Err(err) => {
                 if err.kind() == io::ErrorKind::NotFound {
@@ -56,11 +57,11 @@ impl AuthManifest {
 
     fn _add_token(home: &Home, token_type: &str, token: &str) -> anyhow::Result<()> {
         let manifest_path = home.path().join(MANIFEST_FILE_NAME);
-        let content = fs_err::read_to_string(&manifest_path)?;
+        let content = fs::read_to_string(&manifest_path)?;
         let mut document: DocumentMut = content.parse()?;
         document[token_type] = toml_edit::value(token.to_string());
 
-        fs_err::write(&manifest_path, document.to_string())?;
+        fs::write(&manifest_path, document.to_string())?;
 
         log::info!("A {token_type} token has been added globally.");
 

@@ -1,8 +1,7 @@
 use std::env;
+use std::fs::{self, OpenOptions};
 use std::io::{self, Write};
 use std::path::Path;
-
-use fs_err::OpenOptions;
 
 use crate::config::write_if_not_exists;
 use crate::dirs::home_dir;
@@ -48,7 +47,7 @@ pub fn add(home: &Home) -> anyhow::Result<bool> {
 }
 
 fn append_line_if_not_present(path: &Path, line: &str, create: bool) -> anyhow::Result<bool> {
-    let ends_with_newline = match fs_err::read_to_string(path) {
+    let ends_with_newline = match fs::read_to_string(path) {
         // This file already has this line, skip it.
         Ok(contents) if contents.contains(line) => return Ok(false),
         Ok(contents) if contents.ends_with('\n') => true,

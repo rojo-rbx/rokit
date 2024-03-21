@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
@@ -35,7 +36,7 @@ impl Manifest {
     /// Create an empty global Aftman manifest if there isn't one already.
     pub fn init_global(home: &Home) -> anyhow::Result<()> {
         let base_dir = home.path();
-        fs_err::create_dir_all(base_dir)?;
+        fs::create_dir_all(base_dir)?;
 
         let manifest_path = base_dir.join(MANIFEST_FILE_NAME);
         write_if_not_exists(&manifest_path, DEFAULT_MANIFEST.trim())?;
@@ -82,7 +83,7 @@ impl Manifest {
     pub fn load_from_dir(path: &Path) -> anyhow::Result<Option<Manifest>> {
         let file_path = path.join(MANIFEST_FILE_NAME);
 
-        let contents = match fs_err::read_to_string(&file_path) {
+        let contents = match fs::read_to_string(&file_path) {
             Ok(contents) => contents,
             Err(err) => {
                 if err.kind() == io::ErrorKind::NotFound {
@@ -142,11 +143,11 @@ impl Manifest {
     }
 
     fn add_tool(manifest_path: &Path, alias: &ToolAlias, id: &ToolId) -> anyhow::Result<()> {
-        let content = fs_err::read_to_string(manifest_path)?;
+        let content = fs::read_to_string(manifest_path)?;
         let mut document: DocumentMut = content.parse()?;
         document["tools"][alias.as_ref()] = toml_edit::value(id.to_string());
 
-        fs_err::write(manifest_path, document.to_string())?;
+        fs::write(manifest_path, document.to_string())?;
 
         log::info!(
             "Tool {alias} = {id} has been added to {}",
