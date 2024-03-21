@@ -92,7 +92,6 @@ fn main() {
     tracing_subscriber::fmt()
         .with_env_filter(tracing_env_filter)
         .with_target(false)
-        .with_level(false)
         .without_time()
         .init();
 
