@@ -158,6 +158,9 @@ pub struct InstallSubcommand {
     /// Skip / don't error if a tool was not trusted during install.
     #[clap(long)]
     pub skip_untrusted: bool,
+    /// Force install tools, even if they are already installed.
+    #[clap(long)]
+    pub force: bool,
 }
 
 impl InstallSubcommand {
@@ -168,7 +171,7 @@ impl InstallSubcommand {
             TrustMode::Check
         };
 
-        tools.install_all(trust, self.skip_untrusted)
+        tools.install_all(trust, self.force, self.skip_untrusted)
     }
 }
 

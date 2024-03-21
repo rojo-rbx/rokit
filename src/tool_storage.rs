@@ -75,7 +75,7 @@ impl ToolStorage {
     }
 
     pub fn run(&self, id: &ToolId, args: Vec<String>) -> anyhow::Result<i32> {
-        self.install_exact(id, TrustMode::Check)?;
+        self.install_exact(id, TrustMode::Check, false)?;
 
         let exe_path = self.exe_path(id);
         let code = crate::process::run(&exe_path, args).with_context(|| {
@@ -136,7 +136,12 @@ impl ToolStorage {
     }
 
     /// Install all tools from all reachable manifest files.
-    pub fn install_all(&self, trust: TrustMode, skip_untrusted: bool) -> anyhow::Result<()> {
+    pub fn install_all(
+        &self,
+        trust: TrustMode,
+        force: bool,
+        skip_untrusted: bool,
+    ) -> anyhow::Result<()> {
         let current_dir = current_dir().context("Failed to get current working directory")?;
         let manifests = Manifest::discover(&self.home, &current_dir)?;
 
@@ -156,7 +161,7 @@ impl ToolStorage {
             );
 
         for (alias, tool_id) in &trusted_tools {
-            self.install_exact(tool_id, trust)?;
+            self.install_exact(tool_id, trust, force)?;
             self.link(alias)?;
         }
 
@@ -246,12 +251,12 @@ impl ToolStorage {
     }
 
     /// Ensure a tool with the given tool ID is installed.
-    fn install_exact(&self, id: &ToolId, trust: TrustMode) -> anyhow::Result<()> {
+    fn install_exact(&self, id: &ToolId, trust: TrustMode, force: bool) -> anyhow::Result<()> {
         let installed_path = self.storage_dir.join("installed.txt");
         let installed = InstalledToolsCache::read(&installed_path)?;
         let is_installed = installed.tools.contains(id);
 
-        if is_installed {
+        if is_installed && !force {
             return Ok(());
         }
 
