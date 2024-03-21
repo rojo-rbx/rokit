@@ -25,7 +25,9 @@ pub enum ToolIdParseError {
 
     Used to uniquely identify a tool, but not its version.
 */
-#[derive(Debug, Clone, PartialEq, Eq, Hash, DeserializeFromStr, SerializeDisplay)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, DeserializeFromStr, SerializeDisplay,
+)]
 pub struct ToolId {
     pub(super) author: String,
     pub(super) name: String,
