@@ -7,7 +7,7 @@ use std::process::Command;
 use anyhow::Context;
 use command_group::CommandGroup;
 
-pub fn run(exe_path: &Path, args: Vec<String>) -> anyhow::Result<i32> {
+pub async fn run(exe_path: &Path, args: Vec<String>) -> anyhow::Result<i32> {
     // On Windows, using a job group here will cause the subprocess to terminate
     // automatically when Aftman is terminated.
     let mut child = Command::new(exe_path)

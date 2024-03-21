@@ -81,9 +81,11 @@ impl ToolStorage {
         self.install_exact(id, TrustMode::Check, false).await?;
 
         let exe_path = self.exe_path(id);
-        let code = crate::process::run(&exe_path, args).with_context(|| {
-            format!("Failed to run tool {id}, your installation may be corrupt.")
-        })?;
+        let code = crate::process::run(&exe_path, args)
+            .await
+            .with_context(|| {
+                format!("Failed to run tool {id}, your installation may be corrupt.")
+            })?;
         Ok(code)
     }
 
