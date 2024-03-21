@@ -1,6 +1,0 @@
----
-source: tests/ui.rs
-assertion_line: 9
-expression: output.stdout
----
-
