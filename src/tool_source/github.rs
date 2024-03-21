@@ -32,7 +32,7 @@ impl GitHubSource {
 
     pub fn get_all_releases(&self, name: &ToolName) -> anyhow::Result<Vec<Release>> {
         let url = format!("https://api.github.com/repos/{}/releases", name);
-        let mut builder = self.client.get(&url).header(USER_AGENT, APP_NAME);
+        let mut builder = self.client.get(url).header(USER_AGENT, APP_NAME);
 
         if let Some(token) = &self.token {
             builder = builder.header(AUTHORIZATION, format!("token {}", token));

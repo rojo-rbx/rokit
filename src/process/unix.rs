@@ -16,7 +16,7 @@ pub fn run(exe_path: &Path, args: Vec<String>) -> anyhow::Result<i32> {
     // Spawn a thread dedicated to listening for signals and relaying them to
     // our async runtime.
     let (signal_thread, signal_handle) = {
-        let mut signals = Signals::new(&[SIGABRT, SIGINT, SIGQUIT, SIGTERM]).unwrap();
+        let mut signals = Signals::new([SIGABRT, SIGINT, SIGQUIT, SIGTERM]).unwrap();
         let signal_handle = signals.handle();
 
         let thread = thread::spawn(move || {

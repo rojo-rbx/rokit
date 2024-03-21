@@ -25,7 +25,7 @@ impl AuthManifest {
     /// Create an empty global auth manifest if there isn't one already.
     pub fn init(home: &Home) -> anyhow::Result<()> {
         let base_dir = home.path();
-        fs_err::create_dir_all(&base_dir)?;
+        fs_err::create_dir_all(base_dir)?;
 
         let manifest_path = base_dir.join(MANIFEST_FILE_NAME);
         write_if_not_exists(&manifest_path, DEFAULT_MANIFEST.trim())?;
@@ -54,11 +54,11 @@ impl AuthManifest {
         Ok(Some(manifest))
     }
 
-    fn add_token(home: &Home, token_type: &str, token: &str) -> anyhow::Result<()> {
+    fn _add_token(home: &Home, token_type: &str, token: &str) -> anyhow::Result<()> {
         let manifest_path = home.path().join(MANIFEST_FILE_NAME);
         let content = fs_err::read_to_string(&manifest_path)?;
         let mut document: Document = content.parse()?;
-        document[token_type.as_ref()] = toml_edit::value(token.to_string());
+        document[token_type] = toml_edit::value(token.to_string());
 
         fs_err::write(&manifest_path, document.to_string())?;
 

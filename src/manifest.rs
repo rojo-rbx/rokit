@@ -35,7 +35,7 @@ impl Manifest {
     /// Create an empty global Aftman manifest if there isn't one already.
     pub fn init_global(home: &Home) -> anyhow::Result<()> {
         let base_dir = home.path();
-        fs_err::create_dir_all(&base_dir)?;
+        fs_err::create_dir_all(base_dir)?;
 
         let manifest_path = base_dir.join(MANIFEST_FILE_NAME);
         write_if_not_exists(&manifest_path, DEFAULT_MANIFEST.trim())?;
