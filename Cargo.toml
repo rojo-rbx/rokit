@@ -7,7 +7,7 @@ edition = "2021"
 repository = "https://github.com/LPGhatguy/aftman"
 readme = "README.md"
 authors = ["Lucien Greathouse <me@lpghatguy.com>"]
-default-run = "aftman"
+default-run = "aftman-new"
 
 [dependencies]
 anyhow = "1.0"
