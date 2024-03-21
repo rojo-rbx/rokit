@@ -47,3 +47,7 @@ path = "src/main.rs"
 [[bin]]
 name = "aftman-new"
 path = "src-new/main.rs"
+
+[lib]
+name = "aftman"
+path = "src-new/lib.rs"

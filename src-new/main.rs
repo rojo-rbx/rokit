@@ -1,4 +1,4 @@
-mod tool;
-
 #[tokio::main]
-pub async fn main() {}
+async fn main() -> anyhow::Result<()> {
+    Ok(())
+}
