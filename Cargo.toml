@@ -7,7 +7,7 @@ edition = "2021"
 repository = "https://github.com/LPGhatguy/aftman"
 readme = "README.md"
 authors = ["Lucien Greathouse <me@lpghatguy.com>"]
-default-run = "aftman-new"
+default-run = "aftman"
 
 [dependencies]
 anyhow = "1.0"
@@ -41,12 +41,12 @@ winreg = "0.10"
 signal-hook = "0.3"
 
 [[bin]]
-name = "aftman"
-path = "src/main.rs"
+name = "aftman-old"
+path = "src-old/main.rs"
 
 [[bin]]
-name = "aftman-new"
-path = "src-new/main.rs"
+name = "aftman"
+path = "src/main.rs"
 
 [lib]
 name = "aftman"
