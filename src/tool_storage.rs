@@ -49,7 +49,7 @@ impl ToolStorage {
         })
     }
 
-    pub fn add(
+    pub async fn add(
         &self,
         spec: &ToolSpec,
         alias: Option<&ToolAlias>,
@@ -62,7 +62,7 @@ impl ToolStorage {
             None => Cow::Owned(ToolAlias::new(spec.name().name())?),
         };
 
-        let id = self.install_inexact(spec, TrustMode::Check)?;
+        let id = self.install_inexact(spec, TrustMode::Check).await?;
         self.link(&alias)?;
 
         if global {
@@ -74,8 +74,8 @@ impl ToolStorage {
         Ok(())
     }
 
-    pub fn run(&self, id: &ToolId, args: Vec<String>) -> anyhow::Result<i32> {
-        self.install_exact(id, TrustMode::Check, false)?;
+    pub async fn run(&self, id: &ToolId, args: Vec<String>) -> anyhow::Result<i32> {
+        self.install_exact(id, TrustMode::Check, false).await?;
 
         let exe_path = self.exe_path(id);
         let code = crate::process::run(&exe_path, args).with_context(|| {
@@ -136,7 +136,7 @@ impl ToolStorage {
     }
 
     /// Install all tools from all reachable manifest files.
-    pub fn install_all(
+    pub async fn install_all(
         &self,
         trust: TrustMode,
         force: bool,
@@ -161,7 +161,7 @@ impl ToolStorage {
             );
 
         for (alias, tool_id) in &trusted_tools {
-            self.install_exact(tool_id, trust, force)?;
+            self.install_exact(tool_id, trust, force).await?;
             self.link(alias)?;
         }
 
@@ -176,7 +176,7 @@ impl ToolStorage {
     }
 
     /// Ensure a tool that matches the given spec is installed.
-    fn install_inexact(&self, spec: &ToolSpec, trust: TrustMode) -> anyhow::Result<ToolId> {
+    async fn install_inexact(&self, spec: &ToolSpec, trust: TrustMode) -> anyhow::Result<ToolId> {
         let installed_path = self.storage_dir.join("installed.txt");
         let installed = InstalledToolsCache::read(&installed_path)?;
 
@@ -188,7 +188,7 @@ impl ToolStorage {
         let github = self
             .github
             .get_or_init(|| GitHubSource::new(self.auth.as_ref()));
-        let mut releases = github.get_all_releases(spec.name())?;
+        let mut releases = github.get_all_releases(spec.name()).await?;
         releases.sort_by(|a, b| a.version.cmp(&b.version).reverse());
 
         tracing::trace!("All releases found: {:#?}", releases);
@@ -228,7 +228,7 @@ impl ToolStorage {
                 release.version,
                 asset.name
             );
-            let artifact = github.download_asset(&asset.url)?;
+            let artifact = github.download_asset(&asset.url).await?;
 
             self.install_artifact(&id, artifact).with_context(|| {
                 format!(
@@ -251,7 +251,12 @@ impl ToolStorage {
     }
 
     /// Ensure a tool with the given tool ID is installed.
-    fn install_exact(&self, id: &ToolId, trust: TrustMode, force: bool) -> anyhow::Result<()> {
+    async fn install_exact(
+        &self,
+        id: &ToolId,
+        trust: TrustMode,
+        force: bool,
+    ) -> anyhow::Result<()> {
         let installed_path = self.storage_dir.join("installed.txt");
         let installed = InstalledToolsCache::read(&installed_path)?;
         let is_installed = installed.tools.contains(id);
@@ -268,7 +273,7 @@ impl ToolStorage {
         let github = self
             .github
             .get_or_init(|| GitHubSource::new(self.auth.as_ref()));
-        let release = github.get_release(id)?;
+        let release = github.get_release(id).await?;
 
         let mut compatible_assets = self.get_compatible_assets(&release);
         if compatible_assets.is_empty() {
@@ -284,7 +289,7 @@ impl ToolStorage {
             release.version,
             asset.name
         );
-        let artifact = github.download_asset(&asset.url)?;
+        let artifact = github.download_asset(&asset.url).await?;
 
         self.install_artifact(id, artifact).with_context(|| {
             format!(

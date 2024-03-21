@@ -21,12 +21,12 @@ pub struct Args {
 }
 
 impl Args {
-    pub fn run(self, home: &Home, tools: ToolStorage) -> anyhow::Result<()> {
+    pub async fn run(self, home: &Home, tools: ToolStorage) -> anyhow::Result<()> {
         match self.subcommand {
             Subcommand::Init(sub) => sub.run(),
             Subcommand::List(sub) => sub.run(home),
-            Subcommand::Add(sub) => sub.run(tools),
-            Subcommand::Install(sub) => sub.run(tools),
+            Subcommand::Add(sub) => sub.run(tools).await,
+            Subcommand::Install(sub) => sub.run(tools).await,
             Subcommand::Trust(sub) => sub.run(home),
             Subcommand::SelfInstall(sub) => sub.run(home, tools),
 
@@ -123,8 +123,10 @@ pub struct AddSubcommand {
 }
 
 impl AddSubcommand {
-    pub fn run(self, tools: ToolStorage) -> anyhow::Result<()> {
-        tools.add(&self.tool_spec, self.tool_alias.as_ref(), self.global)
+    pub async fn run(self, tools: ToolStorage) -> anyhow::Result<()> {
+        tools
+            .add(&self.tool_spec, self.tool_alias.as_ref(), self.global)
+            .await
     }
 }
 
@@ -164,14 +166,16 @@ pub struct InstallSubcommand {
 }
 
 impl InstallSubcommand {
-    pub fn run(self, tools: ToolStorage) -> anyhow::Result<()> {
+    pub async fn run(self, tools: ToolStorage) -> anyhow::Result<()> {
         let trust = if self.no_trust_check {
             TrustMode::NoCheck
         } else {
             TrustMode::Check
         };
 
-        tools.install_all(trust, self.force, self.skip_untrusted)
+        tools
+            .install_all(trust, self.force, self.skip_untrusted)
+            .await
     }
 }
 

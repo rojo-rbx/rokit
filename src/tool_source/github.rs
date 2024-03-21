@@ -2,8 +2,8 @@ use std::io::{Cursor, Read, Seek};
 
 use anyhow::Context;
 use reqwest::{
-    blocking::Client,
     header::{ACCEPT, AUTHORIZATION, USER_AGENT},
+    Client,
 };
 use semver::Version;
 use serde::{Deserialize, Serialize};
@@ -30,7 +30,7 @@ impl GitHubSource {
         }
     }
 
-    pub fn get_all_releases(&self, name: &ToolName) -> anyhow::Result<Vec<Release>> {
+    pub async fn get_all_releases(&self, name: &ToolName) -> anyhow::Result<Vec<Release>> {
         let url = format!("https://api.github.com/repos/{}/releases", name);
         let mut builder = self.client.get(url).header(USER_AGENT, APP_NAME);
 
@@ -38,7 +38,7 @@ impl GitHubSource {
             builder = builder.header(AUTHORIZATION, format!("token {}", token));
         }
 
-        let response_body = builder.send()?.text()?;
+        let response_body = builder.send().await?.text().await?;
 
         let gh_releases: Vec<GitHubRelease> = serde_json::from_str(&response_body)
             .with_context(|| format!("Unexpected GitHub API response: {}", response_body))?;
@@ -70,11 +70,11 @@ impl GitHubSource {
         Ok(releases)
     }
 
-    pub fn get_release(&self, id: &ToolId) -> anyhow::Result<Release> {
+    pub async fn get_release(&self, id: &ToolId) -> anyhow::Result<Release> {
         // TODO: Better implementation using individual release API instead of
         // using the release list API.
 
-        let releases = self.get_all_releases(id.name())?;
+        let releases = self.get_all_releases(id.name()).await?;
 
         releases
             .into_iter()
@@ -82,7 +82,7 @@ impl GitHubSource {
             .with_context(|| format!("Could not find release {}", id))
     }
 
-    pub fn download_asset(&self, url: &str) -> anyhow::Result<impl Read + Seek> {
+    pub async fn download_asset(&self, url: &str) -> anyhow::Result<impl Read + Seek> {
         let mut builder = self
             .client
             .get(url)
@@ -93,8 +93,8 @@ impl GitHubSource {
             builder = builder.header(AUTHORIZATION, format!("token {}", token));
         }
 
-        let response = builder.send()?;
-        let body = response.bytes()?.to_vec();
+        let response = builder.send().await?;
+        let body = response.bytes().await?.to_vec();
 
         Ok(Cursor::new(body))
     }

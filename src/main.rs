@@ -26,7 +26,7 @@ use crate::home::Home;
 use crate::manifest::Manifest;
 use crate::tool_storage::ToolStorage;
 
-fn run() -> anyhow::Result<()> {
+async fn run() -> anyhow::Result<()> {
     let home = Home::from_env()?;
     let tool_storage = ToolStorage::new(&home)?;
     let exe_name = current_exe_name()?;
@@ -38,7 +38,7 @@ fn run() -> anyhow::Result<()> {
         for manifest in &manifests {
             if let Some(tool_id) = manifest.tools.get(exe_name.as_str()) {
                 let args = std::env::args().skip(1).collect();
-                std::process::exit(tool_storage.run(tool_id, args)?);
+                std::process::exit(tool_storage.run(tool_id, args).await?);
             }
         }
 
@@ -67,7 +67,7 @@ fn run() -> anyhow::Result<()> {
     AuthManifest::init(&home)?;
     system_path::init(&home)?;
 
-    Args::parse().run(&home, tool_storage)
+    Args::parse().run(&home, tool_storage).await
 }
 
 fn current_exe_name() -> anyhow::Result<String> {
@@ -95,8 +95,15 @@ fn main() {
         .without_time()
         .init();
 
-    if let Err(err) = run() {
-        eprintln!("Aftman error: {:?}", err);
-        std::process::exit(1);
-    }
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .expect("Failed to create Tokio runtime");
+
+    rt.block_on(async {
+        if let Err(err) = run().await {
+            eprintln!("Aftman error: {:?}", err);
+            std::process::exit(1);
+        }
+    })
 }
