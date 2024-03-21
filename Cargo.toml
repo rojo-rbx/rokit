@@ -50,4 +50,4 @@ path = "src-new/main.rs"
 
 [lib]
 name = "aftman"
-path = "src-new/lib.rs"
+path = "lib/lib.rs"
