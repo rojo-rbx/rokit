@@ -14,3 +14,8 @@
 
 /.DS_Store
 /**/.DS_Store
+
+# Ignore any aftman manifest files in this
+# repository - they are used for testing only
+
+/aftman.toml
