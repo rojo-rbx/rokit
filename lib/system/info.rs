@@ -104,3 +104,150 @@ impl Description {
         a.os.cmp(&b.os)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn assert_desc(description: &str, expected: Description) {
+        assert_eq!(
+            Description::detect(description),
+            Some(expected),
+            "{description}"
+        );
+    }
+
+    #[test]
+    fn detect_description_valid() {
+        // Windows
+        assert_desc(
+            "windows-x64-msvc",
+            Description {
+                os: OS::Windows,
+                arch: Arch::X64,
+                toolchain: Some(Toolchain::Msvc),
+            },
+        );
+        assert_desc(
+            "win64",
+            Description {
+                os: OS::Windows,
+                arch: Arch::X64,
+                toolchain: None,
+            },
+        );
+        assert_desc(
+            "windows-x86-gnu",
+            Description {
+                os: OS::Windows,
+                arch: Arch::X86,
+                toolchain: Some(Toolchain::Gnu),
+            },
+        );
+        assert_desc(
+            "windows-x86",
+            Description {
+                os: OS::Windows,
+                arch: Arch::X86,
+                toolchain: None,
+            },
+        );
+        assert_desc(
+            "win32",
+            Description {
+                os: OS::Windows,
+                arch: Arch::X86,
+                toolchain: None,
+            },
+        );
+        // macOS
+        assert_desc(
+            "aarch64-macos",
+            Description {
+                os: OS::MacOS,
+                arch: Arch::Arm64,
+                toolchain: None,
+            },
+        );
+        assert_desc(
+            "macos-x64-gnu",
+            Description {
+                os: OS::MacOS,
+                arch: Arch::X64,
+                toolchain: Some(Toolchain::Gnu),
+            },
+        );
+        assert_desc(
+            "macos-x64",
+            Description {
+                os: OS::MacOS,
+                arch: Arch::X64,
+                toolchain: None,
+            },
+        );
+        // Linux
+        assert_desc(
+            "linux-x86_64-gnu",
+            Description {
+                os: OS::Linux,
+                arch: Arch::X64,
+                toolchain: Some(Toolchain::Gnu),
+            },
+        );
+        assert_desc(
+            "linux-gnu-x86",
+            Description {
+                os: OS::Linux,
+                arch: Arch::X86,
+                toolchain: Some(Toolchain::Gnu),
+            },
+        );
+        assert_desc(
+            "armv7-linux-musl",
+            Description {
+                os: OS::Linux,
+                arch: Arch::Arm32,
+                toolchain: Some(Toolchain::Musl),
+            },
+        );
+    }
+
+    #[test]
+    fn detect_description_universal() {
+        // macOS universal binaries should parse as x64 (most compatible)
+        assert_desc(
+            "macos-universal",
+            Description {
+                os: OS::MacOS,
+                arch: Arch::X64,
+                toolchain: None,
+            },
+        );
+        assert_desc(
+            "darwin-universal",
+            Description {
+                os: OS::MacOS,
+                arch: Arch::X64,
+                toolchain: None,
+            },
+        );
+    }
+
+    #[test]
+    fn detect_description_invalid() {
+        // Anything that is missing a valid os or arch should be invalid
+        const INVALID_DESCRIPTIONS: &[&str] = &[
+            "widows-x64-unknown",
+            "macccos-x64-unknown",
+            "linucks-x64-unknown",
+            "unknown-x64-gnu",
+            "unknown-x64",
+            "unknown-x86-gnu",
+            "unknown-x86",
+            "unknown-armv7-musl",
+        ];
+        for description in INVALID_DESCRIPTIONS {
+            assert_eq!(Description::detect(description), None);
+        }
+    }
+}

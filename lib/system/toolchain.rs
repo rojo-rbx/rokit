@@ -44,3 +44,25 @@ impl Toolchain {
         None
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn detect_toolchain_valid() {
+        assert_eq!(Toolchain::detect("msvc"), Some(Toolchain::Msvc));
+        assert_eq!(Toolchain::detect("msvc-clang"), Some(Toolchain::Msvc));
+        assert_eq!(Toolchain::detect("gnu"), Some(Toolchain::Gnu));
+        assert_eq!(Toolchain::detect("musl"), Some(Toolchain::Musl));
+        assert_eq!(Toolchain::detect("musl-gcc"), Some(Toolchain::Musl));
+    }
+
+    #[test]
+    fn detect_toolchain_invalid() {
+        assert_eq!(Toolchain::detect("unknown"), None);
+        assert_eq!(Toolchain::detect("msrv"), None);
+        assert_eq!(Toolchain::detect("gnnuuu!"), None);
+        assert_eq!(Toolchain::detect("muscle"), None);
+    }
+}

@@ -51,3 +51,44 @@ impl OS {
         None
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn current_os() {
+        let os = OS::current();
+        if cfg!(target_os = "windows") {
+            assert_eq!(os, OS::Windows);
+        } else if cfg!(target_os = "macos") {
+            assert_eq!(os, OS::MacOS);
+        } else if cfg!(target_os = "linux") {
+            assert_eq!(os, OS::Linux);
+        } else {
+            panic!("Unknown OS for testing: {CURRENT_OS}");
+        }
+    }
+
+    #[test]
+    fn detect_os_valid() {
+        assert_eq!(OS::detect("APP-windows-ARCH-VER"), Some(OS::Windows));
+        assert_eq!(OS::detect("APP-win32-ARCH-VER"), Some(OS::Windows));
+        assert_eq!(OS::detect("APP-win64-ARCH-VER"), Some(OS::Windows));
+        assert_eq!(OS::detect("APP-macos-ARCH-VER"), Some(OS::MacOS));
+        assert_eq!(OS::detect("APP-osx-ARCH-VER"), Some(OS::MacOS));
+        assert_eq!(OS::detect("APP-darwin-ARCH-VER"), Some(OS::MacOS));
+        assert_eq!(OS::detect("APP-linux-ARCH-VER"), Some(OS::Linux));
+        assert_eq!(OS::detect("APP-ubuntu-ARCH-VER"), Some(OS::Linux));
+        assert_eq!(OS::detect("APP-debian-ARCH-VER"), Some(OS::Linux));
+    }
+
+    #[test]
+    fn detect_os_invalid() {
+        assert_eq!(OS::detect("APP-widows-ARCH-VER"), None);
+        assert_eq!(OS::detect("APP-mac_in_tosh-ARCH-VER"), None);
+        assert_eq!(OS::detect("APP-myOS-ARCH-VER"), None);
+        assert_eq!(OS::detect("APP-fedoooruhh-ARCH-VER"), None);
+        assert_eq!(OS::detect("APP-linucks-ARCH-VER"), None);
+    }
+}

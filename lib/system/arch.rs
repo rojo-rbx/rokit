@@ -81,3 +81,60 @@ impl Arch {
         None
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn current_arch() {
+        let arch = Arch::current();
+        if cfg!(target_arch = "aarch64") {
+            assert_eq!(arch, Arch::Arm64);
+        } else if cfg!(target_arch = "x86_64") {
+            assert_eq!(arch, Arch::X64);
+        } else if cfg!(target_arch = "x86") {
+            assert_eq!(arch, Arch::X86);
+        } else if cfg!(target_arch = "arm") {
+            assert_eq!(arch, Arch::Arm32);
+        } else {
+            panic!("Unknown architecture for testing: {CURRENT_ARCH}");
+        }
+    }
+
+    #[test]
+    fn detect_arch_valid() {
+        const REAL_ARCHITECTURES: [(&str, Arch); 8] = [
+            ("APP-x86-64-VER", Arch::X64),
+            ("APP-x86_64-VER", Arch::X64),
+            ("APP-x64-VER", Arch::X64),
+            ("APP-amd64-VER", Arch::X64),
+            ("APP-x86-VER", Arch::X86),
+            ("APP-i686-VER", Arch::X86),
+            ("APP-arm64-VER", Arch::Arm64),
+            ("APP-arm-VER", Arch::Arm32),
+        ];
+        for (real_arch, expected) in REAL_ARCHITECTURES {
+            assert_eq!(Arch::detect(real_arch), Some(expected));
+        }
+    }
+
+    #[test]
+    fn detect_arch_invalid() {
+        const FAKE_ARCHITECTURES: [&str; 5] = [
+            "APP-x84-48-VER",
+            "APP-x87-65-VER",
+            "APP-x62-VER",
+            "APP-nvidia4-VER",
+            "APP-intel999-VER",
+        ];
+        for fake_arch in FAKE_ARCHITECTURES {
+            assert_eq!(Arch::detect(fake_arch), None);
+        }
+    }
+
+    #[test]
+    fn detect_arch_universal() {
+        assert_eq!(Arch::detect("APP-macos-universal-VER"), Some(Arch::X64));
+    }
+}
