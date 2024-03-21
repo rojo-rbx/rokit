@@ -67,7 +67,7 @@ fn run() -> anyhow::Result<()> {
     AuthManifest::init(&home)?;
     system_path::init(&home)?;
 
-    Args::from_args().run(&home, tool_storage)
+    Args::parse().run(&home, tool_storage)
 }
 
 fn current_exe_name() -> anyhow::Result<String> {

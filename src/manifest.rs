@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{bail, format_err, Context};
 use serde::{Deserialize, Serialize};
-use toml_edit::Document;
+use toml_edit::DocumentMut;
 
 use crate::config::{write_if_not_exists, write_only_new};
 use crate::home::Home;
@@ -82,7 +82,7 @@ impl Manifest {
     pub fn load_from_dir(path: &Path) -> anyhow::Result<Option<Manifest>> {
         let file_path = path.join(MANIFEST_FILE_NAME);
 
-        let contents = match fs_err::read(&file_path) {
+        let contents = match fs_err::read_to_string(&file_path) {
             Ok(contents) => contents,
             Err(err) => {
                 if err.kind() == io::ErrorKind::NotFound {
@@ -93,7 +93,7 @@ impl Manifest {
             }
         };
 
-        let mut manifest: Manifest = toml::from_slice(&contents)
+        let mut manifest: Manifest = toml::from_str(&contents)
             .with_context(|| format_err!("Invalid manifest at {}", file_path.display()))?;
 
         manifest.path = Some(file_path);
@@ -143,7 +143,7 @@ impl Manifest {
 
     fn add_tool(manifest_path: &Path, alias: &ToolAlias, id: &ToolId) -> anyhow::Result<()> {
         let content = fs_err::read_to_string(manifest_path)?;
-        let mut document: Document = content.parse()?;
+        let mut document: DocumentMut = content.parse()?;
         document["tools"][alias.as_ref()] = toml_edit::value(id.to_string());
 
         fs_err::write(manifest_path, document.to_string())?;

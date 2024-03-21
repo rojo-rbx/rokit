@@ -2,7 +2,7 @@ use std::io;
 
 use anyhow::{bail, format_err, Context};
 use serde::{Deserialize, Serialize};
-use toml_edit::Document;
+use toml_edit::DocumentMut;
 
 use crate::config::write_if_not_exists;
 use crate::home::Home;
@@ -37,7 +37,7 @@ impl AuthManifest {
     pub fn load(home: &Home) -> anyhow::Result<Option<AuthManifest>> {
         let file_path = home.path().join(MANIFEST_FILE_NAME);
 
-        let contents = match fs_err::read(&file_path) {
+        let contents = match fs_err::read_to_string(&file_path) {
             Ok(contents) => contents,
             Err(err) => {
                 if err.kind() == io::ErrorKind::NotFound {
@@ -48,7 +48,7 @@ impl AuthManifest {
             }
         };
 
-        let manifest: AuthManifest = toml::from_slice(&contents)
+        let manifest: AuthManifest = toml::from_str(&contents)
             .with_context(|| format_err!("Invalid auth.toml at {}", file_path.display()))?;
 
         Ok(Some(manifest))
@@ -57,7 +57,7 @@ impl AuthManifest {
     fn _add_token(home: &Home, token_type: &str, token: &str) -> anyhow::Result<()> {
         let manifest_path = home.path().join(MANIFEST_FILE_NAME);
         let content = fs_err::read_to_string(&manifest_path)?;
-        let mut document: Document = content.parse()?;
+        let mut document: DocumentMut = content.parse()?;
         document[token_type] = toml_edit::value(token.to_string());
 
         fs_err::write(&manifest_path, document.to_string())?;
