@@ -1,4 +1,5 @@
 # Aftman
+
 Aftman is a toolchain manager. It enables installing project-specific command line tools and switching between them seamlessly.
 
 ```bash
@@ -15,10 +16,11 @@ Rojo 7.1.0
 
 $ cat aftman.toml
 [tools]
-rojo = "rojo-rbx/rojo@7.1.0" 
+rojo = "rojo-rbx/rojo@7.1.0"
 ```
 
 ## Supported Platforms
+
 Aftman supports:
 
 - Windows (x86, x86-64)
@@ -26,6 +28,7 @@ Aftman supports:
 - Linux (x86, x86-64)
 
 ## Installation
+
 You can install Aftman by downloading a pre-built binary for your platform from Aftman's [GitHub Releases Page](https://github.com/LPGhatguy/aftman/releases).
 
 Once you have the release unzipped, run:
@@ -37,6 +40,7 @@ Once you have the release unzipped, run:
 This will install Aftman to its own bin directory and update your system's `PATH` environment variable for you.
 
 ## Getting Started
+
 To create a new `aftman.toml` file in your current directory, run
 
 ```bash
@@ -70,6 +74,7 @@ aftman install
 ```
 
 ### Authenticating with GitHub (Aftman 0.2.7+)
+
 If you're running into GitHub rate limits or want to manage private tools hosted on GitHub, you can give Aftman a [Personal Access Token][pat].
 
 Generate a Personal Access Token, then edit `~/.aftman/auth.toml` to add it:
@@ -83,9 +88,11 @@ Aftman will use this token to authenticate all requests to GitHub.
 [pat]: https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token
 
 ## Subcommands
+
 For detailed help information, run `aftman --help`.
 
 ### `aftman init`
+
 Usage:
 
 ```bash
@@ -95,6 +102,7 @@ aftman init [path]
 Creates a new `aftman.toml` file in the given directory. Defaults to the current directory.
 
 ### `aftman add`
+
 Usage:
 
 ```bash
@@ -120,6 +128,7 @@ aftman add rojo-rbx/rojo@6.2.0 rojo6
 ```
 
 ### `aftman install`
+
 Usage:
 
 ```bash
@@ -133,6 +142,7 @@ If `--no-trust-check` is given, all tools will be installed, regardless of wheth
 If `--skip-untrusted` is given, only already trusted tools will be installed, others will be skipped and not emit any errors.
 
 ### `aftman self-install`
+
 Usage:
 
 ```bash
@@ -144,6 +154,7 @@ Installs Aftman, upgrades any references to Aftman, and adds `aftman` to your sy
 Whenever you upgrade Aftman, run this command. Aftman makes copies of itself to mimic the tools it installs, and this command will ensure those copies get updated as well.
 
 ### `aftman trust`
+
 Usage:
 
 ```bash
@@ -155,7 +166,8 @@ Adds a tool to the list of trusted tools.
 Aftman prompts the user before installing new tools. Running `aftman trust` beforehand skips this prompt. This is useful when running automation that depends on a tool from a known location.
 
 ### `aftman list`
-*Added in Aftman 0.2.6.*
+
+_Added in Aftman 0.2.6._
 
 Usage:
 
@@ -166,20 +178,22 @@ aftman list
 Lists all tools currently managed by Aftman.
 
 ### `aftman update`
+
 **This subcommand is not yet implemented.**
 
 ## Differences from Foreman
+
 Aftman is spiritually very similar to [Foreman], a project I created at Roblox.
 
 I'm hoping to fix some of the core design mistakes I made in Foreman and also take a little more care with the codebase. Roughly:
 
-* **Exact version dependencies.** Using a range here has tripped up lots of users, so Aftman uses exact versions in all configuration files.
-* **Commands to install, uninstall, and upgrade tools.** Editing a global, tucked-away toml file by hand is rough.
-* **Change model to no longer trust-by-default.** Aftman prompts before downloading new tools. ([Roblox/foreman#16]).
-* **Better strategy for storing executables.** ([Roblox/foreman#11])
-* **Better heuristics for picking the right artifacts for your platform.** Aftman uses your Compiler, OS, architecture, and will eventually support custom patterns. ([Roblox/foreman#18])
-* **Proper error handling.** Unlike Foreman, which uses `Result::unwrap` liberally, Aftman has good error hygiene with helpful context attached.
-* **Less Roblox-angled.** Aftman does not market itself as being for Roblox development. It is a generally useful tool that can install all sorts of CLI tools.
+- **Exact version dependencies.** Using a range here has tripped up lots of users, so Aftman uses exact versions in all configuration files.
+- **Commands to install, uninstall, and upgrade tools.** Editing a global, tucked-away toml file by hand is rough.
+- **Change model to no longer trust-by-default.** Aftman prompts before downloading new tools. ([Roblox/foreman#16]).
+- **Better strategy for storing executables.** ([Roblox/foreman#11])
+- **Better heuristics for picking the right artifacts for your platform.** Aftman uses your Compiler, OS, architecture, and will eventually support custom patterns. ([Roblox/foreman#18])
+- **Proper error handling.** Unlike Foreman, which uses `Result::unwrap` liberally, Aftman has good error hygiene with helpful context attached.
+- **Less Roblox-angled.** Aftman does not market itself as being for Roblox development. It is a generally useful tool that can install all sorts of CLI tools.
 
 [Foreman]: https://github.com/Roblox/foreman
 [Roblox/foreman#11]: https://github.com/Roblox/foreman/issues/11
@@ -187,4 +201,5 @@ I'm hoping to fix some of the core design mistakes I made in Foreman and also ta
 [Roblox/foreman#18]: https://github.com/Roblox/foreman/issues/18
 
 ## License
+
 Aftman is available under the terms of the MIT license. See <https://opensource.org/licenses/MIT> or [LICENSE](LICENSE) for details.
