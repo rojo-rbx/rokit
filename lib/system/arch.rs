@@ -2,8 +2,8 @@ use std::env::consts::ARCH as CURRENT_ARCH;
 
 use super::OS;
 
-const KEYWORDS_X64: [&str; 4] = ["x86-64", "x86_64", "x64", "amd64"];
-const KEYWORDS_X86: [&str; 4] = ["x86", "i686", "win32", "i386"];
+const KEYWORDS_X64: [&str; 5] = ["x86-64", "x86_64", "x64", "amd64", "win64"];
+const KEYWORDS_X86: [&str; 5] = ["x86", "i686", "win32", "i386", "win32"];
 const KEYWORDS_ARM64: [&str; 3] = ["aarch64", "arm64", "armv9"];
 const KEYWORDS_ARM32: [&str; 3] = ["arm", "arm32", "armv7"];
 

@@ -109,7 +109,7 @@ impl Description {
 mod tests {
     use super::*;
 
-    fn assert_desc(description: &str, expected: Description) {
+    fn check_desc(description: &str, expected: Description) {
         assert_eq!(
             Description::detect(description),
             Some(expected),
@@ -120,7 +120,7 @@ mod tests {
     #[test]
     fn detect_description_valid() {
         // Windows
-        assert_desc(
+        check_desc(
             "windows-x64-msvc",
             Description {
                 os: OS::Windows,
@@ -128,7 +128,7 @@ mod tests {
                 toolchain: Some(Toolchain::Msvc),
             },
         );
-        assert_desc(
+        check_desc(
             "win64",
             Description {
                 os: OS::Windows,
@@ -136,7 +136,7 @@ mod tests {
                 toolchain: None,
             },
         );
-        assert_desc(
+        check_desc(
             "windows-x86-gnu",
             Description {
                 os: OS::Windows,
@@ -144,7 +144,7 @@ mod tests {
                 toolchain: Some(Toolchain::Gnu),
             },
         );
-        assert_desc(
+        check_desc(
             "windows-x86",
             Description {
                 os: OS::Windows,
@@ -152,7 +152,7 @@ mod tests {
                 toolchain: None,
             },
         );
-        assert_desc(
+        check_desc(
             "win32",
             Description {
                 os: OS::Windows,
@@ -161,7 +161,7 @@ mod tests {
             },
         );
         // macOS
-        assert_desc(
+        check_desc(
             "aarch64-macos",
             Description {
                 os: OS::MacOS,
@@ -169,7 +169,7 @@ mod tests {
                 toolchain: None,
             },
         );
-        assert_desc(
+        check_desc(
             "macos-x64-gnu",
             Description {
                 os: OS::MacOS,
@@ -177,7 +177,7 @@ mod tests {
                 toolchain: Some(Toolchain::Gnu),
             },
         );
-        assert_desc(
+        check_desc(
             "macos-x64",
             Description {
                 os: OS::MacOS,
@@ -186,7 +186,7 @@ mod tests {
             },
         );
         // Linux
-        assert_desc(
+        check_desc(
             "linux-x86_64-gnu",
             Description {
                 os: OS::Linux,
@@ -194,7 +194,7 @@ mod tests {
                 toolchain: Some(Toolchain::Gnu),
             },
         );
-        assert_desc(
+        check_desc(
             "linux-gnu-x86",
             Description {
                 os: OS::Linux,
@@ -202,7 +202,7 @@ mod tests {
                 toolchain: Some(Toolchain::Gnu),
             },
         );
-        assert_desc(
+        check_desc(
             "armv7-linux-musl",
             Description {
                 os: OS::Linux,
@@ -215,7 +215,7 @@ mod tests {
     #[test]
     fn detect_description_universal() {
         // macOS universal binaries should parse as x64 (most compatible)
-        assert_desc(
+        check_desc(
             "macos-universal",
             Description {
                 os: OS::MacOS,
@@ -223,7 +223,7 @@ mod tests {
                 toolchain: None,
             },
         );
-        assert_desc(
+        check_desc(
             "darwin-universal",
             Description {
                 os: OS::MacOS,
