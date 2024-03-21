@@ -1,9 +1,9 @@
 mod arch;
-mod info;
+mod description;
 mod os;
 mod toolchain;
 
 pub use self::arch::Arch;
-pub use self::info::Description;
+pub use self::description::{Description, DescriptionParseError};
 pub use self::os::OS;
 pub use self::toolchain::Toolchain;
