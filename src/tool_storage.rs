@@ -10,6 +10,8 @@ use std::io::{Seek, Write as _};
 use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context};
+use futures::stream::FuturesUnordered;
+use futures::StreamExt as _;
 use itertools::{Either, Itertools};
 
 use crate::auth::AuthManifest;
@@ -21,6 +23,8 @@ use crate::tool_name::ToolName;
 use crate::tool_source::{Asset, GitHubSource, Release};
 use crate::tool_spec::ToolSpec;
 use crate::trust::{TrustCache, TrustMode, TrustStatus};
+
+const EXPERIMENTAL_CONCURRENT_INSTALL: bool = false;
 
 pub struct ToolStorage {
     pub storage_dir: PathBuf,
@@ -147,8 +151,9 @@ impl ToolStorage {
 
         // Installing all tools is split into multiple steps:
         // 1. Trust check, which may prompt the user and yield if untrusted
-        // 2. Installation of trusted tools, which will be in parallel in the future
-        // 3. Reporting of installation trust errors, unless trust errors are skipped
+        // 2. Installation of trusted tools, which runs all installation concurrently
+        // 3. Linking of installed tools to their alias files
+        // 4. Reporting of installation trust errors, unless trust errors are skipped
 
         let (trusted_tools, trust_errors): (Vec<_>, Vec<_>) = manifests
             .iter()
@@ -160,9 +165,22 @@ impl ToolStorage {
                 },
             );
 
-        for (alias, tool_id) in &trusted_tools {
-            self.install_exact(tool_id, trust, force).await?;
-            self.link(alias)?;
+        if EXPERIMENTAL_CONCURRENT_INSTALL {
+            let mut install_futs = FuturesUnordered::new();
+            for (_, tool_id) in &trusted_tools {
+                install_futs.push(self.install_exact(tool_id, trust, force));
+            }
+            while let Some(result) = install_futs.next().await {
+                result?;
+            }
+            for (alias, _) in &trusted_tools {
+                self.link(alias)?;
+            }
+        } else {
+            for (alias, tool_id) in &trusted_tools {
+                self.install_exact(tool_id, trust, force).await?;
+                self.link(alias)?;
+            }
         }
 
         if !trust_errors.is_empty() && !skip_untrusted {
