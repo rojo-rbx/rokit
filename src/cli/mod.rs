@@ -24,11 +24,11 @@ impl Args {
     pub async fn run(self, home: &Home, tools: ToolStorage) -> anyhow::Result<()> {
         match self.subcommand {
             Subcommand::Init(sub) => sub.run(),
-            Subcommand::List(sub) => sub.run(home),
+            Subcommand::List(sub) => sub.run(home).await,
             Subcommand::Add(sub) => sub.run(tools).await,
             Subcommand::Install(sub) => sub.run(tools).await,
-            Subcommand::Trust(sub) => sub.run(home),
-            Subcommand::SelfInstall(sub) => sub.run(home, tools),
+            Subcommand::Trust(sub) => sub.run(home).await,
+            Subcommand::SelfInstall(sub) => sub.run(home, tools).await,
 
             Subcommand::Update(_) => bail!("This command is not yet implemented."),
             Subcommand::SelfUpdate(_) => bail!("This command is not yet implemented."),
@@ -74,9 +74,9 @@ impl InitSubcommand {
 pub struct ListSubcommand {}
 
 impl ListSubcommand {
-    pub fn run(self, home: &Home) -> anyhow::Result<()> {
+    pub async fn run(self, home: &Home) -> anyhow::Result<()> {
         let installed_path = home.path().join("tool-storage").join("installed.txt");
-        let installed = InstalledToolsCache::read(&installed_path)?;
+        let installed = InstalledToolsCache::read(&installed_path).await?;
 
         let mut tools = BTreeMap::new();
 
@@ -187,8 +187,8 @@ pub struct TrustSubcommand {
 }
 
 impl TrustSubcommand {
-    pub fn run(self, home: &Home) -> anyhow::Result<()> {
-        if TrustCache::add(home, self.name.clone())? {
+    pub async fn run(self, home: &Home) -> anyhow::Result<()> {
+        if TrustCache::add(home, self.name.clone()).await? {
             tracing::info!("Added {} to the set of trusted tools.", self.name);
         } else {
             tracing::info!("{} was already a trusted tool.", self.name);
@@ -208,8 +208,8 @@ pub struct SelfUpdateSubcommand {}
 pub struct SelfInstallSubcommand {}
 
 impl SelfInstallSubcommand {
-    pub fn run(self, home: &Home, tools: ToolStorage) -> anyhow::Result<()> {
-        tools.update_links()?;
+    pub async fn run(self, home: &Home, tools: ToolStorage) -> anyhow::Result<()> {
+        tools.update_links().await?;
 
         if crate::system_path::add(home)? {
             tracing::info!(

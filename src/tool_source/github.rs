@@ -1,5 +1,3 @@
-use std::io::{Cursor, Read, Seek};
-
 use anyhow::Context;
 use reqwest::{
     header::{ACCEPT, AUTHORIZATION, USER_AGENT},
@@ -82,7 +80,7 @@ impl GitHubSource {
             .with_context(|| format!("Could not find release {}", id))
     }
 
-    pub async fn download_asset(&self, url: &str) -> anyhow::Result<impl Read + Seek> {
+    pub async fn download_asset(&self, url: &str) -> anyhow::Result<Vec<u8>> {
         let mut builder = self
             .client
             .get(url)
@@ -96,7 +94,7 @@ impl GitHubSource {
         let response = builder.send().await?;
         let body = response.bytes().await?.to_vec();
 
-        Ok(Cursor::new(body))
+        Ok(body)
     }
 }
 

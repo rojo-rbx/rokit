@@ -28,7 +28,7 @@ use crate::tool_storage::ToolStorage;
 
 async fn run() -> anyhow::Result<()> {
     let home = Home::from_env()?;
-    let tool_storage = ToolStorage::new(&home)?;
+    let tool_storage = ToolStorage::new(&home).await?;
     let exe_name = current_exe_name()?;
 
     if exe_name != "aftman" {
@@ -88,14 +88,18 @@ fn main() {
 
     let tracing_env_filter = EnvFilter::builder()
         .with_default_directive(LevelFilter::INFO.into())
-        .from_env_lossy();
+        .from_env_lossy()
+        .add_directive("reqwest=info".parse().unwrap())
+        .add_directive("rustls=info".parse().unwrap())
+        .add_directive("hyper=info".parse().unwrap())
+        .add_directive("h2=info".parse().unwrap());
     tracing_subscriber::fmt()
         .with_env_filter(tracing_env_filter)
         .with_target(false)
         .without_time()
         .init();
 
-    let rt = tokio::runtime::Builder::new_current_thread()
+    let rt = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()
         .expect("Failed to create Tokio runtime");

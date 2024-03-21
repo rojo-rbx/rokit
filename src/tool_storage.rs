@@ -4,15 +4,16 @@ use std::collections::BTreeSet;
 use std::env::current_dir;
 use std::env::{consts::EXE_SUFFIX, current_exe};
 use std::fmt::Write;
-use std::fs::{self, File};
-use std::io::{self, BufWriter, IsTerminal, Read};
-use std::io::{Seek, Write as _};
+use std::io::{self, IsTerminal, Read};
 use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context};
 use futures::stream::FuturesUnordered;
 use futures::StreamExt as _;
-use itertools::{Either, Itertools};
+use itertools::Itertools;
+use tokio::fs;
+use tokio::task::spawn_blocking;
+use tokio::time::Instant;
 
 use crate::auth::AuthManifest;
 use crate::home::Home;
@@ -24,8 +25,6 @@ use crate::tool_source::{Asset, GitHubSource, Release};
 use crate::tool_spec::ToolSpec;
 use crate::trust::{TrustCache, TrustMode, TrustStatus};
 
-const EXPERIMENTAL_CONCURRENT_INSTALL: bool = false;
-
 pub struct ToolStorage {
     pub storage_dir: PathBuf,
     pub bin_dir: PathBuf,
@@ -35,12 +34,12 @@ pub struct ToolStorage {
 }
 
 impl ToolStorage {
-    pub fn new(home: &Home) -> anyhow::Result<Self> {
+    pub async fn new(home: &Home) -> anyhow::Result<Self> {
         let storage_dir = home.path().join("tool-storage");
-        fs::create_dir_all(&storage_dir)?;
+        fs::create_dir_all(&storage_dir).await?;
 
         let bin_dir = home.path().join("bin");
-        fs::create_dir_all(&bin_dir)?;
+        fs::create_dir_all(&bin_dir).await?;
 
         let auth = AuthManifest::load(home)?;
 
@@ -67,7 +66,7 @@ impl ToolStorage {
         };
 
         let id = self.install_inexact(spec, TrustMode::Check).await?;
-        self.link(&alias)?;
+        self.link(&alias).await?;
 
         if global {
             Manifest::add_global_tool(&self.home, &alias, &id)?;
@@ -90,7 +89,7 @@ impl ToolStorage {
 
     /// Update all executables managed by Aftman, which might include Aftman
     /// itself.
-    pub fn update_links(&self) -> anyhow::Result<()> {
+    pub async fn update_links(&self) -> anyhow::Result<()> {
         let self_path =
             current_exe().context("Failed to discover path to the Aftman executable")?;
         let self_name = self_path.file_name().unwrap();
@@ -103,15 +102,15 @@ impl ToolStorage {
         tracing::debug!("Copying own executable into temp dir");
         let source_dir = tempfile::tempdir()?;
         let source_path = source_dir.path().join(self_name);
-        fs::copy(&self_path, &source_path)?;
+        fs::copy(&self_path, &source_path).await?;
         let self_path = source_path;
 
         let junk_dir = tempfile::tempdir()?;
         let aftman_name = format!("aftman{EXE_SUFFIX}");
         let mut found_aftman = false;
 
-        for entry in fs::read_dir(&self.bin_dir)? {
-            let entry = entry?;
+        let mut read_dir = fs::read_dir(&self.bin_dir).await?;
+        while let Some(entry) = read_dir.next_entry().await? {
             let path = entry.path();
             let name = path.file_name().unwrap().to_str().unwrap();
 
@@ -123,15 +122,15 @@ impl ToolStorage {
 
             // Copy the executable into a temp directory so that we can replace
             // it even if it's currently running.
-            fs::rename(&path, junk_dir.path().join(name))?;
-            fs::copy(&self_path, path)?;
+            fs::rename(&path, junk_dir.path().join(name)).await?;
+            fs::copy(&self_path, path).await?;
         }
 
         // If we didn't find and update Aftman already, install it.
         if !found_aftman {
             tracing::info!("Installing Aftman...");
             let aftman_path = self.bin_dir.join(aftman_name);
-            fs::copy(&self_path, aftman_path)?;
+            fs::copy(&self_path, aftman_path).await?;
         }
 
         tracing::info!("Updated Aftman binaries successfully!");
@@ -155,32 +154,36 @@ impl ToolStorage {
         // 3. Linking of installed tools to their alias files
         // 4. Reporting of installation trust errors, unless trust errors are skipped
 
-        let (trusted_tools, trust_errors): (Vec<_>, Vec<_>) = manifests
-            .iter()
-            .flat_map(|manifest| &manifest.tools)
-            .partition_map(
-                |(alias, tool_id)| match self.trust_check(tool_id.name(), trust) {
-                    Ok(_) => Either::Left((alias, tool_id)),
-                    Err(e) => Either::Right(e),
-                },
-            );
+        let mut trust_futs = FuturesUnordered::new();
+        for (alias, tool_id) in manifests
+            .into_iter()
+            .flat_map(|manifest| manifest.tools.clone())
+        {
+            trust_futs.push(async move {
+                self.trust_check(tool_id.name(), trust).await?;
+                anyhow::Ok((alias, tool_id.clone()))
+            });
+        }
 
-        if EXPERIMENTAL_CONCURRENT_INSTALL {
-            let mut install_futs = FuturesUnordered::new();
-            for (_, tool_id) in &trusted_tools {
-                install_futs.push(self.install_exact(tool_id, trust, force));
+        let mut trusted_tools = Vec::new();
+        let mut trust_errors = Vec::new();
+        while let Some(result) = trust_futs.next().await {
+            match result {
+                Ok((alias, tool_id)) => trusted_tools.push((alias, tool_id)),
+                Err(e) => trust_errors.push(e),
             }
-            while let Some(result) = install_futs.next().await {
-                result?;
-            }
-            for (alias, _) in &trusted_tools {
-                self.link(alias)?;
-            }
-        } else {
-            for (alias, tool_id) in &trusted_tools {
+        }
+
+        let mut install_futs = FuturesUnordered::new();
+        for (alias, tool_id) in &trusted_tools {
+            install_futs.push(async {
                 self.install_exact(tool_id, trust, force).await?;
-                self.link(alias)?;
-            }
+                self.link(alias).await?;
+                anyhow::Ok(())
+            });
+        }
+        while let Some(result) = install_futs.next().await {
+            result?;
         }
 
         if !trust_errors.is_empty() && !skip_untrusted {
@@ -196,9 +199,9 @@ impl ToolStorage {
     /// Ensure a tool that matches the given spec is installed.
     async fn install_inexact(&self, spec: &ToolSpec, trust: TrustMode) -> anyhow::Result<ToolId> {
         let installed_path = self.storage_dir.join("installed.txt");
-        let installed = InstalledToolsCache::read(&installed_path)?;
+        let installed = InstalledToolsCache::read(&installed_path).await?;
 
-        self.trust_check(spec.name(), trust)?;
+        self.trust_check(spec.name(), trust).await?;
 
         tracing::info!("Installing tool: {}", spec);
 
@@ -248,16 +251,19 @@ impl ToolStorage {
             );
             let artifact = github.download_asset(&asset.url).await?;
 
-            self.install_artifact(&id, artifact).with_context(|| {
-                format!(
-                    "Could not install asset {} from tool {} release v{}",
-                    asset.name,
-                    id.name(),
-                    release.version
-                )
-            })?;
+            self.install_artifact(&id, artifact)
+                .await
+                .with_context(|| {
+                    format!(
+                        "Could not install asset {} from tool {} release v{}",
+                        asset.name,
+                        id.name(),
+                        release.version
+                    )
+                })?;
 
             InstalledToolsCache::add(&installed_path, &id)
+                .await
                 .context("Could not write installed tools cache file")?;
 
             tracing::info!("{} v{} installed successfully.", id.name(), release.version);
@@ -276,14 +282,14 @@ impl ToolStorage {
         force: bool,
     ) -> anyhow::Result<()> {
         let installed_path = self.storage_dir.join("installed.txt");
-        let installed = InstalledToolsCache::read(&installed_path)?;
+        let installed = InstalledToolsCache::read(&installed_path).await?;
         let is_installed = installed.tools.contains(id);
 
         if is_installed && !force {
             return Ok(());
         }
 
-        self.trust_check(id.name(), trust)?;
+        self.trust_check(id.name(), trust).await?;
 
         tracing::info!("Installing tool: {id}");
 
@@ -309,7 +315,7 @@ impl ToolStorage {
         );
         let artifact = github.download_asset(&asset.url).await?;
 
-        self.install_artifact(id, artifact).with_context(|| {
+        self.install_artifact(id, artifact).await.with_context(|| {
             format!(
                 "Could not install asset {} from tool {} release v{}",
                 asset.name,
@@ -319,6 +325,7 @@ impl ToolStorage {
         })?;
 
         InstalledToolsCache::add(&installed_path, id)
+            .await
             .context("Could not write installed tools cache file")?;
 
         tracing::info!("{} v{} installed successfully.", id.name(), release.version);
@@ -368,8 +375,8 @@ impl ToolStorage {
             .collect()
     }
 
-    fn trust_check(&self, name: &ToolName, mode: TrustMode) -> anyhow::Result<()> {
-        let status = self.trust_status(name)?;
+    async fn trust_check(&self, name: &ToolName, mode: TrustMode) -> anyhow::Result<()> {
+        let status = self.trust_status(name).await?;
 
         if status == TrustStatus::NotTrusted {
             if mode == TrustMode::Check {
@@ -399,14 +406,14 @@ impl ToolStorage {
                 }
             }
 
-            TrustCache::add(&self.home, name.clone())?;
+            TrustCache::add(&self.home, name.clone()).await?;
         }
 
         Ok(())
     }
 
-    fn trust_status(&self, name: &ToolName) -> anyhow::Result<TrustStatus> {
-        let trusted = TrustCache::read(&self.home)?;
+    async fn trust_status(&self, name: &ToolName) -> anyhow::Result<TrustStatus> {
+        let trusted = TrustCache::read(&self.home).await?;
         let is_trusted = trusted.tools.contains(name);
         if is_trusted {
             Ok(TrustStatus::Trusted)
@@ -415,68 +422,92 @@ impl ToolStorage {
         }
     }
 
-    fn install_executable(&self, id: &ToolId, mut contents: impl Read) -> anyhow::Result<()> {
+    async fn install_executable(&self, id: &ToolId, contents: &[u8]) -> anyhow::Result<()> {
         let output_path = self.exe_path(id);
 
-        fs::create_dir_all(output_path.parent().unwrap())?;
-
-        let mut output = BufWriter::new(File::create(&output_path)?);
-        io::copy(&mut contents, &mut output)?;
-        output.flush()?;
+        fs::create_dir_all(output_path.parent().unwrap()).await?;
+        fs::write(&output_path, contents).await?;
 
         #[cfg(unix)]
         {
-            use std::fs::{set_permissions, Permissions};
+            use std::fs::Permissions;
             use std::os::unix::fs::PermissionsExt;
+            use tokio::fs::set_permissions;
 
             set_permissions(&output_path, Permissions::from_mode(0o755))
+                .await
                 .context("failed to mark executable as executable")?;
         }
 
         Ok(())
     }
 
-    fn install_artifact(&self, id: &ToolId, artifact: impl Read + Seek) -> anyhow::Result<()> {
+    async fn install_artifact(&self, id: &ToolId, artifact: Vec<u8>) -> anyhow::Result<()> {
         let output_path = self.exe_path(id);
         let expected_name = format!("{}{EXE_SUFFIX}", id.name().name());
 
-        fs::create_dir_all(output_path.parent().unwrap())?;
+        fs::create_dir_all(output_path.parent().unwrap()).await?;
 
-        // If there is an executable with an exact name match, install that one.
-        let mut zip = zip::ZipArchive::new(artifact)?;
-        for i in 0..zip.len() {
-            let mut file = zip.by_index(i)?;
+        // Reading a zip file can be slow, so we spawn a blocking task for it.
+        let zipped_id = id.clone();
+        let zipped_file = spawn_blocking(move || {
+            let start = Instant::now();
 
-            if file.name() == expected_name {
-                tracing::debug!("Installing file {} from archive...", file.name());
-                self.install_executable(id, &mut file)?;
-                return Ok(());
+            let mut found = None;
+            let mut reader = io::Cursor::new(&artifact);
+            let mut zip = zip::ZipArchive::new(&mut reader)?;
+
+            // If there is an executable with an exact name match, install that one.
+            for i in 0..zip.len() {
+                let mut file = zip.by_index(i)?;
+
+                if file.name() == expected_name {
+                    let mut bytes = Vec::new();
+                    let path = file.name().to_string();
+                    file.read_to_end(&mut bytes)?;
+                    found = Some((path, bytes));
+                }
             }
-        }
 
-        // ...otherwise, look for any file with the system's EXE_SUFFIX and
-        // install that.
-        for i in 0..zip.len() {
-            let mut file = zip.by_index(i)?;
+            if found.is_none() {
+                // ...otherwise, look for any file with the system's EXE_SUFFIX and
+                // install that.
+                for i in 0..zip.len() {
+                    let mut file = zip.by_index(i)?;
 
-            if file.name().ends_with(EXE_SUFFIX) {
-                tracing::debug!("Installing file {} from archive...", file.name());
-                self.install_executable(id, &mut file)?;
-                return Ok(());
+                    if file.name().ends_with(EXE_SUFFIX) {
+                        let mut bytes = Vec::new();
+                        let path = file.name().to_string();
+                        file.read_to_end(&mut bytes)?;
+                        found = Some((path, bytes));
+                    }
+                }
             }
-        }
 
-        bail!("no executables were found in archive");
+            tracing::debug!("Read zip file for {zipped_id} in {:?}", start.elapsed());
+            anyhow::Ok(found)
+        })
+        .await??;
+
+        if let Some((path, bytes)) = zipped_file {
+            tracing::debug!("Installing file {path} from archive...");
+            self.install_executable(id, &bytes).await?;
+            Ok(())
+        } else {
+            bail!("no executables were found in archive");
+        }
     }
 
-    fn link(&self, alias: &ToolAlias) -> anyhow::Result<()> {
+    async fn link(&self, alias: &ToolAlias) -> anyhow::Result<()> {
         let self_path =
             current_exe().context("Failed to discover path to the Aftman executable")?;
 
         let link_name = format!("{}{}", alias.as_ref(), EXE_SUFFIX);
         let link_path = self.bin_dir.join(link_name);
 
-        fs::copy(self_path, link_path).context("Failed to create Aftman alias")?;
+        fs::copy(self_path, link_path)
+            .await
+            .context("Failed to create Aftman alias")?;
         Ok(())
     }
 
@@ -496,8 +527,8 @@ pub struct InstalledToolsCache {
 }
 
 impl InstalledToolsCache {
-    pub fn read(path: &Path) -> anyhow::Result<Self> {
-        let contents = match fs::read_to_string(path) {
+    pub async fn read(path: &Path) -> anyhow::Result<Self> {
+        let contents = match fs::read_to_string(path).await {
             Ok(v) => v,
             Err(err) => {
                 if err.kind() == io::ErrorKind::NotFound {
@@ -516,8 +547,8 @@ impl InstalledToolsCache {
         Ok(Self { tools })
     }
 
-    pub fn add(path: &Path, id: &ToolId) -> anyhow::Result<()> {
-        let mut cache = Self::read(path)?;
+    pub async fn add(path: &Path, id: &ToolId) -> anyhow::Result<()> {
+        let mut cache = Self::read(path).await?;
         cache.tools.insert(id.clone());
 
         let mut output = String::new();
@@ -525,7 +556,7 @@ impl InstalledToolsCache {
             writeln!(&mut output, "{}", tool).unwrap();
         }
 
-        fs::write(path, output)?;
+        fs::write(path, output).await?;
         Ok(())
     }
 }

@@ -1,9 +1,9 @@
 use std::collections::BTreeSet;
 use std::fmt::Write;
-use std::fs;
 use std::io;
 
 use anyhow::bail;
+use tokio::fs;
 
 use crate::home::Home;
 use crate::tool_name::ToolName;
@@ -26,10 +26,10 @@ pub struct TrustCache {
 }
 
 impl TrustCache {
-    pub fn read(home: &Home) -> anyhow::Result<Self> {
+    pub async fn read(home: &Home) -> anyhow::Result<Self> {
         let path = home.path().join("trusted.txt");
 
-        let contents = match fs::read_to_string(path) {
+        let contents = match fs::read_to_string(path).await {
             Ok(v) => v,
             Err(err) => {
                 if err.kind() == io::ErrorKind::NotFound {
@@ -48,8 +48,8 @@ impl TrustCache {
         Ok(Self { tools })
     }
 
-    pub fn add(home: &Home, name: ToolName) -> anyhow::Result<bool> {
-        let mut cache = Self::read(home)?;
+    pub async fn add(home: &Home, name: ToolName) -> anyhow::Result<bool> {
+        let mut cache = Self::read(home).await?;
 
         if cache.tools.insert(name) {
             let mut output = String::new();
@@ -58,7 +58,7 @@ impl TrustCache {
             }
 
             let path = home.path().join("trusted.txt");
-            fs::write(path, output)?;
+            fs::write(path, output).await?;
 
             return Ok(true);
         }
@@ -71,19 +71,19 @@ impl TrustCache {
 mod test {
     use super::*;
 
-    #[test]
-    fn get_and_add() -> anyhow::Result<()> {
+    #[tokio::test]
+    async fn get_and_add() -> anyhow::Result<()> {
         let home = Home::new_temp()?;
 
-        let cache = TrustCache::read(&home)?;
+        let cache = TrustCache::read(&home).await?;
         assert!(cache.tools.is_empty());
 
         let tool_name: ToolName = "foo/bar".parse()?;
 
-        let added = TrustCache::add(&home, tool_name.clone())?;
+        let added = TrustCache::add(&home, tool_name.clone()).await?;
         assert!(added);
 
-        let cache = TrustCache::read(&home)?;
+        let cache = TrustCache::read(&home).await?;
         assert!(cache.tools.len() == 1);
         assert!(cache.tools.contains(&tool_name));
 
