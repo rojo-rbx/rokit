@@ -149,7 +149,7 @@ impl Manifest {
 
         fs::write(manifest_path, document.to_string())?;
 
-        log::info!(
+        tracing::info!(
             "Tool {alias} = {id} has been added to {}",
             manifest_path.display()
         );

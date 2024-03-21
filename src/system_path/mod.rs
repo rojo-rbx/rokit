@@ -35,6 +35,6 @@ pub fn add(home: &Home) -> anyhow::Result<bool> {
         return windows::add(home);
     }
 
-    log::debug!("Not adding value to path because this platform is not supported.");
+    tracing::debug!("Not adding value to path because this platform is not supported.");
     Ok(false)
 }

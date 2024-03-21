@@ -58,7 +58,7 @@ fn append_line_if_not_present(path: &Path, line: &str, create: bool) -> anyhow::
         Ok(file) => file,
         Err(err) => {
             if err.kind() != io::ErrorKind::NotFound {
-                log::error!("Error trying to write {}: {err}", path.display());
+                tracing::error!("Error trying to write {}: {err}", path.display());
             }
 
             return Ok(false);

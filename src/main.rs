@@ -83,11 +83,17 @@ fn current_exe_name() -> anyhow::Result<String> {
 }
 
 fn main() {
-    let log_env = env_logger::Env::default().default_filter_or("info");
+    use tracing::level_filters::LevelFilter;
+    use tracing_subscriber::EnvFilter;
 
-    env_logger::Builder::from_env(log_env)
-        .format_module_path(false)
-        .format_timestamp(None)
+    let tracing_env_filter = EnvFilter::builder()
+        .with_default_directive(LevelFilter::INFO.into())
+        .from_env_lossy();
+    tracing_subscriber::fmt()
+        .with_env_filter(tracing_env_filter)
+        .with_target(false)
+        .with_level(false)
+        .without_time()
         .init();
 
     if let Err(err) = run() {

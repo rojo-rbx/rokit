@@ -91,12 +91,12 @@ impl ToolStorage {
             current_exe().context("Failed to discover path to the Aftman executable")?;
         let self_name = self_path.file_name().unwrap();
 
-        log::info!("Updating all Aftman binaries...");
+        tracing::info!("Updating all Aftman binaries...");
 
         // Copy our current executable into a temp directory. That way, if it
         // ends up replaced by this process, we'll still have the file that
         // we're supposed to be copying.
-        log::debug!("Copying own executable into temp dir");
+        tracing::debug!("Copying own executable into temp dir");
         let source_dir = tempfile::tempdir()?;
         let source_path = source_dir.path().join(self_name);
         fs::copy(&self_path, &source_path)?;
@@ -115,7 +115,7 @@ impl ToolStorage {
                 found_aftman = true;
             }
 
-            log::debug!("Updating {:?}", name);
+            tracing::debug!("Updating {:?}", name);
 
             // Copy the executable into a temp directory so that we can replace
             // it even if it's currently running.
@@ -125,12 +125,12 @@ impl ToolStorage {
 
         // If we didn't find and update Aftman already, install it.
         if !found_aftman {
-            log::info!("Installing Aftman...");
+            tracing::info!("Installing Aftman...");
             let aftman_path = self.bin_dir.join(aftman_name);
             fs::copy(&self_path, aftman_path)?;
         }
 
-        log::info!("Updated Aftman binaries successfully!");
+        tracing::info!("Updated Aftman binaries successfully!");
 
         Ok(())
     }
@@ -177,17 +177,17 @@ impl ToolStorage {
 
         self.trust_check(spec.name(), trust)?;
 
-        log::info!("Installing tool: {}", spec);
+        tracing::info!("Installing tool: {}", spec);
 
-        log::debug!("Fetching GitHub releases...");
+        tracing::debug!("Fetching GitHub releases...");
         let github = self
             .github
             .get_or_init(|| GitHubSource::new(self.auth.as_ref()));
         let mut releases = github.get_all_releases(spec.name())?;
         releases.sort_by(|a, b| a.version.cmp(&b.version).reverse());
 
-        log::trace!("All releases found: {:#?}", releases);
-        log::debug!("Choosing a release...");
+        tracing::trace!("All releases found: {:#?}", releases);
+        tracing::debug!("Choosing a release...");
 
         for release in &releases {
             // If we've requested a version, skip any releases that don't match
@@ -201,13 +201,13 @@ impl ToolStorage {
             let id = ToolId::new(spec.name().clone(), release.version.clone());
 
             if installed.tools.contains(&id) {
-                log::debug!("Tool is already installed.");
+                tracing::debug!("Tool is already installed.");
                 return Ok(id);
             }
 
             let mut compatible_assets = self.get_compatible_assets(release);
             if compatible_assets.is_empty() {
-                log::warn!(
+                tracing::warn!(
                     "Version {} was compatible, but had no assets compatible with your platform.",
                     release.version
                 );
@@ -217,7 +217,7 @@ impl ToolStorage {
             self.sort_assets_by_preference(&mut compatible_assets);
             let asset = &compatible_assets[0];
 
-            log::info!(
+            tracing::info!(
                 "Downloading {} v{} ({})...",
                 spec.name(),
                 release.version,
@@ -237,7 +237,7 @@ impl ToolStorage {
             InstalledToolsCache::add(&installed_path, &id)
                 .context("Could not write installed tools cache file")?;
 
-            log::info!("{} v{} installed successfully.", id.name(), release.version);
+            tracing::info!("{} v{} installed successfully.", id.name(), release.version);
 
             return Ok(id);
         }
@@ -257,9 +257,9 @@ impl ToolStorage {
 
         self.trust_check(id.name(), trust)?;
 
-        log::info!("Installing tool: {id}");
+        tracing::info!("Installing tool: {id}");
 
-        log::debug!("Fetching GitHub release...");
+        tracing::debug!("Fetching GitHub release...");
         let github = self
             .github
             .get_or_init(|| GitHubSource::new(self.auth.as_ref()));
@@ -273,7 +273,7 @@ impl ToolStorage {
         self.sort_assets_by_preference(&mut compatible_assets);
         let asset = &compatible_assets[0];
 
-        log::info!(
+        tracing::info!(
             "Downloading {} v{} ({})...",
             id.name(),
             release.version,
@@ -293,7 +293,7 @@ impl ToolStorage {
         InstalledToolsCache::add(&installed_path, id)
             .context("Could not write installed tools cache file")?;
 
-        log::info!("{} v{} installed successfully.", id.name(), release.version);
+        tracing::info!("{} v{} installed successfully.", id.name(), release.version);
 
         Ok(())
     }
@@ -420,7 +420,7 @@ impl ToolStorage {
             let mut file = zip.by_index(i)?;
 
             if file.name() == expected_name {
-                log::debug!("Installing file {} from archive...", file.name());
+                tracing::debug!("Installing file {} from archive...", file.name());
                 self.install_executable(id, &mut file)?;
                 return Ok(());
             }
@@ -432,7 +432,7 @@ impl ToolStorage {
             let mut file = zip.by_index(i)?;
 
             if file.name().ends_with(EXE_SUFFIX) {
-                log::debug!("Installing file {} from archive...", file.name());
+                tracing::debug!("Installing file {} from archive...", file.name());
                 self.install_executable(id, &mut file)?;
                 return Ok(());
             }

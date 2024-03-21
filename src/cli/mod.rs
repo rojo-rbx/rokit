@@ -182,9 +182,9 @@ pub struct TrustSubcommand {
 impl TrustSubcommand {
     pub fn run(self, home: &Home) -> anyhow::Result<()> {
         if TrustCache::add(home, self.name.clone())? {
-            log::info!("Added {} to the set of trusted tools.", self.name);
+            tracing::info!("Added {} to the set of trusted tools.", self.name);
         } else {
-            log::info!("{} was already a trusted tool.", self.name);
+            tracing::info!("{} was already a trusted tool.", self.name);
         }
 
         Ok(())
@@ -205,11 +205,11 @@ impl SelfInstallSubcommand {
         tools.update_links()?;
 
         if crate::system_path::add(home)? {
-            log::info!(
+            tracing::info!(
                 "Added ~/.aftman/bin to your PATH. Restart your terminal for this to take effect."
             );
         } else {
-            log::debug!("Did not modify PATH.");
+            tracing::debug!("Did not modify PATH.");
         }
 
         Ok(())
