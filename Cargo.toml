@@ -32,9 +32,9 @@ toml_edit = "0.22"
 zip = "0.6"
 
 [target.'cfg(windows)'.dependencies]
-command-group = "1.0.8"
-winreg = "0.10.1"
+command-group = "1.0"
+winreg = "0.10"
 
 [target.'cfg(unix)'.dependencies]
-tokio = { version = "1.18.2", features = ["macros", "sync", "process"] }
-signal-hook = "0.3.14"
+tokio = { version = "1.36", features = ["macros", "sync", "process"] }
+signal-hook = "0.3"
