@@ -29,7 +29,9 @@ pub enum ToolSpecParseError {
     This is an extension of [`ToolId`] used to uniquely identify
     a *specific version requirement* of a given tool.
 */
-#[derive(Debug, Clone, PartialEq, Eq, Hash, DeserializeFromStr, SerializeDisplay)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, DeserializeFromStr, SerializeDisplay,
+)]
 pub struct ToolSpec {
     pub(super) author: String,
     pub(super) name: String,
@@ -92,6 +94,15 @@ impl From<(ToolId, Version)> for ToolSpec {
             author: id.author,
             name: id.name,
             version,
+        }
+    }
+}
+
+impl From<ToolSpec> for ToolId {
+    fn from(spec: ToolSpec) -> Self {
+        ToolId {
+            author: spec.author,
+            name: spec.name,
         }
     }
 }

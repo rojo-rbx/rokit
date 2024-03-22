@@ -9,6 +9,9 @@ use crate::tool::ToolId;
 
 /**
     Storage for trusted tool identifiers.
+
+    Can be cheaply cloned while still
+    referring to the same underlying data.
 */
 #[derive(Debug, Default, Clone)]
 pub struct TrustStorage {

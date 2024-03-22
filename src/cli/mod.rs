@@ -1,5 +1,5 @@
 use aftman::storage::Home;
-use anyhow::Result;
+use anyhow::{Context, Result};
 use clap::Parser;
 
 mod debug_system_info;
@@ -42,7 +42,9 @@ pub enum Subcommand {
 
 impl Subcommand {
     pub async fn run(self) -> Result<()> {
-        let home = Home::load_from_env().await?;
+        let home = Home::load_from_env()
+            .await
+            .context("Failed to load Aftman home!")?;
 
         let result = match self {
             // Hidden subcommands
@@ -54,7 +56,10 @@ impl Subcommand {
             Self::Untrust(cmd) => cmd.run(&home).await,
         };
 
-        home.save().await?;
+        home.save().await.context(
+            "Failed to save Aftman data!\
+            \nChanges to trust, tools, and more may have been lost.",
+        )?;
 
         result
     }
