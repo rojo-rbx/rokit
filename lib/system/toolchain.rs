@@ -1,6 +1,9 @@
-const KEYWORDS_MSVC: [&str; 1] = ["msvc"];
-const KEYWORDS_GNU: [&str; 1] = ["gnu"];
-const KEYWORDS_MUSL: [&str; 1] = ["musl"];
+#[rustfmt::skip]
+const TOOLCHAIN_KEYWORDS: [(Toolchain, &[&str]); 3] = [
+    (Toolchain::Msvc, &["msvc"]),
+    (Toolchain::Gnu,  &["gnu"]),
+    (Toolchain::Musl, &["musl"]),
+];
 
 /**
     Enum representing a system toolchain, such as MSVC or GNU.
@@ -26,19 +29,11 @@ impl Toolchain {
     */
     pub fn detect(search_string: impl AsRef<str>) -> Option<Self> {
         let lowercased = search_string.as_ref().to_lowercase();
-        for keyword in &KEYWORDS_MSVC {
-            if lowercased.contains(keyword) {
-                return Some(Self::Msvc);
-            }
-        }
-        for keyword in &KEYWORDS_GNU {
-            if lowercased.contains(keyword) {
-                return Some(Self::Gnu);
-            }
-        }
-        for keyword in &KEYWORDS_MUSL {
-            if lowercased.contains(keyword) {
-                return Some(Self::Musl);
+        for (toolchain, keywords) in TOOLCHAIN_KEYWORDS {
+            for keyword in keywords {
+                if lowercased.contains(keyword) {
+                    return Some(toolchain);
+                }
             }
         }
         None
@@ -48,6 +43,21 @@ impl Toolchain {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn keywords_are_lowercase() {
+        for (toolchain, keywords) in TOOLCHAIN_KEYWORDS {
+            for keyword in keywords {
+                assert_eq!(
+                    keyword.to_string(),
+                    keyword.to_lowercase(),
+                    "Toolchain keyword for {:?} is not lowercase: {}",
+                    toolchain,
+                    keyword
+                );
+            }
+        }
+    }
 
     #[test]
     fn detect_toolchain_valid() {

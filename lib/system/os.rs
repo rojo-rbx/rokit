@@ -1,8 +1,11 @@
 use std::env::consts::OS as CURRENT_OS;
 
-const KEYWORDS_WINDOWS: [&str; 3] = ["windows", "win32", "win64"];
-const KEYWORDS_MACOS: [&str; 3] = ["macos", "osx", "darwin"];
-const KEYWORDS_LINUX: [&str; 3] = ["linux", "ubuntu", "debian"];
+#[rustfmt::skip]
+const OS_KEYWORDS: [(OS, &[&str]); 3] = [
+    (OS::Windows, &["windows", "win32", "win64"]),
+    (OS::MacOS,   &["macos", "osx", "darwin"]),
+    (OS::Linux,   &["linux", "ubuntu", "debian"]),
+];
 
 /**
     Enum representing a system operating system, such as Windows or Linux.
@@ -33,19 +36,11 @@ impl OS {
     */
     pub fn detect(search_string: impl AsRef<str>) -> Option<Self> {
         let lowercased = search_string.as_ref().to_lowercase();
-        for keyword in &KEYWORDS_WINDOWS {
-            if lowercased.contains(keyword) {
-                return Some(Self::Windows);
-            }
-        }
-        for keyword in &KEYWORDS_MACOS {
-            if lowercased.contains(keyword) {
-                return Some(Self::MacOS);
-            }
-        }
-        for keyword in &KEYWORDS_LINUX {
-            if lowercased.contains(keyword) {
-                return Some(Self::Linux);
+        for (os, keywords) in OS_KEYWORDS {
+            for keyword in keywords {
+                if lowercased.contains(keyword) {
+                    return Some(os);
+                }
             }
         }
         None
@@ -55,6 +50,21 @@ impl OS {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn keywords_are_lowercase() {
+        for (toolchain, keywords) in OS_KEYWORDS {
+            for keyword in keywords {
+                assert_eq!(
+                    keyword.to_string(),
+                    keyword.to_lowercase(),
+                    "OS keyword for {:?} is not lowercase: {}",
+                    toolchain,
+                    keyword
+                );
+            }
+        }
+    }
 
     #[test]
     fn current_os() {

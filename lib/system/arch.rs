@@ -2,10 +2,13 @@ use std::env::consts::ARCH as CURRENT_ARCH;
 
 use super::OS;
 
-const KEYWORDS_X64: [&str; 5] = ["x86-64", "x86_64", "x64", "amd64", "win64"];
-const KEYWORDS_X86: [&str; 5] = ["x86", "i686", "win32", "i386", "win32"];
-const KEYWORDS_ARM64: [&str; 3] = ["aarch64", "arm64", "armv9"];
-const KEYWORDS_ARM32: [&str; 3] = ["arm", "arm32", "armv7"];
+#[rustfmt::skip]
+const ARCH_KEYWORDS: [(Arch, &[&str]); 4] = [
+    (Arch::Arm64, &["aarch64", "arm64", "armv9"]),
+    (Arch::X64,   &["x86-64", "x86_64", "x64", "amd64", "win64"]),
+    (Arch::Arm32, &["arm", "arm32", "armv7"]),
+    (Arch::X86,   &["x86", "i686", "i386", "win32"]),
+];
 
 /**
     Enum representing a system architecture, such as x86-64 or ARM.
@@ -42,24 +45,11 @@ impl Arch {
     pub fn detect(search_string: impl AsRef<str>) -> Option<Self> {
         let lowercased = search_string.as_ref().to_lowercase();
 
-        for keyword in &KEYWORDS_X64 {
-            if lowercased.contains(keyword) {
-                return Some(Self::X64);
-            }
-        }
-        for keyword in &KEYWORDS_X86 {
-            if lowercased.contains(keyword) {
-                return Some(Self::X86);
-            }
-        }
-        for keyword in &KEYWORDS_ARM64 {
-            if lowercased.contains(keyword) {
-                return Some(Self::Arm64);
-            }
-        }
-        for keyword in &KEYWORDS_ARM32 {
-            if lowercased.contains(keyword) {
-                return Some(Self::Arm32);
+        for (arch, keywords) in ARCH_KEYWORDS {
+            for keyword in keywords {
+                if lowercased.contains(keyword) {
+                    return Some(arch);
+                }
             }
         }
 
@@ -85,6 +75,21 @@ impl Arch {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn keywords_are_lowercase() {
+        for (toolchain, keywords) in ARCH_KEYWORDS {
+            for keyword in keywords {
+                assert_eq!(
+                    keyword.to_string(),
+                    keyword.to_lowercase(),
+                    "Arch keyword for {:?} is not lowercase: {}",
+                    toolchain,
+                    keyword
+                );
+            }
+        }
+    }
 
     #[test]
     fn current_arch() {
