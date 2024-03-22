@@ -91,7 +91,7 @@ impl Description {
 
         Two descriptions that are not compatible _at all_ have no defined order.
     */
-    pub fn sort_by_preferred_compat<'a>(self, a: &'a Self, b: &'a Self) -> Ordering {
+    pub fn sort_by_preferred_compat(self, a: &Self, b: &Self) -> Ordering {
         // Check for strict compatibility first (exact matches)
         let a_compat = a.os == self.os && a.arch == self.arch;
         let b_compat = b.os == self.os && b.arch == self.arch;
