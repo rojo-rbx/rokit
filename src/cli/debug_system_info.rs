@@ -1,7 +1,7 @@
 use anyhow::Result;
 use clap::Parser;
 
-use aftman::{storage::Home, system::Description};
+use aftman::{description::Description, storage::Home};
 
 /// Prints out information about the system detected by Aftman.
 #[derive(Debug, Parser)]

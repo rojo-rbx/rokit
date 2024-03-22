@@ -2,7 +2,13 @@ use std::{cmp::Ordering, str::FromStr};
 
 use thiserror::Error;
 
-use super::{Arch, Toolchain, OS};
+mod arch;
+mod os;
+mod toolchain;
+
+pub use self::arch::Arch;
+pub use self::os::OS;
+pub use self::toolchain::Toolchain;
 
 #[derive(Debug, Error, Clone, Copy, PartialEq, Eq)]
 pub enum DescriptionParseError {
