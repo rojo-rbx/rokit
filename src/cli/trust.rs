@@ -17,14 +17,14 @@ impl TrustSubcommand {
         }
 
         let trust_storage = home.trust();
-        let (new_tools, existing_tools) = self
+        let (added_tools, existing_tools) = self
             .tools
             .into_iter()
             .partition::<Vec<_>, _>(|tool| trust_storage.add_tool(tool.clone()));
 
-        if !new_tools.is_empty() {
+        if !added_tools.is_empty() {
             println!("The following tools have been marked as trusted:");
-            for tool in new_tools {
+            for tool in added_tools {
                 println!("  - {tool}");
             }
         }
