@@ -1,4 +1,5 @@
 use std::ffi::OsStr;
+use std::io::Result as IoResult;
 
 use async_signal::{Signal, Signals};
 use futures::StreamExt;
@@ -7,9 +8,16 @@ use tokio::{
     task::{spawn, JoinHandle},
 };
 
+/*
+    If we got a signal, we'll return 128 + signal number as our exit code.
+
+    When debugging, and for experienced users, this may
+    make it slightly more obvious that the program they were
+    running didn't error - it was interrupted by a signal.
+*/
 const EXIT_CODE_GOT_SIGNAL: i32 = 128;
 
-fn spawn_signal_task() -> Result<JoinHandle<i32>, std::io::Error> {
+fn spawn_signal_task() -> IoResult<JoinHandle<i32>> {
     let mut signals = if cfg!(target_os = "windows") {
         Signals::new([Signal::Int])?
     } else {
@@ -20,14 +28,6 @@ fn spawn_signal_task() -> Result<JoinHandle<i32>, std::io::Error> {
         ])?
     };
 
-    /*
-        NOTE: If we got a signal, we'll return 128 + signal number as
-        our exit code - this is not very obvious to an end user but will
-        give us something to work and debug with in case there's an issue.
-
-        For experienced users this may also make it more obvious that the
-        program they were trying to run did not error - it was interrupted.
-    */
     let task = spawn(async move {
         while let Some(result) = signals.next().await {
             match result {
@@ -58,7 +58,7 @@ fn spawn_signal_task() -> Result<JoinHandle<i32>, std::io::Error> {
     - If signal listeners could not be created
     - If the given command could not be spawned
 */
-pub async fn run<C, A, S>(command: C, args: A) -> Result<i32, std::io::Error>
+pub async fn run_interruptible<C, A, S>(command: C, args: A) -> IoResult<i32>
 where
     C: AsRef<OsStr>,
     A: IntoIterator<Item = S>,
@@ -75,7 +75,8 @@ where
         .spawn()?;
 
     let code = tokio::select! {
-        // If the spawned process exits cleanly, we'll return its exit code.
+        // If the spawned process exits cleanly, we'll return its exit code,
+        // which may or may not exist. Interpret a non-existent code as 1.
         command_result = child_handle.wait() => {
             let code = command_result.ok().and_then(|s| s.code()).unwrap_or(1);
             signal_aborter.abort();
