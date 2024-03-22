@@ -6,11 +6,13 @@ mod debug_system_info;
 mod debug_trusted_tools;
 mod list;
 mod trust;
+mod untrust;
 
 use self::debug_system_info::DebugSystemInfoSubcommand;
 use self::debug_trusted_tools::DebugTrustedToolsSubcommand;
 use self::list::ListSubcommand;
 use self::trust::TrustSubcommand;
+use self::untrust::UntrustSubcommand;
 
 #[derive(Debug, Parser)]
 #[clap(author, version, about)]
@@ -35,6 +37,7 @@ pub enum Subcommand {
     // Public subcommands
     List(ListSubcommand),
     Trust(TrustSubcommand),
+    Untrust(UntrustSubcommand),
 }
 
 impl Subcommand {
@@ -48,6 +51,7 @@ impl Subcommand {
             // Public subcommands
             Self::List(cmd) => cmd.run(&home).await,
             Self::Trust(cmd) => cmd.run(&home).await,
+            Self::Untrust(cmd) => cmd.run(&home).await,
         };
 
         home.save().await?;

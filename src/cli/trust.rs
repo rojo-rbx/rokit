@@ -23,13 +23,13 @@ impl TrustSubcommand {
             .partition::<Vec<_>, _>(|tool| trust_storage.add_tool(tool.clone()));
 
         if !new_tools.is_empty() {
-            println!("Trusted new tools:");
+            println!("The following tools have been marked as trusted:");
             for tool in new_tools {
                 println!("  - {tool}");
             }
         }
         if !existing_tools.is_empty() {
-            println!("Already trusted tools:");
+            println!("The following tools were already trusted:");
             for tool in existing_tools {
                 println!("  - {tool}");
             }
