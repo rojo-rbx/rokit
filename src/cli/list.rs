@@ -9,11 +9,11 @@ pub struct ListSubcommand {}
 
 impl ListSubcommand {
     pub async fn run(&self, home: &Home) -> Result<()> {
-        let installed = home.installed();
-        let tools = installed
+        let cache = home.install_cache();
+        let tools = cache
             .all_ids()
             .into_iter()
-            .map(|id| (id.clone(), installed.all_versions_for_id(&id)))
+            .map(|id| (id.clone(), cache.all_versions_for_id(&id)))
             .collect::<Vec<_>>();
 
         if tools.is_empty() {

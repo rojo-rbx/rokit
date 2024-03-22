@@ -10,7 +10,7 @@ pub struct DebugTrustedToolsSubcommand {}
 impl DebugTrustedToolsSubcommand {
     pub async fn run(&self, home: &Home) -> Result<()> {
         println!("Trusted tools:");
-        for tool in home.trust().all_tools() {
+        for tool in home.trust_cache().all_tools() {
             println!("{tool}");
         }
         Ok(())

@@ -15,25 +15,25 @@ use crate::tool::{ToolId, ToolSpec};
     referring to the same underlying data.
 */
 #[derive(Debug, Default, Clone)]
-pub struct InstalledStorage {
+pub struct InstallCache {
     tools: Arc<DashSet<ToolSpec>>,
 }
 
-impl InstalledStorage {
+impl InstallCache {
     /**
-        Create a new, **empty** `InstalledStorage`.
+        Create a new, **empty** `InstallCache`.
     */
     pub fn new() -> Self {
         Self::default()
     }
 
     /**
-        Parse the contents of a string into a `InstalledStorage`.
+        Parse the contents of a string into a `InstallCache`.
 
         Note that this is not fallible - any invalid
         lines or tool specifications will simply be ignored.
 
-        This means that, worst case, if the installed storage file is corrupted,
+        This means that, worst case, if the installed cache file is corrupted,
         the user will simply have to re-install the tools they want to use.
     */
     pub fn from_str(s: impl AsRef<str>) -> Self {
@@ -48,32 +48,32 @@ impl InstalledStorage {
     }
 
     /**
-        Add a tool to this `InstalledStorage`.
+        Add a tool to this `InstallCache`.
 
-        Returns `true` if the tool was added and not already trusted.
+        Returns `true` if the tool was added and not already cached.
     */
     pub fn add_spec(&self, tool: ToolSpec) -> bool {
         self.tools.insert(tool)
     }
 
     /**
-        Remove a tool from this `InstalledStorage`.
+        Remove a tool from this `InstallCache`.
 
-        Returns `true` if the tool was previously trusted and has now been removed.
+        Returns `true` if the tool was previously cached and has now been removed.
     */
     pub fn remove_spec(&self, tool: &ToolSpec) -> bool {
         self.tools.remove(tool).is_some()
     }
 
     /**
-        Check if a tool is cached in this `InstalledStorage`.
+        Check if a tool is cached in this `InstallCache`.
     */
     pub fn is_installed(&self, tool: &ToolSpec) -> bool {
         self.tools.contains(tool)
     }
 
     /**
-        Get a sorted copy of the installed tools in this `InstalledStorage`.
+        Get a sorted copy of the cached tools in this `InstallCache`.
     */
     pub fn all_specs(&self) -> Vec<ToolSpec> {
         let mut sorted_tools = self.tools.iter().map(|id| id.clone()).collect::<Vec<_>>();
@@ -82,7 +82,10 @@ impl InstalledStorage {
     }
 
     /**
-        Get a sorted list of all unique tool identifiers in this `InstalledStorage`.
+        Get a sorted list of all unique tool identifiers in this `InstallCache`.
+
+        Note that this will deduplicate any tools with the same identifier,
+        and only one identifier will be returned for each unique tool.
     */
     pub fn all_ids(&self) -> Vec<ToolId> {
         let sorted_set = self
@@ -94,15 +97,15 @@ impl InstalledStorage {
     }
 
     /**
-        Get a sorted list of all unique versions for a
-        given tool identifier in this `InstalledStorage`.
+        Get a sorted list of all unique versions for
+        a given tool identifier in this `InstallCache`.
     */
     pub fn all_versions_for_id(&self, id: &ToolId) -> Vec<Version> {
         let sorted_set = self
             .all_specs()
             .into_iter()
             .filter_map(|spec| {
-                if ToolId::from(spec.clone()) == *id {
+                if spec.matches_id(id) {
                     Some(spec.version().clone())
                 } else {
                     None
@@ -113,7 +116,7 @@ impl InstalledStorage {
     }
 
     /**
-        Render the contents of this `InstalledStorage` to a string.
+        Render the contents of this `InstallCache` to a string.
 
         This will be a sorted list of all tool specifications, separated by newlines.
     */
@@ -129,14 +132,14 @@ impl InstalledStorage {
     }
 }
 
-impl FromStr for InstalledStorage {
+impl FromStr for InstallCache {
     type Err = Infallible;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(InstalledStorage::from_str(s))
+        Ok(InstallCache::from_str(s))
     }
 }
 
-impl ToString for InstalledStorage {
+impl ToString for InstallCache {
     fn to_string(&self) -> String {
         self.to_string()
     }

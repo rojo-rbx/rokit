@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
-use super::{InstalledStorage, StorageError, StorageResult, TrustStorage};
+use super::{InstallCache, StorageError, StorageResult, TrustCache};
 
 /**
     Aftman's home directory - this is where Aftman stores its
@@ -17,8 +17,8 @@ use super::{InstalledStorage, StorageError, StorageResult, TrustStorage};
 pub struct Home {
     path: Arc<Path>,
     saved: Arc<AtomicBool>,
-    trust: TrustStorage,
-    installed: InstalledStorage,
+    trust_cache: TrustCache,
+    install_cache: InstallCache,
 }
 
 impl Home {
@@ -29,14 +29,14 @@ impl Home {
         let path: Arc<Path> = path.into().into();
         let saved = Arc::new(AtomicBool::new(false));
 
-        let trust = TrustStorage::load(&path).await?;
-        let installed = InstalledStorage::load(&path).await?;
+        let trust_cache = TrustCache::load(&path).await?;
+        let install_cache = InstallCache::load(&path).await?;
 
         Ok(Self {
             path,
             saved,
-            trust,
-            installed,
+            trust_cache,
+            install_cache,
         })
     }
 
@@ -63,25 +63,25 @@ impl Home {
     }
 
     /**
-        Returns a reference to the `TrustStorage` for this `Home`.
+        Returns a reference to the `TrustCache` for this `Home`.
     */
-    pub fn trust(&self) -> &TrustStorage {
-        &self.trust
+    pub fn trust_cache(&self) -> &TrustCache {
+        &self.trust_cache
     }
 
     /**
-        Returns a reference to the `InstalledStorage` for this `Home`.
+        Returns a reference to the `InstallCache` for this `Home`.
     */
-    pub fn installed(&self) -> &InstalledStorage {
-        &self.installed
+    pub fn install_cache(&self) -> &InstallCache {
+        &self.install_cache
     }
 
     /**
         Saves the contents of this `Home` to disk.
     */
     pub async fn save(&self) -> StorageResult<()> {
-        self.trust.save(&self.path).await?;
-        self.installed.save(&self.path).await?;
+        self.trust_cache.save(&self.path).await?;
+        self.install_cache.save(&self.path).await?;
         self.saved.store(true, Ordering::SeqCst);
         Ok(())
     }

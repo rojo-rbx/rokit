@@ -8,31 +8,31 @@ use dashmap::DashSet;
 use crate::tool::ToolId;
 
 /**
-    Storage for trusted tool identifiers.
+    Cache for trusted tool identifiers.
 
     Can be cheaply cloned while still
     referring to the same underlying data.
 */
 #[derive(Debug, Default, Clone)]
-pub struct TrustStorage {
+pub struct TrustCache {
     tools: Arc<DashSet<ToolId>>,
 }
 
-impl TrustStorage {
+impl TrustCache {
     /**
-        Create a new, **empty** `TrustStorage`.
+        Create a new, **empty** `TrustCache`.
     */
     pub fn new() -> Self {
         Self::default()
     }
 
     /**
-        Parse the contents of a string into a `TrustStorage`.
+        Parse the contents of a string into a `TrustCache`.
 
         Note that this is not fallible - any invalid
         lines or tool identifiers will simply be ignored.
 
-        This means that, worst case, if the trust storage file is corrupted,
+        This means that, worst case, if the trust cache file is corrupted,
         the user will simply have to re-trust the tools they want to use.
     */
     pub fn from_str(s: impl AsRef<str>) -> Self {
@@ -47,7 +47,7 @@ impl TrustStorage {
     }
 
     /**
-        Add a tool to this `TrustStorage`.
+        Add a tool to this `TrustCache`.
 
         Returns `true` if the tool was added and not already trusted.
     */
@@ -56,7 +56,7 @@ impl TrustStorage {
     }
 
     /**
-        Remove a tool from this `TrustStorage`.
+        Remove a tool from this `TrustCache`.
 
         Returns `true` if the tool was previously trusted and has now been removed.
     */
@@ -65,14 +65,14 @@ impl TrustStorage {
     }
 
     /**
-        Check if a tool is trusted by this `TrustStorage`.
+        Check if a tool is trusted by this `TrustCache`.
     */
     pub fn is_trusted(&self, tool: &ToolId) -> bool {
         self.tools.contains(tool)
     }
 
     /**
-        Get a sorted copy of the trusted tools in this `TrustStorage`.
+        Get a sorted copy of the trusted tools in this `TrustCache`.
     */
     pub fn all_tools(&self) -> Vec<ToolId> {
         let mut sorted_tools = self.tools.iter().map(|id| id.clone()).collect::<Vec<_>>();
@@ -81,7 +81,7 @@ impl TrustStorage {
     }
 
     /**
-        Render the contents of this `TrustStorage` to a string.
+        Render the contents of this `TrustCache` to a string.
 
         This will be a sorted list of all tool ids, separated by newlines.
     */
@@ -97,14 +97,14 @@ impl TrustStorage {
     }
 }
 
-impl FromStr for TrustStorage {
+impl FromStr for TrustCache {
     type Err = Infallible;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        Ok(TrustStorage::from_str(s))
+        Ok(TrustCache::from_str(s))
     }
 }
 
-impl ToString for TrustStorage {
+impl ToString for TrustCache {
     fn to_string(&self) -> String {
         self.to_string()
     }

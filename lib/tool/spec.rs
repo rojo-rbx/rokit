@@ -50,6 +50,10 @@ impl ToolSpec {
     pub fn version(&self) -> &Version {
         &self.version
     }
+
+    pub fn matches_id(&self, id: &ToolId) -> bool {
+        self.author == id.author && self.name == id.name
+    }
 }
 
 impl FromStr for ToolSpec {

@@ -16,11 +16,11 @@ impl UntrustSubcommand {
             bail!("Please provide at least one tool to remove trust for.");
         }
 
-        let trust_storage = home.trust();
+        let cache = home.trust_cache();
         let (removed_tools, existing_tools) = self
             .tools
             .into_iter()
-            .partition::<Vec<_>, _>(|tool| trust_storage.remove_tool(tool));
+            .partition::<Vec<_>, _>(|tool| cache.remove_tool(tool));
 
         if !removed_tools.is_empty() {
             println!("The following tools are no longer trusted:");
