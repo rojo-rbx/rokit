@@ -1,16 +1,18 @@
 #![allow(clippy::should_implement_trait)]
 #![allow(clippy::inherent_to_string)]
 
-use std::{collections::BTreeSet, convert::Infallible, str::FromStr};
+use std::{convert::Infallible, str::FromStr, sync::Arc};
+
+use dashmap::DashSet;
 
 use crate::tool::ToolId;
 
 /**
     Storage for trusted tool identifiers.
 */
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct TrustStorage {
-    tools: BTreeSet<ToolId>,
+    tools: Arc<DashSet<ToolId>>,
 }
 
 impl TrustStorage {
@@ -35,8 +37,10 @@ impl TrustStorage {
             .as_ref()
             .lines()
             .filter_map(|line| line.parse::<ToolId>().ok())
-            .collect();
-        Self { tools }
+            .collect::<DashSet<_>>();
+        Self {
+            tools: Arc::new(tools),
+        }
     }
 
     /**
@@ -44,7 +48,7 @@ impl TrustStorage {
 
         Returns `true` if the tool was added and not already trusted.
     */
-    pub fn add_tool(&mut self, tool: ToolId) -> bool {
+    pub fn add_tool(&self, tool: ToolId) -> bool {
         self.tools.insert(tool)
     }
 
@@ -53,8 +57,8 @@ impl TrustStorage {
 
         Returns `true` if the tool was previously trusted and has now been removed.
     */
-    pub fn remove_tool(&mut self, tool: &ToolId) -> bool {
-        self.tools.remove(tool)
+    pub fn remove_tool(&self, tool: &ToolId) -> bool {
+        self.tools.remove(tool).is_some()
     }
 
     /**
@@ -65,10 +69,12 @@ impl TrustStorage {
     }
 
     /**
-        Get an iterator over the tools in this `TrustStorage`.
+        Get a sorted copy of the trusted tools in this `TrustStorage`.
     */
-    pub fn iter_tools(&self) -> impl Iterator<Item = &ToolId> {
-        self.tools.iter()
+    pub fn all_tools(&self) -> Vec<ToolId> {
+        let mut sorted_tools = self.tools.iter().map(|id| id.clone()).collect::<Vec<_>>();
+        sorted_tools.sort();
+        sorted_tools
     }
 
     /**
@@ -78,9 +84,9 @@ impl TrustStorage {
     */
     pub fn to_string(&self) -> String {
         let mut contents = self
-            .tools
-            .iter()
-            .map(ToString::to_string)
+            .all_tools()
+            .into_iter()
+            .map(|id| id.to_string())
             .collect::<Vec<_>>()
             .join("\n");
         contents.push('\n');

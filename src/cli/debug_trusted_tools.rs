@@ -5,14 +5,12 @@ use aftman::storage::Home;
 
 /// Prints out information about currently trusted tools.
 #[derive(Debug, Parser)]
-pub struct GetTrustedToolsSubcommand {}
+pub struct DebugTrustedToolsSubcommand {}
 
-impl GetTrustedToolsSubcommand {
-    pub async fn run(&self) -> Result<()> {
-        let home = Home::from_env()?;
-        let storage = home.trust_storage().await?;
+impl DebugTrustedToolsSubcommand {
+    pub async fn run(&self, home: &Home) -> Result<()> {
         println!("Trusted tools:");
-        for tool in storage.iter_tools() {
+        for tool in home.trust().all_tools() {
             println!("{tool}");
         }
         Ok(())

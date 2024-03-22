@@ -1,14 +1,14 @@
 use anyhow::Result;
 use clap::Parser;
 
-use aftman::system::Description;
+use aftman::{storage::Home, system::Description};
 
 /// Prints out information about the system detected by Aftman.
 #[derive(Debug, Parser)]
-pub struct GetSystemInfoSubcommand {}
+pub struct DebugSystemInfoSubcommand {}
 
-impl GetSystemInfoSubcommand {
-    pub async fn run(&self) -> Result<()> {
+impl DebugSystemInfoSubcommand {
+    pub async fn run(&self, _home: &Home) -> Result<()> {
         let desc = Description::current();
         println!("Current system information:");
         println!("{desc:#?}");

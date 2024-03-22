@@ -1,8 +1,7 @@
 use std::env::var;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-
-use tokio::fs::read_to_string;
 
 use super::{StorageError, StorageResult, TrustStorage};
 
@@ -17,49 +16,75 @@ use super::{StorageError, StorageResult, TrustStorage};
 #[derive(Debug, Clone)]
 pub struct Home {
     path: Arc<Path>,
+    saved: Arc<AtomicBool>,
+    trust: TrustStorage,
 }
 
 impl Home {
     /**
         Creates a new `Home` from the given path.
     */
-    fn from_path(path: impl Into<PathBuf>) -> Self {
-        Self {
-            path: path.into().into(),
-        }
+    async fn load_from_path(path: impl Into<PathBuf>) -> StorageResult<Self> {
+        let path: Arc<Path> = path.into().into();
+        let saved = Arc::new(AtomicBool::new(false));
+
+        let trust = TrustStorage::load(&path).await?;
+
+        Ok(Self { path, saved, trust })
     }
 
     /**
         Creates a new `Home` from the environment.
 
+        This will read, and if necessary, create the Aftman home directory
+        and its contents - including trust storage, tools storage, etc.
+
         If the `AFTMAN_ROOT` environment variable is set, this will use
         that as the home directory. Otherwise, it will use `$HOME/.aftman`.
     */
-    pub fn from_env() -> StorageResult<Self> {
+    pub async fn load_from_env() -> StorageResult<Self> {
         Ok(match var("AFTMAN_ROOT") {
-            Ok(root_str) => Self::from_path(root_str),
+            Ok(root_str) => Self::load_from_path(root_str).await?,
             Err(_) => {
                 let path = dirs::home_dir()
                     .ok_or(StorageError::HomeNotFound)?
                     .join(".aftman");
 
-                Self::from_path(path)
+                Self::load_from_path(path).await?
             }
         })
     }
 
     /**
-        Reads the trust storage for this `Home`.
-
-        This function will return an error if the trust storage file
-        cannot be read - if it does not exist, it will be created.
+        Returns a reference to the `TrustStorage` for this `Home`.
     */
-    pub async fn trust_storage(&self) -> StorageResult<TrustStorage> {
-        let path = self.path.join("trusted.txt");
-        match read_to_string(&path).await {
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(TrustStorage::new()),
-            Err(e) => Err(e.into()),
-            Ok(s) => Ok(TrustStorage::from_str(s)),
+    pub fn trust(&self) -> &TrustStorage {
+        &self.trust
+    }
+
+    /**
+        Saves the contents of this `Home` to disk.
+    */
+    pub async fn save(&self) -> StorageResult<()> {
+        self.trust.save(&self.path).await?;
+        self.saved.store(true, Ordering::SeqCst);
+        Ok(())
+    }
+}
+
+// Implement Drop with an error message if the Home was dropped
+// without being saved - this should never happen since a Home
+// should always be loaded once on startup and saved on shutdown
+// in the CLI, but this detail may be missed during refactoring.
+// In the future, if AsyncDrop ever becomes a thing, we can just
+// force the save to happen in the Drop implementation instead.
+impl Drop for Home {
+    fn drop(&mut self) {
+        if !self.saved.load(Ordering::SeqCst) {
+            tracing::error!(
+                "Aftman home was dropped without being saved!\
+                \nChanges to trust, tools, and more may have been lost."
+            )
         }
     }
 }

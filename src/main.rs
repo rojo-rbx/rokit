@@ -1,13 +1,14 @@
-use anyhow::Result;
+use std::process::exit;
+
 use clap::Parser;
-use tracing::level_filters::LevelFilter;
+use tracing::{error, level_filters::LevelFilter};
 use tracing_subscriber::EnvFilter;
 
 mod cli;
 use cli::Args;
 
 #[tokio::main]
-async fn main() -> Result<()> {
+async fn main() {
     let tracing_env_filter = EnvFilter::builder()
         .with_default_directive(LevelFilter::INFO.into())
         .from_env_lossy()
@@ -24,5 +25,8 @@ async fn main() -> Result<()> {
         .without_time()
         .init();
 
-    Args::parse().run().await
+    if let Err(e) = Args::parse().run().await {
+        error!("{e}");
+        exit(1);
+    }
 }

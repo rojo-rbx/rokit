@@ -12,6 +12,7 @@ default-run = "aftman"
 [dependencies]
 anyhow = "1.0"
 clap = { version = "4.5", features = ["derive"] }
+dashmap = "5.5"
 dialoguer = "0.11"
 dirs = "5.0"
 futures = "0.3"

@@ -1,13 +1,16 @@
+use aftman::storage::Home;
 use anyhow::Result;
 use clap::Parser;
 
 mod debug_system_info;
 mod debug_trusted_tools;
 mod list;
+mod trust;
 
-use self::debug_system_info::GetSystemInfoSubcommand;
-use self::debug_trusted_tools::GetTrustedToolsSubcommand;
+use self::debug_system_info::DebugSystemInfoSubcommand;
+use self::debug_trusted_tools::DebugTrustedToolsSubcommand;
 use self::list::ListSubcommand;
+use self::trust::TrustSubcommand;
 
 #[derive(Debug, Parser)]
 #[clap(author, version, about)]
@@ -26,21 +29,29 @@ impl Args {
 pub enum Subcommand {
     // Hidden subcommands (for debugging)
     #[clap(hide = true)]
-    DebugSystemInfo(GetSystemInfoSubcommand),
+    DebugSystemInfo(DebugSystemInfoSubcommand),
     #[clap(hide = true)]
-    DebugTrustedTools(GetTrustedToolsSubcommand),
+    DebugTrustedTools(DebugTrustedToolsSubcommand),
     // Public subcommands
     List(ListSubcommand),
+    Trust(TrustSubcommand),
 }
 
 impl Subcommand {
     pub async fn run(self) -> Result<()> {
-        match self {
+        let home = Home::load_from_env().await?;
+
+        let result = match self {
             // Hidden subcommands
-            Self::DebugSystemInfo(cmd) => cmd.run().await,
-            Self::DebugTrustedTools(cmd) => cmd.run().await,
+            Self::DebugSystemInfo(cmd) => cmd.run(&home).await,
+            Self::DebugTrustedTools(cmd) => cmd.run(&home).await,
             // Public subcommands
-            Self::List(cmd) => cmd.run().await,
-        }
+            Self::List(cmd) => cmd.run(&home).await,
+            Self::Trust(cmd) => cmd.run(&home).await,
+        };
+
+        home.save().await?;
+
+        result
     }
 }
