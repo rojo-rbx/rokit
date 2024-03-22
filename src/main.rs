@@ -26,6 +26,9 @@ async fn main() {
         .init();
 
     if let Err(e) = Args::parse().run().await {
+        // NOTE: We use tracing for errors here for consistent
+        // output between returned errors, and errors that
+        // may be logged while the program is running.
         error!("{e}");
         exit(1);
     }
