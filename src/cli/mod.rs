@@ -35,7 +35,9 @@ impl Cli {
             "Aftman loaded"
         );
 
-        // 2. Run the subcommand and capture the result
+        // 2. Run the subcommand and capture the result - note that we
+        // do not (!!!) use the question mark operator here, because we
+        // want to save our data below even if the subcommand fails.
         let start_command = Instant::now();
         let result = self.subcommand.run(&home).await;
         tracing::trace!(
