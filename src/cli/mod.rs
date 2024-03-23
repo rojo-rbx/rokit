@@ -1,6 +1,7 @@
 use aftman::storage::Home;
 use anyhow::{Context, Result};
 use clap::Parser;
+use tokio::time::Instant;
 
 mod debug_system_info;
 mod debug_trusted_tools;
@@ -16,14 +17,46 @@ use self::untrust::UntrustSubcommand;
 
 #[derive(Debug, Parser)]
 #[clap(author, version, about)]
-pub struct Args {
+pub struct Cli {
     #[clap(subcommand)]
     pub subcommand: Subcommand,
 }
 
-impl Args {
+impl Cli {
     pub async fn run(self) -> Result<()> {
-        self.subcommand.run().await
+        // 1. Load aftman data structures
+        let start_home = Instant::now();
+        let home = Home::load_from_env().await.context(
+            "Failed to load Aftman home!\
+            \nYour installation or environment may be corrupted.",
+        )?;
+        tracing::trace!(
+            elapsed = ?start_home.elapsed(),
+            "Aftman loaded"
+        );
+
+        // 2. Run the subcommand and capture the result
+        let start_command = Instant::now();
+        let result = self.subcommand.run(&home).await;
+        tracing::trace!(
+            elapsed = ?start_command.elapsed(),
+            success = result.is_ok(),
+            "Aftman ran",
+        );
+
+        // 3. Save aftman data structures to disk
+        let start_save = Instant::now();
+        home.save().await.context(
+            "Failed to save Aftman data!\
+            \nChanges to trust, tools, and more may have been lost.",
+        )?;
+        tracing::trace!(
+            elapsed = ?start_save.elapsed(),
+            "Aftman saved"
+        );
+
+        // 4. Return the result of the subcommand
+        result
     }
 }
 
@@ -41,26 +74,15 @@ pub enum Subcommand {
 }
 
 impl Subcommand {
-    pub async fn run(self) -> Result<()> {
-        let home = Home::load_from_env()
-            .await
-            .context("Failed to load Aftman home!")?;
-
-        let result = match self {
+    pub async fn run(self, home: &Home) -> Result<()> {
+        match self {
             // Hidden subcommands
-            Self::DebugSystemInfo(cmd) => cmd.run(&home).await,
-            Self::DebugTrustedTools(cmd) => cmd.run(&home).await,
+            Self::DebugSystemInfo(cmd) => cmd.run(home).await,
+            Self::DebugTrustedTools(cmd) => cmd.run(home).await,
             // Public subcommands
-            Self::List(cmd) => cmd.run(&home).await,
-            Self::Trust(cmd) => cmd.run(&home).await,
-            Self::Untrust(cmd) => cmd.run(&home).await,
-        };
-
-        home.save().await.context(
-            "Failed to save Aftman data!\
-            \nChanges to trust, tools, and more may have been lost.",
-        )?;
-
-        result
+            Self::List(cmd) => cmd.run(home).await,
+            Self::Trust(cmd) => cmd.run(home).await,
+            Self::Untrust(cmd) => cmd.run(home).await,
+        }
     }
 }

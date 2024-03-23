@@ -5,7 +5,7 @@ use tracing::{error, level_filters::LevelFilter};
 use tracing_subscriber::EnvFilter;
 
 mod cli;
-use cli::Args;
+use cli::Cli;
 
 #[tokio::main]
 async fn main() {
@@ -25,7 +25,7 @@ async fn main() {
         .without_time()
         .init();
 
-    if let Err(e) = Args::parse().run().await {
+    if let Err(e) = Cli::parse().run().await {
         // NOTE: We use tracing for errors here for consistent
         // output between returned errors, and errors that
         // may be logged while the program is running.
