@@ -3,12 +3,14 @@ use anyhow::{Context, Result};
 use clap::Parser;
 use tokio::time::Instant;
 
+mod add;
 mod debug_system_info;
 mod debug_trusted_tools;
 mod list;
 mod trust;
 mod untrust;
 
+use self::add::AddSubcommand;
 use self::debug_system_info::DebugSystemInfoSubcommand;
 use self::debug_trusted_tools::DebugTrustedToolsSubcommand;
 use self::list::ListSubcommand;
@@ -70,6 +72,7 @@ pub enum Subcommand {
     #[clap(hide = true)]
     DebugTrustedTools(DebugTrustedToolsSubcommand),
     // Public subcommands
+    Add(AddSubcommand),
     List(ListSubcommand),
     Trust(TrustSubcommand),
     Untrust(UntrustSubcommand),
@@ -82,6 +85,7 @@ impl Subcommand {
             Self::DebugSystemInfo(cmd) => cmd.run(home).await,
             Self::DebugTrustedTools(cmd) => cmd.run(home).await,
             // Public subcommands
+            Self::Add(cmd) => cmd.run(home).await,
             Self::List(cmd) => cmd.run(home).await,
             Self::Trust(cmd) => cmd.run(home).await,
             Self::Untrust(cmd) => cmd.run(home).await,

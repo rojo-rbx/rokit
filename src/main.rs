@@ -5,6 +5,7 @@ use tracing::{error, level_filters::LevelFilter};
 use tracing_subscriber::EnvFilter;
 
 mod cli;
+mod util;
 use cli::Cli;
 
 #[tokio::main]
