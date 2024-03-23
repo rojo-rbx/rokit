@@ -1,12 +1,26 @@
 #![allow(clippy::should_implement_trait)]
 #![allow(clippy::inherent_to_string)]
 
-use std::{collections::BTreeSet, convert::Infallible, str::FromStr, sync::Arc};
+use std::{
+    collections::BTreeSet,
+    convert::Infallible,
+    path::{Path, MAIN_SEPARATOR},
+    str::FromStr,
+    sync::Arc,
+};
 
+use const_format::concatcp;
 use dashmap::DashSet;
 use semver::Version;
 
 use crate::tool::{ToolId, ToolSpec};
+
+use super::{
+    util::{load_from_file, save_to_file},
+    StorageResult,
+};
+
+const FILE_PATH_INSTALLED: &str = concatcp!("tool-storage", MAIN_SEPARATOR, "installed.txt");
 
 /**
     Storage for installed tool specifications.
@@ -129,6 +143,16 @@ impl InstallCache {
             .join("\n");
         contents.push('\n');
         contents
+    }
+
+    pub(crate) async fn load(home_path: impl AsRef<Path>) -> StorageResult<Self> {
+        let path = home_path.as_ref().join(FILE_PATH_INSTALLED);
+        load_from_file(path).await
+    }
+
+    pub(crate) async fn save(&self, home_path: impl AsRef<Path>) -> StorageResult<()> {
+        let path = home_path.as_ref().join(FILE_PATH_INSTALLED);
+        save_to_file(path, self.clone()).await
     }
 }
 

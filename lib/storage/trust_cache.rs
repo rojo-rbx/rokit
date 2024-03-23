@@ -1,11 +1,18 @@
 #![allow(clippy::should_implement_trait)]
 #![allow(clippy::inherent_to_string)]
 
-use std::{convert::Infallible, str::FromStr, sync::Arc};
+use std::{convert::Infallible, path::Path, str::FromStr, sync::Arc};
 
 use dashmap::DashSet;
 
 use crate::tool::ToolId;
+
+use super::{
+    util::{load_from_file, save_to_file},
+    StorageResult,
+};
+
+const FILE_PATH_TRUST: &str = "trusted.txt";
 
 /**
     Cache for trusted tool identifiers.
@@ -94,6 +101,16 @@ impl TrustCache {
             .join("\n");
         contents.push('\n');
         contents
+    }
+
+    pub(crate) async fn load(home_path: impl AsRef<Path>) -> StorageResult<Self> {
+        let path = home_path.as_ref().join(FILE_PATH_TRUST);
+        load_from_file(path).await
+    }
+
+    pub(crate) async fn save(&self, home_path: impl AsRef<Path>) -> StorageResult<()> {
+        let path = home_path.as_ref().join(FILE_PATH_TRUST);
+        save_to_file(path, self.clone()).await
     }
 }
 
