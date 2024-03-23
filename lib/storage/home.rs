@@ -29,8 +29,8 @@ impl Home {
         let path: Arc<Path> = path.into().into();
         let saved = Arc::new(AtomicBool::new(false));
 
-        let trust_cache = TrustCache::load(&path).await?;
-        let install_cache = InstallCache::load(&path).await?;
+        let (trust_cache, install_cache) =
+            tokio::try_join!(TrustCache::load(&path), InstallCache::load(&path))?;
 
         Ok(Self {
             path,
