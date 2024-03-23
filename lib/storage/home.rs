@@ -80,8 +80,10 @@ impl Home {
         Saves the contents of this `Home` to disk.
     */
     pub async fn save(&self) -> StorageResult<()> {
-        self.trust_cache.save(&self.path).await?;
-        self.install_cache.save(&self.path).await?;
+        tokio::try_join!(
+            self.trust_cache.save(&self.path),
+            self.install_cache.save(&self.path)
+        )?;
         self.saved.store(true, Ordering::SeqCst);
         Ok(())
     }
