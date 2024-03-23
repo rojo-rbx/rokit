@@ -38,3 +38,12 @@ impl From<ToolSpec> for ToolIdOrSpec {
         Self::Spec(spec)
     }
 }
+
+impl From<ToolIdOrSpec> for ToolId {
+    fn from(id_or_spec: ToolIdOrSpec) -> Self {
+        match id_or_spec {
+            ToolIdOrSpec::Id(id) => id,
+            ToolIdOrSpec::Spec(spec) => spec.into(),
+        }
+    }
+}

@@ -1,9 +1,10 @@
 use std::{fmt, str::FromStr};
 
+use semver::Version;
 use serde_with::{DeserializeFromStr, SerializeDisplay};
 use thiserror::Error;
 
-use super::util::is_invalid_identifier;
+use super::{util::is_invalid_identifier, ToolSpec};
 
 /**
     Error type representing the possible errors that can occur when parsing a ToolId.
@@ -40,6 +41,10 @@ impl ToolId {
 
     pub fn name(&self) -> &str {
         &self.name
+    }
+
+    pub fn into_spec(self, version: Version) -> ToolSpec {
+        ToolSpec::from((self, version))
     }
 }
 
