@@ -13,11 +13,10 @@ use const_format::concatcp;
 use dashmap::DashSet;
 use semver::Version;
 
-use crate::tool::{ToolId, ToolSpec};
-
-use super::{
+use crate::{
+    result::AftmanResult,
+    tool::{ToolId, ToolSpec},
     util::{load_from_file, save_to_file},
-    StorageResult,
 };
 
 const FILE_PATH_INSTALLED: &str = concatcp!("tool-storage", MAIN_SEPARATOR, "installed.txt");
@@ -145,12 +144,12 @@ impl InstallCache {
         contents
     }
 
-    pub(crate) async fn load(home_path: impl AsRef<Path>) -> StorageResult<Self> {
+    pub(crate) async fn load(home_path: impl AsRef<Path>) -> AftmanResult<Self> {
         let path = home_path.as_ref().join(FILE_PATH_INSTALLED);
         load_from_file(path).await
     }
 
-    pub(crate) async fn save(&self, home_path: impl AsRef<Path>) -> StorageResult<()> {
+    pub(crate) async fn save(&self, home_path: impl AsRef<Path>) -> AftmanResult<()> {
         let path = home_path.as_ref().join(FILE_PATH_INSTALLED);
         save_to_file(path, self.clone()).await
     }

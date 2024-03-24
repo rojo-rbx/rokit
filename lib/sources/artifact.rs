@@ -1,3 +1,5 @@
+use std::{fmt, str::FromStr};
+
 use octocrab::models::repos::Asset;
 use url::Url;
 
@@ -6,6 +8,31 @@ use crate::tool::ToolSpec;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ArtifactProvider {
     GitHub,
+}
+
+impl ArtifactProvider {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::GitHub => "github",
+        }
+    }
+}
+
+impl FromStr for ArtifactProvider {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let l = s.trim().to_lowercase();
+        match l.as_str() {
+            "github" => Ok(Self::GitHub),
+            _ => Err(format!("unknown artifact provider '{l}'")),
+        }
+    }
+}
+
+impl fmt::Display for ArtifactProvider {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.as_str().fmt(f)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

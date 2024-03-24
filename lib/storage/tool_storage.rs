@@ -10,9 +10,10 @@ use tokio::{
     task::{spawn_blocking, JoinSet},
 };
 
-use crate::tool::{ToolAlias, ToolSpec};
-
-use super::StorageResult;
+use crate::{
+    result::AftmanResult,
+    tool::{ToolAlias, ToolSpec},
+};
 
 /**
     Storage for tool binaries and aliases.
@@ -43,7 +44,7 @@ impl ToolStorage {
         self.aliases_dir.join(format!("aftman{EXE_SUFFIX}"))
     }
 
-    async fn aftman_contents(&self) -> StorageResult<Vec<u8>> {
+    async fn aftman_contents(&self) -> AftmanResult<Vec<u8>> {
         let mut guard = self.current_exe_contents.lock().await;
         if let Some(contents) = &*guard {
             return Ok(contents.clone());
@@ -69,7 +70,7 @@ impl ToolStorage {
         &self,
         spec: &ToolSpec,
         contents: impl AsRef<[u8]>,
-    ) -> StorageResult<()> {
+    ) -> AftmanResult<()> {
         let (dir_path, file_path) = self.tool_paths(spec);
         create_dir_all(dir_path).await?;
         write(file_path, contents).await?;
@@ -85,7 +86,7 @@ impl ToolStorage {
         This would also update the cached contents of
         the current executable stored in this struct.
     */
-    pub async fn replace_aftman_contents(&self, contents: Option<Vec<u8>>) -> StorageResult<()> {
+    pub async fn replace_aftman_contents(&self, contents: Option<Vec<u8>>) -> AftmanResult<()> {
         let contents = match contents {
             Some(contents) => {
                 self.current_exe_contents
@@ -105,7 +106,7 @@ impl ToolStorage {
 
         Note that if the link already exists, it will be overwritten.
     */
-    pub async fn create_tool_link(&self, alias: &ToolAlias) -> StorageResult<()> {
+    pub async fn create_tool_link(&self, alias: &ToolAlias) -> AftmanResult<()> {
         let path = self.aliases_dir.join(alias.name());
         let contents = self.aftman_contents().await?;
         write(&path, &contents).await?;
@@ -118,7 +119,7 @@ impl ToolStorage {
         This includes the link for Aftman itself - and if the link for Aftman does
         not exist, `true` will be returned to indicate that the link was created.
     */
-    pub async fn recreate_all_links(&self) -> StorageResult<bool> {
+    pub async fn recreate_all_links(&self) -> AftmanResult<bool> {
         let contents = self.aftman_contents().await?;
 
         let mut link_paths = Vec::new();
@@ -146,7 +147,7 @@ impl ToolStorage {
         Ok(!aftman_existed)
     }
 
-    pub(crate) async fn load(home_path: impl AsRef<Path>) -> StorageResult<Self> {
+    pub(crate) async fn load(home_path: impl AsRef<Path>) -> AftmanResult<Self> {
         let home_path = home_path.as_ref();
 
         let tools_dir = home_path.join("tool-storage").into();

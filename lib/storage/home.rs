@@ -3,7 +3,9 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
-use super::{InstallCache, StorageError, StorageResult, ToolStorage, TrustCache};
+use crate::result::{AftmanError, AftmanResult};
+
+use super::{InstallCache, ToolStorage, TrustCache};
 
 /**
     Aftman's home directory - this is where Aftman stores its
@@ -26,7 +28,7 @@ impl Home {
     /**
         Creates a new `Home` from the given path.
     */
-    async fn load_from_path(path: impl Into<PathBuf>) -> StorageResult<Self> {
+    async fn load_from_path(path: impl Into<PathBuf>) -> AftmanResult<Self> {
         let path: Arc<Path> = path.into().into();
         let saved = Arc::new(AtomicBool::new(false));
 
@@ -54,12 +56,12 @@ impl Home {
         If the `AFTMAN_ROOT` environment variable is set, this will use
         that as the home directory. Otherwise, it will use `$HOME/.aftman`.
     */
-    pub async fn load_from_env() -> StorageResult<Self> {
+    pub async fn load_from_env() -> AftmanResult<Self> {
         Ok(match var("AFTMAN_ROOT") {
             Ok(root_str) => Self::load_from_path(root_str).await?,
             Err(_) => {
                 let path = dirs::home_dir()
-                    .ok_or(StorageError::HomeNotFound)?
+                    .ok_or(AftmanError::HomeNotFound)?
                     .join(".aftman");
 
                 Self::load_from_path(path).await?
@@ -91,7 +93,7 @@ impl Home {
     /**
         Saves the contents of this `Home` to disk.
     */
-    pub async fn save(&self) -> StorageResult<()> {
+    pub async fn save(&self) -> AftmanResult<()> {
         tokio::try_join!(
             self.trust_cache.save(&self.path),
             self.install_cache.save(&self.path)
