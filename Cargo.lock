@@ -42,6 +42,7 @@ dependencies = [
  "dialoguer",
  "dirs",
  "futures",
+ "http-body-util",
  "itertools",
  "octocrab",
  "reqwest",

@@ -8,6 +8,10 @@ pub enum AftmanError {
     HomeNotFound,
     #[error("file not found: {0}")]
     FileNotFound(PathBuf),
+    #[error("failed to extract artifact: unknown format")]
+    ExtractUnknownFormat,
+    #[error("failed to extract artifact: missing binary file")]
+    ExtractFileMissing,
     #[error("task join error: {0}")]
     TaskJoinError(#[from] tokio::task::JoinError),
     #[error("TOML parse error: {0}")]
@@ -16,6 +20,8 @@ pub enum AftmanError {
     Io(#[from] std::io::Error),
     #[error("JSON error: {0}")]
     Json(#[from] serde_json::Error),
+    #[error("Zip file error: {0}")]
+    Zip(#[from] zip::result::ZipError),
 }
 
 pub type AftmanResult<T> = Result<T, AftmanError>;

@@ -20,8 +20,8 @@ pub struct AddSubcommand {
     /// The name that will be used to run the tool.
     pub alias: Option<ToolAlias>,
 
-    /// Install this tool globally by adding it to ~/.aftman/aftman.toml
-    /// instead of installing it to the nearest aftman.toml file.
+    /// Add this tool globally instead of adding
+    /// it to the nearest manifest file.
     #[clap(long)]
     pub global: bool,
 }

@@ -4,19 +4,20 @@ use std::{
     time::Duration,
 };
 
+use http_body_util::BodyExt;
 use octocrab::{models::repos::Release, Error, Octocrab, OctocrabBuilder, Result};
 use reqwest::header::ACCEPT;
 use secrecy::{ExposeSecret, SecretString};
 use semver::Version;
 use tokio::time::sleep;
-use tracing::{info, instrument, trace};
+use tracing::{debug, info, instrument};
 
 use crate::{
     description::Description,
     tool::{ToolId, ToolSpec},
 };
 
-use super::Artifact;
+use super::{Artifact, ArtifactProvider};
 
 const BASE_URI: &str = "https://api.github.com";
 
@@ -123,9 +124,9 @@ impl GitHubSource {
     /**
         Fetches a page of releases for a given tool.
     */
-    #[instrument(skip(self), fields(%tool_id), level = "trace")]
+    #[instrument(skip(self), fields(%tool_id), level = "debug")]
     pub async fn get_releases(&self, tool_id: &ToolId, page: u32) -> Result<Vec<Release>> {
-        trace!("fetching releases for tool");
+        debug!("fetching releases for tool");
 
         let repository = self.client.repos(tool_id.author(), tool_id.name());
         let releases = repository
@@ -142,9 +143,9 @@ impl GitHubSource {
     /**
         Fetches a specific release for a given tool.
     */
-    #[instrument(skip(self), fields(%tool_spec), level = "trace")]
+    #[instrument(skip(self), fields(%tool_spec), level = "debug")]
     pub async fn find_release(&self, tool_spec: &ToolSpec) -> Result<Option<Release>> {
-        trace!("fetching release for tool");
+        debug!("fetching release for tool");
 
         let repository = self.client.repos(tool_spec.author(), tool_spec.name());
         let releases = repository.releases();
@@ -171,13 +172,13 @@ impl GitHubSource {
 
         If no releases are found, or no non-prerelease releases are found, this will return `None`.
     */
-    #[instrument(skip(self), fields(%tool_id), level = "trace")]
+    #[instrument(skip(self), fields(%tool_id), level = "debug")]
     pub async fn find_latest_version(
         &self,
         tool_id: &ToolId,
         allow_prereleases: bool,
     ) -> Result<Option<Version>> {
-        trace!("fetching latest version for tool");
+        debug!("fetching latest version for tool");
 
         let releases = self.get_releases(tool_id, 1).await?;
         Ok(releases.into_iter().find_map(|release| {
@@ -229,6 +230,26 @@ impl GitHubSource {
             .into_iter()
             .map(|(_, artifact)| artifact)
             .collect()
+    }
+
+    /**
+        Downloads the contents of the given artifact.
+    */
+    #[instrument(skip(self, artifact), level = "debug")]
+    pub async fn download_artifact_contents(&self, artifact: &Artifact) -> Result<Vec<u8>> {
+        debug!("downloading artifact contents");
+
+        if artifact.provider != ArtifactProvider::GitHub {
+            return Err(Error::Other {
+                source: "Artifact provider mismatch".into(),
+                backtrace: Backtrace::capture(),
+            });
+        }
+
+        let response = self.client._get(artifact.download_url.as_str()).await?;
+        let bytes = response.into_body().collect().await?.to_bytes().to_vec();
+
+        Ok(bytes)
     }
 }
 

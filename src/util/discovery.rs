@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use aftman::{manifests::AFTMAN_MANIFEST_FILE_NAME, system::discover_file_recursive};
+use aftman::manifests::{discover_file_recursive, AFTMAN_MANIFEST_FILE_NAME};
 use anyhow::{Context, Result};
 
 pub async fn discover_aftman_manifest_dir() -> Result<PathBuf> {
