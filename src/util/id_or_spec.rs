@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use serde_with::DeserializeFromStr;
 
-use aftman::tool::{ToolId, ToolSpec, ToolSpecParseError};
+use aftman::tool::{ToolAlias, ToolId, ToolSpec, ToolSpecParseError};
 
 /**
     A tool identifier *or* specification, which includes
@@ -45,5 +45,15 @@ impl From<ToolIdOrSpec> for ToolId {
             ToolIdOrSpec::Id(id) => id,
             ToolIdOrSpec::Spec(spec) => spec.into(),
         }
+    }
+}
+
+impl From<ToolIdOrSpec> for ToolAlias {
+    fn from(id_or_spec: ToolIdOrSpec) -> Self {
+        let name = match id_or_spec {
+            ToolIdOrSpec::Id(id) => id.name().to_string(),
+            ToolIdOrSpec::Spec(spec) => spec.name().to_string(),
+        };
+        Self::from_str(&name).expect("Derived alias is always valid")
     }
 }

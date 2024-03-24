@@ -8,7 +8,7 @@ use crate::{
     util::{load_from_file_fallible, save_to_file},
 };
 
-const MANIFEST_FILE_NAME: &str = "aftman.toml";
+pub const MANIFEST_FILE_NAME: &str = "aftman.toml";
 const MANIFEST_DEFAULT_CONTENTS: &str = r#"
 # This file lists tools managed by Aftman, a cross-platform toolchain manager.
 # For more information, see <|REPOSITORY_URL|>
@@ -53,8 +53,10 @@ impl AftmanManifest {
 
         This will search for a file named `aftman.toml` in the given directory.
     */
+    #[tracing::instrument(skip(dir), level = "trace")]
     pub async fn load(dir: impl AsRef<Path>) -> AftmanResult<Self> {
         let path = dir.as_ref().join(MANIFEST_FILE_NAME);
+        tracing::trace!(?path, "Loading manifest");
         load_from_file_fallible(path).await
     }
 
@@ -63,8 +65,10 @@ impl AftmanManifest {
 
         This will write the manifest to a file named `aftman.toml` in the given directory.
     */
+    #[tracing::instrument(skip(self, dir), level = "trace")]
     pub async fn save(&self, dir: impl AsRef<Path>) -> AftmanResult<()> {
         let path = dir.as_ref().join(MANIFEST_FILE_NAME);
+        tracing::trace!(?path, "Saving manifest");
         save_to_file(path, self.clone()).await
     }
 
