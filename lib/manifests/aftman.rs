@@ -110,6 +110,24 @@ impl AftmanManifest {
             false
         }
     }
+
+    /**
+        Returns all valid tool specifications in the manifest.
+
+        This will ignore any tools that are not valid tool specifications.
+    */
+    pub fn tool_specs(&self) -> Vec<(ToolAlias, ToolSpec)> {
+        self.document["tools"]
+            .as_table()
+            .into_iter()
+            .flat_map(|tools| tools.get_values())
+            .filter_map(|(key, value)| {
+                let alias = key.last()?.parse::<ToolAlias>().ok()?;
+                let spec = value.as_str()?.parse::<ToolSpec>().ok()?;
+                Some((alias, spec))
+            })
+            .collect()
+    }
 }
 
 impl FromStr for AftmanManifest {

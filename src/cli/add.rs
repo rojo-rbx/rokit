@@ -2,13 +2,12 @@ use anyhow::{bail, Context, Result};
 use clap::Parser;
 
 use aftman::{
-    manifests::{AftmanManifest, AuthManifest},
-    sources::{ArtifactProvider, GitHubSource},
+    manifests::AftmanManifest,
     storage::Home,
     tool::{ToolAlias, ToolId},
 };
 
-use crate::util::{discover_aftman_manifest_dir, ToolIdOrSpec};
+use crate::util::{discover_aftman_manifest_dir, github_tool_source, ToolIdOrSpec};
 
 /// Adds a new tool to Aftman and installs it.
 #[derive(Debug, Parser)]
@@ -40,13 +39,7 @@ impl AddSubcommand {
             discover_aftman_manifest_dir().await?
         };
 
-        // We might be wanting to add a private tool, so load our tool source with auth
-        // FUTURE: Some kind of generic solution for tool sources and auth for them
-        let auth = AuthManifest::load_or_create(home.path()).await?;
-        let source = match auth.get_token(ArtifactProvider::GitHub) {
-            Some(token) => GitHubSource::new_authenticated(token)?,
-            None => GitHubSource::new()?,
-        };
+        let source = github_tool_source(home).await?;
 
         // Load manifest and do a preflight check to make sure we don't overwrite any tool
         let mut manifest = if self.global {

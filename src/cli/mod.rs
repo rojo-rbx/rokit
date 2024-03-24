@@ -6,6 +6,7 @@ use tokio::time::Instant;
 mod add;
 mod debug_system_info;
 mod debug_trusted_tools;
+mod install;
 mod list;
 mod trust;
 mod untrust;
@@ -13,6 +14,7 @@ mod untrust;
 use self::add::AddSubcommand;
 use self::debug_system_info::DebugSystemInfoSubcommand;
 use self::debug_trusted_tools::DebugTrustedToolsSubcommand;
+use self::install::InstallSubcommand;
 use self::list::ListSubcommand;
 use self::trust::TrustSubcommand;
 use self::untrust::UntrustSubcommand;
@@ -76,6 +78,7 @@ pub enum Subcommand {
     List(ListSubcommand),
     Trust(TrustSubcommand),
     Untrust(UntrustSubcommand),
+    Install(InstallSubcommand),
 }
 
 impl Subcommand {
@@ -89,6 +92,7 @@ impl Subcommand {
             Self::List(cmd) => cmd.run(home).await,
             Self::Trust(cmd) => cmd.run(home).await,
             Self::Untrust(cmd) => cmd.run(home).await,
+            Self::Install(cmd) => cmd.run(home).await,
         }
     }
 }

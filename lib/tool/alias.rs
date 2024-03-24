@@ -26,7 +26,9 @@ pub enum ToolAliasParseError {
     - Manifest keys, as a shorthand for a tool's author and name.
     - Executable names, as the main identifier.
 */
-#[derive(Debug, Clone, PartialEq, Eq, Hash, DeserializeFromStr, SerializeDisplay)]
+#[derive(
+    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, DeserializeFromStr, SerializeDisplay,
+)]
 pub struct ToolAlias {
     pub(super) name: String,
 }
