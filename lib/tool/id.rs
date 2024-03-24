@@ -4,7 +4,7 @@ use semver::Version;
 use serde_with::{DeserializeFromStr, SerializeDisplay};
 use thiserror::Error;
 
-use super::{util::is_invalid_identifier, ToolSpec};
+use super::{util::is_invalid_identifier, ToolAlias, ToolSpec};
 
 /**
     Error type representing the possible errors that can occur when parsing a ToolId.
@@ -45,6 +45,10 @@ impl ToolId {
 
     pub fn into_spec(self, version: Version) -> ToolSpec {
         ToolSpec::from((self, version))
+    }
+
+    pub fn into_alias(self) -> ToolAlias {
+        ToolAlias { name: self.name }
     }
 }
 

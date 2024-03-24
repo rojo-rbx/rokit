@@ -18,7 +18,7 @@ use super::{InstallCache, ToolStorage, TrustCache};
 #[derive(Debug, Clone)]
 pub struct Home {
     path: Arc<Path>,
-    saved: Arc<AtomicBool>,
+    did_save: Arc<AtomicBool>,
     trust_cache: TrustCache,
     install_cache: InstallCache,
     tool_storage: ToolStorage,
@@ -30,17 +30,17 @@ impl Home {
     */
     async fn load_from_path(path: impl Into<PathBuf>) -> AftmanResult<Self> {
         let path: Arc<Path> = path.into().into();
-        let saved = Arc::new(AtomicBool::new(false));
+        let did_save = Arc::new(AtomicBool::new(false));
 
         let (trust_cache, install_cache, tool_storage) = tokio::try_join!(
             TrustCache::load(&path),
             InstallCache::load(&path),
-            ToolStorage::load(&path)
+            ToolStorage::load(&path),
         )?;
 
         Ok(Self {
             path,
-            saved,
+            did_save,
             trust_cache,
             install_cache,
             tool_storage,
@@ -70,6 +70,13 @@ impl Home {
     }
 
     /**
+        Gets a reference to the path for this `Home`.
+    */
+    pub fn path(&self) -> &Path {
+        &self.path
+    }
+
+    /**
         Returns a reference to the `TrustCache` for this `Home`.
     */
     pub fn trust_cache(&self) -> &TrustCache {
@@ -96,9 +103,9 @@ impl Home {
     pub async fn save(&self) -> AftmanResult<()> {
         tokio::try_join!(
             self.trust_cache.save(&self.path),
-            self.install_cache.save(&self.path)
+            self.install_cache.save(&self.path),
         )?;
-        self.saved.store(true, Ordering::SeqCst);
+        self.did_save.store(true, Ordering::SeqCst);
         Ok(())
     }
 }
@@ -115,7 +122,7 @@ impl Home {
 impl Drop for Home {
     fn drop(&mut self) {
         let is_last = Arc::strong_count(&self.path) <= 1;
-        if is_last && !self.saved.load(Ordering::SeqCst) {
+        if is_last && !self.did_save.load(Ordering::SeqCst) {
             tracing::error!(
                 "Aftman home was dropped without being saved!\
                 \nChanges to trust, tools, and more may have been lost."

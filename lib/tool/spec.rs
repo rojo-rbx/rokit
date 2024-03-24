@@ -54,6 +54,13 @@ impl ToolSpec {
     pub fn matches_id(&self, id: &ToolId) -> bool {
         self.author == id.author && self.name == id.name
     }
+
+    pub fn into_id(self) -> ToolId {
+        ToolId {
+            author: self.author,
+            name: self.name,
+        }
+    }
 }
 
 impl FromStr for ToolSpec {

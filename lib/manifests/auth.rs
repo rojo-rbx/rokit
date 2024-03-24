@@ -3,7 +3,7 @@ use std::{path::Path, str::FromStr};
 use toml_edit::{DocumentMut, Formatted, Item, Value};
 
 use crate::{
-    result::AftmanResult,
+    result::{AftmanError, AftmanResult},
     sources::ArtifactProvider,
     util::{load_from_file_fallible, save_to_file},
 };
@@ -27,6 +27,26 @@ pub struct AuthManifest {
 }
 
 impl AuthManifest {
+    /**
+        Loads the manifest from the given directory, or creates a new one if it doesn't exist.
+
+        If the manifest doesn't exist, a new one will be created with default contents and saved.
+
+        See [`AuthManifest::load`] and [`AuthManifest::save`] for more information.
+    */
+    pub async fn load_or_create(dir: impl AsRef<Path>) -> AftmanResult<Self> {
+        let path = dir.as_ref().join(MANIFEST_FILE_NAME);
+        match load_from_file_fallible(path).await {
+            Ok(manifest) => Ok(manifest),
+            Err(AftmanError::FileNotFound(_)) => {
+                let new = Self::default();
+                new.save(dir).await?;
+                Ok(new)
+            }
+            Err(e) => Err(e),
+        }
+    }
+
     /**
         Loads the manifest from the given directory.
 
