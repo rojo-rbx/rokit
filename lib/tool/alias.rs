@@ -49,6 +49,9 @@ impl FromStr for ToolAlias {
         if s.chars().any(char::is_whitespace) {
             return Err(ToolAliasParseError::ContainsWhitespace);
         }
+        if s.eq_ignore_ascii_case("aftman") {
+            return Err(ToolAliasParseError::Invalid);
+        }
         Ok(Self {
             name: s.to_string(),
         })

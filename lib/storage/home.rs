@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
-use super::{InstallCache, StorageError, StorageResult, TrustCache};
+use super::{InstallCache, StorageError, StorageResult, ToolStorage, TrustCache};
 
 /**
     Aftman's home directory - this is where Aftman stores its
@@ -19,6 +19,7 @@ pub struct Home {
     saved: Arc<AtomicBool>,
     trust_cache: TrustCache,
     install_cache: InstallCache,
+    tool_storage: ToolStorage,
 }
 
 impl Home {
@@ -29,14 +30,18 @@ impl Home {
         let path: Arc<Path> = path.into().into();
         let saved = Arc::new(AtomicBool::new(false));
 
-        let (trust_cache, install_cache) =
-            tokio::try_join!(TrustCache::load(&path), InstallCache::load(&path))?;
+        let (trust_cache, install_cache, tool_storage) = tokio::try_join!(
+            TrustCache::load(&path),
+            InstallCache::load(&path),
+            ToolStorage::load(&path)
+        )?;
 
         Ok(Self {
             path,
             saved,
             trust_cache,
             install_cache,
+            tool_storage,
         })
     }
 
@@ -74,6 +79,13 @@ impl Home {
     */
     pub fn install_cache(&self) -> &InstallCache {
         &self.install_cache
+    }
+
+    /**
+        Returns a reference to the `ToolStorage` for this `Home`.
+    */
+    pub fn tool_storage(&self) -> &ToolStorage {
+        &self.tool_storage
     }
 
     /**

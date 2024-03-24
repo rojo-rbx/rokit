@@ -2,7 +2,6 @@ use anyhow::{Context, Result};
 use clap::Parser;
 
 use aftman::{sources::GitHubSource, storage::Home, tool::ToolAlias};
-use semver::Version;
 
 use crate::util::ToolIdOrSpec;
 
@@ -23,7 +22,7 @@ pub struct AddSubcommand {
 }
 
 impl AddSubcommand {
-    pub async fn run(&self, home: &Home) -> Result<()> {
+    pub async fn run(&self, _home: &Home) -> Result<()> {
         let source = GitHubSource::new()?;
 
         // If we only got an id without a specified version, we

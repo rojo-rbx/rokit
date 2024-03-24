@@ -8,6 +8,8 @@ pub enum StorageError {
     HomeNotFound,
     #[error("file not found: {0}")]
     FileNotFound(PathBuf),
+    #[error("task join error: {0}")]
+    TaskJoinError(#[from] tokio::task::JoinError),
     #[error("I/O error: {0}")]
     Io(#[from] std::io::Error),
     #[error("JSON error: {0}")]

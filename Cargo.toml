@@ -12,6 +12,7 @@ default-run = "aftman"
 [dependencies]
 anyhow = "1.0"
 async-signal = "0.2"
+async-once-cell = "0.5"
 clap = { version = "4.5", features = ["derive"] }
 const_format = "0.2"
 dashmap = "5.5"
