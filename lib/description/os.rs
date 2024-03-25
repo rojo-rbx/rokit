@@ -2,7 +2,7 @@ use std::env::consts::OS as CURRENT_OS;
 
 #[rustfmt::skip]
 const OS_KEYWORDS: [(OS, &[&str]); 3] = [
-    (OS::Windows, &["windows", "win32", "win64"]),
+    (OS::Windows, &["windows", "win32", "win64", "win-x86", "win-x64"]),
     (OS::MacOS,   &["macos", "osx", "darwin"]),
     (OS::Linux,   &["linux", "ubuntu", "debian"]),
 ];

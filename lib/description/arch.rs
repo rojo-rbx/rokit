@@ -5,9 +5,9 @@ use super::OS;
 #[rustfmt::skip]
 const ARCH_KEYWORDS: [(Arch, &[&str]); 4] = [
     (Arch::Arm64, &["aarch64", "arm64", "armv9"]),
-    (Arch::X64,   &["x86-64", "x86_64", "x64", "amd64", "win64"]),
+    (Arch::X64,   &["x86-64", "x86_64", "x64", "amd64", "win64", "win-x64"]),
     (Arch::Arm32, &["arm", "arm32", "armv7"]),
-    (Arch::X86,   &["x86", "i686", "i386", "win32"]),
+    (Arch::X86,   &["x86", "i686", "i386", "win32", "win-x86"]),
 ];
 
 /**
