@@ -1548,6 +1548,7 @@ dependencies = [
  "http-body-util",
  "indicatif",
  "octocrab",
+ "once_cell",
  "secrecy",
  "semver",
  "serde",
