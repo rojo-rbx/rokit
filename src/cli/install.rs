@@ -7,7 +7,9 @@ use aftman::{description::Description, manifests::AftmanManifest, storage::Home}
 use futures::{stream::FuturesUnordered, TryStreamExt};
 use tokio::time::Instant;
 
-use crate::util::{discover_aftman_manifest_dirs, github_tool_source, prompt_for_install_trust};
+use crate::util::{
+    discover_aftman_manifest_dirs, github_tool_source, new_progress_bar, prompt_for_install_trust,
+};
 
 /// Adds a new tool to Aftman and installs it.
 #[derive(Debug, Parser)]
@@ -82,17 +84,17 @@ impl InstallSubcommand {
         let install_cache = home.install_cache();
         let tool_storage = home.tool_storage();
 
+        let pb = new_progress_bar("Installing", tool_specs.len());
         let artifacts = tool_specs
             .into_iter()
             .map(|tool_spec| async {
                 if install_cache.is_installed(&tool_spec) && !force {
-                    tracing::info!("Skipping already installed {tool_spec}");
+                    pb.inc(1);
                     // HACK: Force the async closure to take ownership
                     // of tool_spec by returning it from the closure
                     return anyhow::Ok(tool_spec);
                 }
 
-                tracing::info!("Downloading {tool_spec}");
                 let release = source
                     .find_release(&tool_spec)
                     .await?
@@ -107,7 +109,6 @@ impl InstallSubcommand {
                     .await
                     .with_context(|| format!("Failed to download contents for {tool_spec}"))?;
 
-                tracing::info!("Installing {tool_spec}");
                 let extracted = artifact
                     .extract_contents(contents)
                     .await
@@ -117,11 +118,14 @@ impl InstallSubcommand {
                     .await?;
 
                 install_cache.add_spec(tool_spec.clone());
+                pb.inc(1);
+
                 Ok(tool_spec)
             })
             .collect::<FuturesUnordered<_>>()
             .try_collect::<Vec<_>>()
             .await?;
+        pb.finish_and_clear();
 
         // 4. Link all of the (possibly new) aliases, we do this even if the
         // tool is already installed in case the link(s) have been corrupted
