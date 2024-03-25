@@ -4,15 +4,11 @@ use clap::Parser;
 use tokio::time::Instant;
 
 mod add;
-mod debug_system_info;
-mod debug_trusted_tools;
 mod install;
 mod list;
 mod trust;
 
 use self::add::AddSubcommand;
-use self::debug_system_info::DebugSystemInfoSubcommand;
-use self::debug_trusted_tools::DebugTrustedToolsSubcommand;
 use self::install::InstallSubcommand;
 use self::list::ListSubcommand;
 use self::trust::TrustSubcommand;
@@ -66,12 +62,6 @@ impl Cli {
 
 #[derive(Debug, Parser)]
 pub enum Subcommand {
-    // Hidden subcommands (for debugging)
-    #[clap(hide = true)]
-    DebugSystemInfo(DebugSystemInfoSubcommand),
-    #[clap(hide = true)]
-    DebugTrustedTools(DebugTrustedToolsSubcommand),
-    // Public subcommands
     Add(AddSubcommand),
     List(ListSubcommand),
     Trust(TrustSubcommand),
@@ -81,10 +71,6 @@ pub enum Subcommand {
 impl Subcommand {
     pub async fn run(self, home: &Home) -> Result<()> {
         match self {
-            // Hidden subcommands
-            Self::DebugSystemInfo(cmd) => cmd.run(home).await,
-            Self::DebugTrustedTools(cmd) => cmd.run(home).await,
-            // Public subcommands
             Self::Add(cmd) => cmd.run(home).await,
             Self::List(cmd) => cmd.run(home).await,
             Self::Trust(cmd) => cmd.run(home).await,

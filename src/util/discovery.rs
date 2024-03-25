@@ -1,6 +1,8 @@
 use std::{env::current_dir, path::PathBuf};
 
 use anyhow::{Context, Result};
+use futures::{stream::FuturesUnordered, TryStreamExt};
+use tokio::task::spawn_blocking;
 
 use aftman::{
     manifests::{
@@ -10,8 +12,6 @@ use aftman::{
     storage::Home,
     tool::{ToolAlias, ToolSpec},
 };
-use futures::{stream::FuturesUnordered, TryStreamExt};
-use tokio::task::spawn_blocking;
 
 pub async fn discover_aftman_manifest_dir() -> Result<PathBuf> {
     let file_path = discover_file_recursive(AFTMAN_MANIFEST_FILE_NAME)
