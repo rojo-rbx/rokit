@@ -12,6 +12,7 @@ use tokio::{
 use tracing::debug;
 
 use crate::{
+    manifests::{AuthManifest, RokitManifest},
     result::RokitResult,
     system::current_exe_contents,
     tool::{ToolAlias, ToolSpec},
@@ -177,7 +178,12 @@ impl ToolStorage {
         let tools_dir = home_path.join("tool-storage").into();
         let aliases_dir = home_path.join("bin").into();
 
-        tokio::try_join!(create_dir_all(&tools_dir), create_dir_all(&aliases_dir))?;
+        tokio::try_join!(
+            RokitManifest::load_or_create(&home_path),
+            AuthManifest::load_or_create(&home_path),
+            async { Ok(create_dir_all(&tools_dir).await?) },
+            async { Ok(create_dir_all(&aliases_dir).await?) },
+        )?;
 
         let current_rokit_contents = Arc::new(AsyncMutex::new(None));
 
