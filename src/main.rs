@@ -1,12 +1,19 @@
+use std::env::args;
 use std::process::exit;
+use std::str::FromStr;
 
+use anyhow::{Context, Result};
 use clap::Parser;
 use tracing::{error, level_filters::LevelFilter};
 use tracing_subscriber::EnvFilter;
 
+use aftman::{storage::Home, system::run_interruptible, tool::ToolAlias};
+
 mod cli;
 mod util;
-use cli::Cli;
+
+use self::cli::Cli;
+use self::util::{arg0_file_name, discover_closest_tool_spec};
 
 #[cfg(debug_assertions)]
 const FMT_PRETTY: bool = true;
@@ -43,11 +50,42 @@ async fn main() {
             .init();
     }
 
-    if let Err(e) = Cli::parse().run().await {
+    let exe_name = arg0_file_name();
+    let result = if exe_name == "aftman" {
+        run_cli().await
+    } else {
+        run_tool(exe_name).await
+    };
+
+    if let Err(e) = result {
         // NOTE: We use tracing for errors here for consistent
         // output between returned errors, and errors that
         // may be logged while the program is running.
         error!("{e:?}");
         exit(1);
     }
+}
+
+async fn run_cli() -> Result<()> {
+    Cli::parse().run().await
+}
+
+async fn run_tool(alias: String) -> Result<()> {
+    let alias = ToolAlias::from_str(&alias)?;
+
+    let home = Home::load_from_env().await?;
+
+    let result = async {
+        let spec = discover_closest_tool_spec(&home, &alias)
+            .await
+            .with_context(|| format!("Failed to find tool '{alias}'"))?;
+        let path = home.tool_storage().tool_path(&spec);
+        let args = args().skip(1).collect::<Vec<_>>();
+        anyhow::Ok(run_interruptible(&path, &args).await?)
+    }
+    .await;
+
+    home.save().await?;
+
+    exit(result?);
 }

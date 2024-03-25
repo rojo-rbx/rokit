@@ -4,10 +4,11 @@ use std::{
     sync::Arc,
 };
 
+use futures::{stream::FuturesUnordered, TryStreamExt};
 use tokio::{
-    fs::{create_dir_all, read, read_dir, write},
+    fs::{create_dir_all, read, read_dir},
     sync::Mutex as AsyncMutex,
-    task::{spawn_blocking, JoinSet},
+    task::spawn_blocking,
 };
 
 use crate::{
@@ -73,7 +74,7 @@ impl ToolStorage {
     ) -> AftmanResult<()> {
         let (dir_path, file_path) = self.tool_paths(spec);
         create_dir_all(dir_path).await?;
-        write(file_path, contents).await?;
+        write_executable(&file_path, contents).await?;
         Ok(())
     }
 
@@ -97,7 +98,7 @@ impl ToolStorage {
             }
             None => self.aftman_contents().await?,
         };
-        write(self.aftman_path(), &contents).await?;
+        write_executable(self.aftman_path(), &contents).await?;
         Ok(())
     }
 
@@ -109,7 +110,7 @@ impl ToolStorage {
     pub async fn create_tool_link(&self, alias: &ToolAlias) -> AftmanResult<()> {
         let path = self.aliases_dir.join(alias.name());
         let contents = self.aftman_contents().await?;
-        write(&path, &contents).await?;
+        write_executable(path, &contents).await?;
         Ok(())
     }
 
@@ -121,30 +122,39 @@ impl ToolStorage {
     */
     pub async fn recreate_all_links(&self) -> AftmanResult<bool> {
         let contents = self.aftman_contents().await?;
+        let aftman_path = self.aftman_path();
+        let mut aftman_found = false;
 
         let mut link_paths = Vec::new();
         let mut link_reader = read_dir(&self.aliases_dir).await?;
         while let Some(entry) = link_reader.next_entry().await? {
-            link_paths.push(entry.path());
+            let path = entry.path();
+            if path != aftman_path {
+                link_paths.push(path);
+            } else {
+                aftman_found = true;
+            }
         }
 
-        let aftman_path = self.aftman_path();
-        let aftman_existed = if link_paths.contains(&aftman_path) {
-            true
-        } else {
-            link_paths.push(aftman_path);
-            false
-        };
+        // Always write the Aftman binary to ensure it's up-to-date
+        write_executable(&aftman_path, &contents).await?;
 
-        let mut futures = JoinSet::new();
-        for link_path in link_paths {
-            futures.spawn(write(link_path, contents.clone()));
-        }
-        while let Some(result) = futures.join_next().await {
-            result??;
-        }
+        // Then we can write the rest of the links - on unix we can use
+        // symlinks pointing to the aftman binary to save on disk space.
+        link_paths
+            .into_iter()
+            .map(|link_path| async {
+                if cfg!(unix) {
+                    write_executable_link(link_path, &aftman_path).await
+                } else {
+                    write_executable(link_path, &contents).await
+                }
+            })
+            .collect::<FuturesUnordered<_>>()
+            .try_collect::<Vec<_>>()
+            .await?;
 
-        Ok(!aftman_existed)
+        Ok(!aftman_found)
     }
 
     pub(crate) async fn load(home_path: impl AsRef<Path>) -> AftmanResult<Self> {
@@ -171,4 +181,47 @@ impl ToolStorage {
             aliases_dir,
         })
     }
+}
+
+async fn write_executable(path: impl AsRef<Path>, contents: impl AsRef<[u8]>) -> AftmanResult<()> {
+    let path = path.as_ref();
+
+    use tokio::fs::write;
+    write(path, contents).await?;
+
+    #[cfg(unix)]
+    {
+        use std::fs::Permissions;
+        use std::os::unix::fs::PermissionsExt;
+        use tokio::fs::set_permissions;
+        set_permissions(path, Permissions::from_mode(0o755)).await?;
+    }
+
+    Ok(())
+}
+
+async fn write_executable_link(
+    link_path: impl AsRef<Path>,
+    target_path: impl AsRef<Path>,
+) -> AftmanResult<()> {
+    let link_path = link_path.as_ref();
+    let target_path = target_path.as_ref();
+
+    #[cfg(unix)]
+    {
+        use tokio::fs::symlink;
+        symlink(target_path, link_path).await?;
+    }
+
+    // NOTE: We set the permissions of the symlink itself only on macOS
+    // since that is the only supported OS where symlink permissions matter
+    #[cfg(target_os = "macos")]
+    {
+        use std::fs::Permissions;
+        use std::os::unix::fs::PermissionsExt;
+        use tokio::fs::set_permissions;
+        set_permissions(link_path, Permissions::from_mode(0o755)).await?;
+    }
+
+    Ok(())
 }
