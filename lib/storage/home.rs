@@ -1,6 +1,5 @@
 use std::env::var;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use crate::result::{AftmanError, AftmanResult};
@@ -18,7 +17,6 @@ use super::{ToolCache, ToolStorage};
 #[derive(Debug, Clone)]
 pub struct Home {
     path: Arc<Path>,
-    did_save: Arc<AtomicBool>,
     tool_storage: ToolStorage,
     tool_cache: ToolCache,
 }
@@ -29,14 +27,12 @@ impl Home {
     */
     async fn load_from_path(path: impl Into<PathBuf>) -> AftmanResult<Self> {
         let path: Arc<Path> = path.into().into();
-        let did_save = Arc::new(AtomicBool::new(false));
 
         let (tool_storage, tool_cache) =
             tokio::try_join!(ToolStorage::load(&path), ToolCache::load(&path))?;
 
         Ok(Self {
             path,
-            did_save,
             tool_storage,
             tool_cache,
         })
@@ -90,7 +86,6 @@ impl Home {
     */
     pub async fn save(&self) -> AftmanResult<()> {
         self.tool_cache.save(&self.path).await?;
-        self.did_save.store(true, Ordering::SeqCst);
         Ok(())
     }
 }
@@ -107,11 +102,14 @@ impl Home {
 impl Drop for Home {
     fn drop(&mut self) {
         let is_last = Arc::strong_count(&self.path) <= 1;
-        if is_last && !self.did_save.load(Ordering::SeqCst) {
+        if !is_last {
+            return;
+        }
+        if self.tool_cache.needs_saving() || self.tool_storage.needs_saving() {
             tracing::error!(
-                "Aftman home was dropped without being saved!\
+                "Aftman home was dropped without saving!\
                 \nChanges to trust, tools, and more may have been lost."
-            )
+            );
         }
     }
 }

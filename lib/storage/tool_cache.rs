@@ -4,12 +4,15 @@
 use std::{
     collections::BTreeSet,
     path::{Path, PathBuf},
-    sync::Arc,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
 };
 
 use dashmap::DashSet;
 use semver::Version;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use tokio::{task::spawn_blocking, time::Instant};
 use tracing::{instrument, trace};
 
@@ -23,10 +26,12 @@ use crate::{
 
     Can be cheaply cloned while still referring to the same underlying data.
 */
-#[derive(Debug, Default, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Deserialize)]
 pub struct ToolCache {
     trusted: Arc<DashSet<ToolId>>,
     installed: Arc<DashSet<ToolSpec>>,
+    #[serde(default, skip)]
+    needs_saving: Arc<AtomicBool>,
 }
 
 impl ToolCache {
@@ -43,6 +48,7 @@ impl ToolCache {
         Returns `true` if the tool was added and not already trusted.
     */
     pub fn add_trust(&self, tool: ToolId) -> bool {
+        self.needs_saving.store(true, Ordering::SeqCst);
         self.trusted.insert(tool)
     }
 
@@ -52,6 +58,7 @@ impl ToolCache {
         Returns `true` if the tool was previously trusted and has now been removed.
     */
     pub fn remove_trust(&self, tool: &ToolId) -> bool {
+        self.needs_saving.store(true, Ordering::SeqCst);
         self.trusted.remove(tool).is_some()
     }
 
@@ -77,6 +84,7 @@ impl ToolCache {
         Returns `true` if the tool was added and not already cached.
     */
     pub fn add_installed(&self, tool: ToolSpec) -> bool {
+        self.needs_saving.store(true, Ordering::SeqCst);
         self.installed.insert(tool)
     }
 
@@ -86,6 +94,7 @@ impl ToolCache {
         Returns `true` if the tool was previously cached and has now been removed.
     */
     pub fn remove_installed(&self, tool: &ToolSpec) -> bool {
+        self.needs_saving.store(true, Ordering::SeqCst);
         self.installed.remove(tool).is_some()
     }
 
@@ -158,11 +167,16 @@ impl ToolCache {
 
     #[instrument(skip(self, home_path), level = "trace")]
     pub(crate) async fn save(&self, home_path: impl AsRef<Path>) -> AftmanResult<()> {
+        self.needs_saving.store(false, Ordering::SeqCst);
         let start = Instant::now();
         let path = Self::path(home_path);
         save_impl(path.clone(), self).await?;
         trace!(?path, elapsed = ?start.elapsed(), "Saved tool cache");
         Ok(())
+    }
+
+    pub(crate) fn needs_saving(&self) -> bool {
+        self.needs_saving.load(Ordering::SeqCst)
     }
 }
 

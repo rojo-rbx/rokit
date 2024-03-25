@@ -191,4 +191,10 @@ impl ToolStorage {
             aliases_dir,
         })
     }
+
+    pub(crate) fn needs_saving(&self) -> bool {
+        // Tool storage always writes all state directly
+        // to the disk, but this may change in the future
+        false
+    }
 }
