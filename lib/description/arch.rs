@@ -13,16 +13,19 @@ const ARCH_KEYWORDS: [(Arch, &[&str]); 4] = [
 /**
     Enum representing a system architecture, such as x86-64 or ARM.
 */
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[non_exhaustive]
 pub enum Arch {
     // NOTE: The ordering here is important! Putting arm architectures before
     // x86 architectures prioritizes native binaries on ARM systems over x86
     // binaries, which would most likely get emulated (eg. Rosetta on macOS)
-    Arm64, // aka AArch64
-    X64,   // aka x86-64, AMD64
-    Arm32, // aka ARMv7
-    X86,   // aka i686
+    Arm64,
+    // NOTE: We use X64 as our default architecture, since it's the most common
+    // and tools that don't specify an architecture are most likely using x86-64.
+    #[default]
+    X64,
+    Arm32,
+    X86,
 }
 
 impl Arch {

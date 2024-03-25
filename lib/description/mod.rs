@@ -14,8 +14,6 @@ pub use self::toolchain::Toolchain;
 pub enum DescriptionParseError {
     #[error("unknown OS, or no OS detected")]
     OS,
-    #[error("unknown arch, or no arch detected")]
-    Arch,
 }
 
 /**
@@ -53,7 +51,7 @@ impl Description {
         let search_string = search_string.as_ref();
 
         let os = OS::detect(search_string)?;
-        let arch = Arch::detect(search_string)?;
+        let arch = Arch::detect(search_string).unwrap_or_default();
         let toolchain = Toolchain::detect(search_string);
 
         Some(Self {
@@ -125,7 +123,7 @@ impl FromStr for Description {
     type Err = DescriptionParseError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let os = OS::detect(s).ok_or(DescriptionParseError::OS)?;
-        let arch = Arch::detect(s).ok_or(DescriptionParseError::Arch)?;
+        let arch = Arch::detect(s).unwrap_or_default();
         let toolchain = Toolchain::detect(s);
 
         Ok(Self {
@@ -322,22 +320,6 @@ mod tests {
             assert_eq!(
                 description.parse::<Description>(),
                 Err(DescriptionParseError::OS)
-            );
-        }
-    }
-
-    #[test]
-    fn parse_from_str_invalid_arch() {
-        const INVALID_ARCH_STRINGS: &[&str] = &[
-            "windows-x66-unknown",
-            "macos-barch32-unknown",
-            "linux-riskyV-unknown",
-            "linux-unknown-unknown",
-        ];
-        for description in INVALID_ARCH_STRINGS {
-            assert_eq!(
-                description.parse::<Description>(),
-                Err(DescriptionParseError::Arch)
             );
         }
     }
