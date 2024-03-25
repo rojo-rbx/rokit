@@ -1,5 +1,6 @@
 use anyhow::{bail, Context, Result};
 use clap::Parser;
+use console::style;
 
 use aftman::{
     description::Description,
@@ -9,8 +10,8 @@ use aftman::{
 };
 
 use crate::util::{
-    discover_aftman_manifest_dir, github_tool_source, new_progress_bar, prompt_for_install_trust,
-    ToolIdOrSpec,
+    discover_aftman_manifest_dir, finish_progress_bar, github_tool_source, new_progress_bar,
+    prompt_for_trust, ToolIdOrSpec,
 };
 
 /// Adds a new tool to Aftman and installs it.
@@ -42,15 +43,15 @@ impl AddSubcommand {
         let tool_cache = home.tool_cache();
         let tool_storage = home.tool_storage();
 
-        // Check for trust, or prompt the user to trust the tool
+        // 1. Check for trust, or prompt the user to trust the tool
         if !tool_cache.is_trusted(&id) {
-            if !self.force && !prompt_for_install_trust(&id).await? {
-                bail!("Tool is not trusted - installation was aborted");
+            if !self.force && !prompt_for_trust(id.clone()).await? {
+                bail!("Tool is not trusted - operation was aborted");
             }
             tool_cache.add_trust(id.clone());
         }
 
-        // Load tool source, manifest, and do a preflight check
+        // 2. Load tool source, manifest, and do a preflight check
         // to make sure we don't overwrite any existing tool(s)
         let source = github_tool_source(home).await?;
         let manifest_path = if self.global {
@@ -73,9 +74,9 @@ impl AddSubcommand {
             );
         }
 
-        // If we only got an id without a specified version, we
+        // 3. If we only got an id without a specified version, we
         // will fetch the latest non-prerelease release and use that
-        let pb = new_progress_bar("Fetching", 5);
+        let pb = new_progress_bar("Fetching", 5, 1);
         let spec = match self.tool.clone() {
             ToolIdOrSpec::Spec(spec) => {
                 pb.inc(1);
@@ -91,11 +92,11 @@ impl AddSubcommand {
             }
         };
 
-        // Add the tool spec to the desired manifest file and save it
+        // 4. Add the tool spec to the desired manifest file and save it
         manifest.add_tool(&alias, &spec);
         manifest.save(manifest_path).await?;
 
-        // Install the tool and create the link for its alias
+        // 5. Download and install the tool
         let description = Description::current();
         if !tool_cache.is_installed(&spec) || self.force {
             pb.set_message("Downloading");
@@ -129,11 +130,23 @@ impl AddSubcommand {
             pb.inc(4);
         }
 
+        // 6. Create the tool alias link
         pb.set_message("Linking");
         tool_storage.create_tool_link(&alias).await?;
-        pb.finish_and_clear();
 
-        tracing::info!("Added tool successfully: {spec}");
+        // 7. Finally, display a nice message to the user
+        let msg = format!(
+            "Added version {} of tool {}{} {}",
+            style(spec.version()).bold().yellow(),
+            style(spec.name()).bold().magenta(),
+            if alias.name() != id.name() {
+                format!(" with alias {}", style(alias.to_string()).bold().cyan())
+            } else {
+                "".into()
+            },
+            style(format!("(took {:.2?})", pb.elapsed())).dim(),
+        );
+        finish_progress_bar(pb, msg);
 
         Ok(())
     }

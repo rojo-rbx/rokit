@@ -37,6 +37,7 @@ dependencies = [
  "async-signal",
  "clap",
  "command-group",
+ "console",
  "const_format",
  "dashmap",
  "dialoguer",
