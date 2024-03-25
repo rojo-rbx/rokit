@@ -166,10 +166,10 @@ impl ToolCache {
     }
 }
 
-// NOTE: Using std::fs here and passing a reader to serde_json lets us
-// deserialize the cache faster and without storing the file in memory.
 async fn load_impl(path: PathBuf) -> AftmanResult<ToolCache> {
-    Ok(spawn_blocking(move || {
+    // NOTE: Using std::fs here and passing a reader to serde_json lets us
+    // deserialize the cache faster and without storing the file in memory.
+    let result = spawn_blocking(move || {
         use std::{
             fs::File,
             io::{BufReader, Error},
@@ -177,12 +177,11 @@ async fn load_impl(path: PathBuf) -> AftmanResult<ToolCache> {
         let reader = BufReader::new(File::open(path)?);
         let this: ToolCache = serde_json::from_reader(reader)?;
         Ok::<_, Error>(this)
-    })
-    .await?
-    .unwrap_or_default())
+    });
+
+    Ok(result.await?.unwrap_or_default())
 }
 
-// Same as in our load implementation, see notes above.
 async fn save_impl(path: PathBuf, cache: &ToolCache) -> AftmanResult<()> {
     // NOTE: We save using sorted json arrays here, which is
     // compatible with the deserialize implementation for DashSet,
@@ -192,7 +191,8 @@ async fn save_impl(path: PathBuf, cache: &ToolCache) -> AftmanResult<()> {
         "installed": cache.all_installed(),
     });
 
-    spawn_blocking(move || {
+    // Same as in our load implementation, see notes there.
+    let result = spawn_blocking(move || {
         use std::{
             fs::{create_dir_all, File},
             io::{BufWriter, Error},
@@ -201,8 +201,8 @@ async fn save_impl(path: PathBuf, cache: &ToolCache) -> AftmanResult<()> {
         let writer = BufWriter::new(File::create(path)?);
         serde_json::to_writer(writer, &json)?;
         Ok::<_, Error>(())
-    })
-    .await??;
+    });
 
+    result.await??;
     Ok(())
 }
