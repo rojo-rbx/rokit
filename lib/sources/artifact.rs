@@ -5,14 +5,14 @@ use tracing::{debug, instrument};
 use url::Url;
 
 use crate::{
-    result::{AftmanError, AftmanResult},
+    result::{RokitError, RokitResult},
     tool::ToolSpec,
 };
 
 use super::extraction::extract_zip_file;
 
 /**
-    An artifact provider supported by Aftman.
+    An artifact provider supported by Rokit.
 */
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ArtifactProvider {
@@ -45,7 +45,7 @@ impl fmt::Display for ArtifactProvider {
 }
 
 /**
-    An artifact format supported by Aftman.
+    An artifact format supported by Rokit.
 */
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ArtifactFormat {
@@ -86,7 +86,7 @@ impl fmt::Display for ArtifactFormat {
 }
 
 /**
-    An artifact found by Aftman, to be downloaded and installed.
+    An artifact found by Rokit, to be downloaded and installed.
 */
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Artifact {
@@ -125,16 +125,16 @@ impl Artifact {
         should be known and the contents should be in the correct format.
     */
     #[instrument(skip(self, contents), level = "debug")]
-    pub async fn extract_contents(&self, contents: Vec<u8>) -> AftmanResult<Vec<u8>> {
+    pub async fn extract_contents(&self, contents: Vec<u8>) -> RokitResult<Vec<u8>> {
         debug!("Extracting artifact contents");
 
-        let format = self.format.ok_or(AftmanError::ExtractUnknownFormat)?;
+        let format = self.format.ok_or(RokitError::ExtractUnknownFormat)?;
 
         let file_name = self.tool_spec.name().to_string();
         let file_opt = match format {
             ArtifactFormat::Zip => extract_zip_file(contents, &file_name).await?,
         };
 
-        file_opt.ok_or(AftmanError::ExtractFileMissing)
+        file_opt.ok_or(RokitError::ExtractFileMissing)
     }
 }

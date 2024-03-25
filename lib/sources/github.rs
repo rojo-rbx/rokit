@@ -4,9 +4,9 @@ use std::{
     time::Duration,
 };
 
+use http::{header::ACCEPT, StatusCode};
 use http_body_util::BodyExt;
 use octocrab::{models::repos::Release, Error, Octocrab, OctocrabBuilder, Result};
-use reqwest::{header::ACCEPT, StatusCode};
 use secrecy::{ExposeSecret, SecretString};
 use semver::Version;
 use tokio::time::sleep;

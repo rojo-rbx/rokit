@@ -1,63 +1,66 @@
 [package]
-name = "aftman"
-description = "Aftman is a command line toolchain manager"
-version = "0.2.7"
+name = "rokit"
+description = "Toolchain manager for Roblox projects"
+version = "0.0.0"
 license = "MIT"
 edition = "2021"
-repository = "https://github.com/LPGhatguy/aftman"
+repository = "https://github.com/filiptibell/rokit"
 readme = "README.md"
-authors = ["Lucien Greathouse <me@lpghatguy.com>"]
-default-run = "aftman"
 
 [dependencies]
-anyhow = "1.0"
-async-signal = "0.2"
-async-once-cell = "0.5"
-clap = { version = "4.5", features = ["derive"] }
 const_format = "0.2"
-console = "0.15"
 dashmap = { version = "5.5", features = ["serde"] }
-dialoguer = "0.11"
 dirs = "5.0"
-futures = "0.3"
-http-body-util = "0.1"
-indicatif = "0.17"
-itertools = "0.12"
 octocrab = "0.36"
-reqwest = { version = "0.12", default-features = false, features = [
-    "rustls-tls",
-    "http2",
-] }
 secrecy = "0.8"
 semver = { version = "1.0", features = ["serde"] }
-serde = { version = "1.0", features = ["derive", "rc"] }
-serde_json = "1.0"
-serde_with = { version = "3.7", features = ["macros"] }
 tempfile = "3.3"
 thiserror = "1.0"
-tokio = { version = "1.36", features = ["full"] }
-toml = "0.8"
-toml_edit = "0.22"
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 url = "2.5"
 zip = "0.6"
 
-[target.'cfg(windows)'.dependencies]
-command-group = "1.0"
-winreg = "0.10"
+# Async / runtime dependencies
 
-[target.'cfg(unix)'.dependencies]
-signal-hook = "0.3"
+async-signal = "0.2"
+futures = "0.3"
+http = "1.1"
+http-body-util = "0.1"
+tokio = { version = "1.36", features = ["full"] }
+tracing = "0.1"
+
+# Serde / file format dependencies
+
+serde = { version = "1.0", features = ["derive", "rc"] }
+serde_json = "1.0"
+serde_with = { version = "3.7", features = ["macros"] }
+toml_edit = "0.22"
+
+# CLI dependencies
+
+anyhow = { optional = true, version = "1.0" }
+clap = { optional = true, version = "4.5", features = ["derive"] }
+console = { optional = true, version = "0.15" }
+dialoguer = { optional = true, version = "0.11" }
+indicatif = { optional = true, version = "0.17" }
+tracing-subscriber = { optional = true, version = "0.3", features = [
+    "env-filter",
+] }
+
+[features]
+default = ["cli"]
+cli = [
+    "dep:anyhow",
+    "dep:clap",
+    "dep:console",
+    "dep:dialoguer",
+    "dep:indicatif",
+    "dep:tracing-subscriber",
+]
 
 [[bin]]
-name = "aftman-old"
-path = "src-old/main.rs"
-
-[[bin]]
-name = "aftman"
+name = "rokit"
 path = "src/main.rs"
 
 [lib]
-name = "aftman"
+name = "rokit"
 path = "lib/lib.rs"

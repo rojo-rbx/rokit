@@ -7,7 +7,7 @@ use std::{
 
 use anyhow::{Context, Result};
 
-use aftman::{storage::Home, system::run_interruptible, tool::ToolAlias};
+use rokit::{storage::Home, system::run_interruptible, tool::ToolAlias};
 
 use crate::util::discover_closest_tool_spec;
 
@@ -22,7 +22,7 @@ impl Runner {
     }
 
     pub fn should_run(&self) -> bool {
-        self.exe_name != "aftman"
+        self.exe_name != env!("CARGO_PKG_NAME")
     }
 
     pub async fn run(&self) -> Result<()> {

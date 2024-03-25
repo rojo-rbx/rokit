@@ -2,19 +2,19 @@ use anyhow::{bail, Context, Result};
 use clap::Parser;
 use console::style;
 
-use aftman::{
+use rokit::{
     description::Description,
-    manifests::AftmanManifest,
+    manifests::RokitManifest,
     storage::Home,
     tool::{ToolAlias, ToolId},
 };
 
 use crate::util::{
-    discover_aftman_manifest_dir, finish_progress_bar, github_tool_source, new_progress_bar,
+    discover_rokit_manifest_dir, finish_progress_bar, github_tool_source, new_progress_bar,
     prompt_for_trust, ToolIdOrSpec,
 };
 
-/// Adds a new tool to Aftman and installs it.
+/// Adds a new tool to Rokit and installs it.
 #[derive(Debug, Parser)]
 pub struct AddSubcommand {
     /// A tool identifier or specification describing where
@@ -57,20 +57,20 @@ impl AddSubcommand {
         let manifest_path = if self.global {
             home.path().to_path_buf()
         } else {
-            discover_aftman_manifest_dir().await?
+            discover_rokit_manifest_dir().await?
         };
 
         let mut manifest = if self.global {
-            AftmanManifest::load_or_create(&manifest_path).await?
+            RokitManifest::load_or_create(&manifest_path).await?
         } else {
-            AftmanManifest::load(&manifest_path).await?
+            RokitManifest::load(&manifest_path).await?
         };
         if manifest.has_tool(&alias) && !self.force {
             let global_flag = if self.global { "--global " } else { "" };
             bail!(
                 "Tool already exists and can't be added: {id}\n\
-                \n  - To update the tool, run `aftman update {global_flag}{id}`\
-                \n  - To remove the tool, run `aftman remove {global_flag}{id}`"
+                \n  - To update the tool, run `rokit update {global_flag}{id}`\
+                \n  - To remove the tool, run `rokit remove {global_flag}{id}`"
             );
         }
 

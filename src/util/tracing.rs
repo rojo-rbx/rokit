@@ -12,7 +12,7 @@ pub fn init() {
         .with_default_directive(LevelFilter::INFO.into())
         .from_env_lossy()
         // Adding the below extra directives will let us debug
-        // aftman easier using RUST_LOG=debug or RUST_LOG=trace
+        // Rokit easier using RUST_LOG=debug or RUST_LOG=trace
         .add_directive("octocrab=info".parse().unwrap())
         .add_directive("reqwest=info".parse().unwrap())
         .add_directive("rustls=info".parse().unwrap())

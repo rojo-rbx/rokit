@@ -15,7 +15,9 @@
 /.DS_Store
 /**/.DS_Store
 
-# Ignore any aftman manifest files in this
+# Ignore any project manifest files in this
 # repository - they are used for testing only
 
 /aftman.toml
+/foreman.toml
+/rokit.toml

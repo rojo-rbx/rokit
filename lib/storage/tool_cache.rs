@@ -17,7 +17,7 @@ use tokio::{task::spawn_blocking, time::Instant};
 use tracing::{instrument, trace};
 
 use crate::{
-    result::AftmanResult,
+    result::RokitResult,
     tool::{ToolId, ToolSpec},
 };
 
@@ -157,7 +157,7 @@ impl ToolCache {
     }
 
     #[instrument(skip(home_path), level = "trace")]
-    pub(crate) async fn load(home_path: impl AsRef<Path>) -> AftmanResult<Self> {
+    pub(crate) async fn load(home_path: impl AsRef<Path>) -> RokitResult<Self> {
         let start = Instant::now();
         let path = Self::path(home_path);
         let this = load_impl(path.clone()).await?;
@@ -166,7 +166,7 @@ impl ToolCache {
     }
 
     #[instrument(skip(self, home_path), level = "trace")]
-    pub(crate) async fn save(&self, home_path: impl AsRef<Path>) -> AftmanResult<()> {
+    pub(crate) async fn save(&self, home_path: impl AsRef<Path>) -> RokitResult<()> {
         self.needs_saving.store(false, Ordering::SeqCst);
         let start = Instant::now();
         let path = Self::path(home_path);
@@ -180,7 +180,7 @@ impl ToolCache {
     }
 }
 
-async fn load_impl(path: PathBuf) -> AftmanResult<ToolCache> {
+async fn load_impl(path: PathBuf) -> RokitResult<ToolCache> {
     // NOTE: Using std::fs here and passing a reader to serde_json lets us
     // deserialize the cache faster and without storing the file in memory.
     let result = spawn_blocking(move || {
@@ -196,7 +196,7 @@ async fn load_impl(path: PathBuf) -> AftmanResult<ToolCache> {
     Ok(result.await?.unwrap_or_default())
 }
 
-async fn save_impl(path: PathBuf, cache: &ToolCache) -> AftmanResult<()> {
+async fn save_impl(path: PathBuf, cache: &ToolCache) -> RokitResult<()> {
     // NOTE: We save using sorted json arrays here, which is
     // compatible with the deserialize implementation for DashSet,
     // while also being easier to read for any human inspectors.

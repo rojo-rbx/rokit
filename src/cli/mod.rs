@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use clap::Parser;
 use tokio::time::Instant;
 
-use aftman::storage::Home;
+use rokit::storage::Home;
 
 mod add;
 mod install;
@@ -25,15 +25,15 @@ pub struct Cli {
 
 impl Cli {
     pub async fn run(self) -> Result<()> {
-        // 1. Load aftman data structures
+        // 1. Load Rokit data structures
         let start_home = Instant::now();
         let home = Home::load_from_env().await.context(
-            "Failed to load Aftman home!\
+            "Failed to load Rokit home!\
             \nYour installation or environment may be corrupted.",
         )?;
         tracing::trace!(
             elapsed = ?start_home.elapsed(),
-            "Aftman loaded"
+            "Rokit loaded"
         );
 
         // 2. Run the subcommand and capture the result - note that we
@@ -44,18 +44,18 @@ impl Cli {
         tracing::trace!(
             elapsed = ?start_command.elapsed(),
             success = result.is_ok(),
-            "Aftman ran",
+            "Rokit ran",
         );
 
-        // 3. Save aftman data structures to disk
+        // 3. Save Rokit data structures to disk
         let start_save = Instant::now();
         home.save().await.context(
-            "Failed to save Aftman data!\
+            "Failed to save Rokit data!\
             \nChanges to trust, tools, and more may have been lost.",
         )?;
         tracing::trace!(
             elapsed = ?start_save.elapsed(),
-            "Aftman saved"
+            "Rokit saved"
         );
 
         // 4. Return the result of the subcommand

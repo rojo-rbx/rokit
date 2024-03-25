@@ -2,7 +2,7 @@ use anyhow::{bail, Result};
 use clap::Parser;
 use console::style;
 
-use aftman::{storage::Home, tool::ToolId};
+use rokit::{storage::Home, tool::ToolId};
 
 use crate::util::{finish_progress_bar, new_progress_bar};
 

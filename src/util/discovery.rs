@@ -4,21 +4,20 @@ use anyhow::{Context, Result};
 use futures::{stream::FuturesUnordered, TryStreamExt};
 use tokio::task::spawn_blocking;
 
-use aftman::{
+use rokit::{
     manifests::{
-        discover_file_recursive, discover_files_recursive, AftmanManifest,
-        AFTMAN_MANIFEST_FILE_NAME,
+        discover_file_recursive, discover_files_recursive, RokitManifest, ROKIT_MANIFEST_FILE_NAME,
     },
     storage::Home,
     tool::{ToolAlias, ToolSpec},
 };
 
-pub async fn discover_aftman_manifest_dir() -> Result<PathBuf> {
-    let file_path = discover_file_recursive(AFTMAN_MANIFEST_FILE_NAME)
+pub async fn discover_rokit_manifest_dir() -> Result<PathBuf> {
+    let file_path = discover_file_recursive(ROKIT_MANIFEST_FILE_NAME)
         .await?
         .context(
             "No manifest was found for the current directory.\
-            \nRun `aftman init` in your project root to create one.",
+            \nRun `rokit init` in your project root to create one.",
         )?;
     let dir_path = file_path
         .parent()
@@ -26,10 +25,10 @@ pub async fn discover_aftman_manifest_dir() -> Result<PathBuf> {
     Ok(dir_path.to_path_buf())
 }
 
-pub async fn discover_aftman_manifest_dirs(home: &Home) -> Result<Vec<PathBuf>> {
+pub async fn discover_rokit_manifest_dirs(home: &Home) -> Result<Vec<PathBuf>> {
     let mut dirs = vec![home.path().to_path_buf()];
 
-    let file_paths = discover_files_recursive(AFTMAN_MANIFEST_FILE_NAME).await?;
+    let file_paths = discover_files_recursive(ROKIT_MANIFEST_FILE_NAME).await?;
     for file_path in file_paths {
         let dir_path = file_path
             .parent()
@@ -45,11 +44,11 @@ pub async fn discover_closest_tool_spec(home: &Home, alias: &ToolAlias) -> Resul
         .await?
         .context("Failed to get current working directory")?;
 
-    let dirs = discover_aftman_manifest_dirs(home).await?;
+    let dirs = discover_rokit_manifest_dirs(home).await?;
     let manifests = dirs
         .iter()
         .map(|dir| async move {
-            let manifest = AftmanManifest::load(&dir)
+            let manifest = RokitManifest::load(&dir)
                 .await
                 .with_context(|| format!("Failed to load manifest at {}", dir.display()))?;
             anyhow::Ok((dir, manifest))

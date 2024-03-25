@@ -51,7 +51,7 @@ impl FromStr for ToolAlias {
         if s.chars().any(char::is_whitespace) {
             return Err(ToolAliasParseError::ContainsWhitespace);
         }
-        if s.eq_ignore_ascii_case("aftman") {
+        if s.eq_ignore_ascii_case("rokit") {
             return Err(ToolAliasParseError::Invalid);
         }
         Ok(Self {

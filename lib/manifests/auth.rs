@@ -3,14 +3,14 @@ use std::{path::Path, str::FromStr};
 use toml_edit::{DocumentMut, Formatted, Item, Value};
 
 use crate::{
-    result::{AftmanError, AftmanResult},
+    result::{RokitError, RokitResult},
     sources::ArtifactProvider,
     util::{load_from_file, save_to_file},
 };
 
 pub const MANIFEST_FILE_NAME: &str = "auth.toml";
 const MANIFEST_DEFAULT_CONTENTS: &str = r#"
-# This file lists authentication tokens managed by Aftman, a cross-platform toolchain manager.
+# This file lists authentication tokens managed by Rokit, a toolchain manager for Roblox projects.
 # For more information, see <|REPOSITORY_URL|>
 
 # github = "ghp_tokenabcdef1234567890"
@@ -19,7 +19,7 @@ const MANIFEST_DEFAULT_CONTENTS: &str = r#"
 /**
     Authentication manifest file.
 
-    Contains authentication tokens managed by Aftman.
+    Contains authentication tokens managed by Rokit.
 */
 #[derive(Debug, Clone)]
 pub struct AuthManifest {
@@ -34,11 +34,11 @@ impl AuthManifest {
 
         See [`AuthManifest::load`] and [`AuthManifest::save`] for more information.
     */
-    pub async fn load_or_create(dir: impl AsRef<Path>) -> AftmanResult<Self> {
+    pub async fn load_or_create(dir: impl AsRef<Path>) -> RokitResult<Self> {
         let path = dir.as_ref().join(MANIFEST_FILE_NAME);
         match load_from_file(path).await {
             Ok(manifest) => Ok(manifest),
-            Err(AftmanError::FileNotFound(_)) => {
+            Err(RokitError::FileNotFound(_)) => {
                 let new = Self::default();
                 new.save(dir).await?;
                 Ok(new)
@@ -53,7 +53,7 @@ impl AuthManifest {
         This will search for a file named `auth.toml` in the given directory.
     */
     #[tracing::instrument(skip(dir), level = "trace")]
-    pub async fn load(dir: impl AsRef<Path>) -> AftmanResult<Self> {
+    pub async fn load(dir: impl AsRef<Path>) -> RokitResult<Self> {
         let path = dir.as_ref().join(MANIFEST_FILE_NAME);
         tracing::trace!(?path, "Loading manifest");
         load_from_file(path).await
@@ -65,7 +65,7 @@ impl AuthManifest {
         This will write the manifest to a file named `auth.toml` in the given directory.
     */
     #[tracing::instrument(skip(self, dir), level = "trace")]
-    pub async fn save(&self, dir: impl AsRef<Path>) -> AftmanResult<()> {
+    pub async fn save(&self, dir: impl AsRef<Path>) -> RokitResult<()> {
         let path = dir.as_ref().join(MANIFEST_FILE_NAME);
         tracing::trace!(?path, "Saving manifest");
         save_to_file(path, self.clone()).await

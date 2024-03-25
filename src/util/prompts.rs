@@ -3,10 +3,10 @@ use std::{
     io::{stderr, IsTerminal},
 };
 
-use aftman::tool::{ToolId, ToolSpec};
 use anyhow::{bail, Context, Result};
 use console::{style, Style};
 use dialoguer::theme::ColorfulTheme;
+use rokit::tool::{ToolId, ToolSpec};
 use tokio::task::spawn_blocking;
 
 #[derive(Debug, Clone, Copy)]
@@ -72,7 +72,7 @@ fn prompt_for_install_trust_inner(kind: TrustPromptKind, tool_id: &ToolId) -> Re
     if !stderr().is_terminal() {
         bail!(
             "The following tool has not been marked as trusted: {tool_id}\
-            \nRun `aftman add {tool_id}` to install and trust this tool.",
+            \nRun `rokit add {tool_id}` to install and trust this tool.",
         );
     }
 

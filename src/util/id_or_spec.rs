@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use serde_with::DeserializeFromStr;
 
-use aftman::tool::{ToolAlias, ToolId, ToolSpec, ToolSpecParseError};
+use rokit::tool::{ToolAlias, ToolId, ToolSpec, ToolSpecParseError};
 
 /**
     A tool identifier *or* specification, which includes

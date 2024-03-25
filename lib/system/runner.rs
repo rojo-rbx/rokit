@@ -45,7 +45,7 @@ fn spawn_signal_task() -> IoResult<JoinHandle<i32>> {
 /**
     Runs the given command with the given arguments and returns its exit code.
 
-    This command is interruptible by passing one of the following signals to Aftman:
+    This command is interruptible by passing one of the following signals to Rokit:
 
     - SIGINT (Ctrl+C)
     - SIGTERM

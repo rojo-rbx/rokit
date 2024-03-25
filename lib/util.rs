@@ -3,23 +3,23 @@ use std::{path::Path, str::FromStr};
 use tokio::fs::{read_to_string, write};
 use tracing::error;
 
-use crate::result::{AftmanError, AftmanResult};
+use crate::result::{RokitError, RokitResult};
 
 /**
     Loads the given type from the file at the given path.
 
     Will return an error if the file does not exist or could not be parsed.
 */
-pub(crate) async fn load_from_file<P, T, E>(path: P) -> AftmanResult<T>
+pub(crate) async fn load_from_file<P, T, E>(path: P) -> RokitResult<T>
 where
     P: AsRef<Path>,
     T: FromStr<Err = E>,
-    E: Into<AftmanError>,
+    E: Into<RokitError>,
 {
     let path = path.as_ref();
     match read_to_string(path).await {
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-            Err(AftmanError::FileNotFound(path.into()))
+            Err(RokitError::FileNotFound(path.into()))
         }
         Err(e) => Err(e.into()),
         Ok(s) => match s.parse() {
@@ -32,7 +32,7 @@ where
 /**
     Saves the given data, stringified, to the file at the given path.
 */
-pub(crate) async fn save_to_file<P, T>(path: P, data: T) -> AftmanResult<()>
+pub(crate) async fn save_to_file<P, T>(path: P, data: T) -> RokitResult<()>
 where
     P: AsRef<Path>,
     T: Clone + ToString,
@@ -49,7 +49,7 @@ where
 pub async fn write_executable_file(
     path: impl AsRef<Path>,
     contents: impl AsRef<[u8]>,
-) -> AftmanResult<()> {
+) -> RokitResult<()> {
     let path = path.as_ref();
 
     if let Err(e) = write(path, contents).await {
@@ -74,7 +74,7 @@ pub async fn write_executable_file(
 pub async fn write_executable_link(
     link_path: impl AsRef<Path>,
     target_path: impl AsRef<Path>,
-) -> AftmanResult<()> {
+) -> RokitResult<()> {
     use tokio::fs::{remove_file, symlink};
 
     let link_path = link_path.as_ref();
@@ -112,12 +112,12 @@ pub async fn write_executable_link(
 pub async fn write_executable_link(
     _link_path: impl AsRef<Path>,
     _target_path: impl AsRef<Path>,
-) -> AftmanResult<()> {
+) -> RokitResult<()> {
     panic!("write_executable_link should only be called on unix systems");
 }
 
 #[cfg(unix)]
-async fn add_executable_permissions(path: impl AsRef<Path>) -> AftmanResult<()> {
+async fn add_executable_permissions(path: impl AsRef<Path>) -> RokitResult<()> {
     use std::fs::Permissions;
     use std::os::unix::fs::PermissionsExt;
     use tokio::fs::set_permissions;
@@ -132,6 +132,6 @@ async fn add_executable_permissions(path: impl AsRef<Path>) -> AftmanResult<()> 
 }
 
 #[cfg(not(unix))]
-async fn add_executable_permissions(_path: impl AsRef<Path>) -> AftmanResult<()> {
+async fn add_executable_permissions(_path: impl AsRef<Path>) -> RokitResult<()> {
     Ok(())
 }

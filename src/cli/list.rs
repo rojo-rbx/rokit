@@ -1,10 +1,10 @@
 use anyhow::Result;
 use clap::Parser;
-
-use aftman::storage::Home;
 use tracing::info;
 
-/// Lists all existing tools managed by Aftman.
+use rokit::storage::Home;
+
+/// Lists all existing tools managed by Rokit.
 #[derive(Debug, Parser)]
 pub struct ListSubcommand {}
 

@@ -2,17 +2,17 @@ use std::env::var;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use crate::result::{AftmanError, AftmanResult};
+use crate::result::{RokitError, RokitResult};
 
 use super::{ToolCache, ToolStorage};
 
 /**
-    Aftman's home directory - this is where Aftman stores its
+    Rokit's home directory - this is where Rokit stores its
     configuration, tools, and other data. Can be cheaply cloned
     while still referring to the same underlying data.
 
-    By default, this is `$HOME/.aftman`, but can be overridden
-    by setting the `AFTMAN_ROOT` environment variable.
+    By default, this is `$HOME/.rokit`, but can be overridden
+    by setting the `ROKIT_ROOT` environment variable.
 */
 #[derive(Debug, Clone)]
 pub struct Home {
@@ -25,7 +25,7 @@ impl Home {
     /**
         Creates a new `Home` from the given path.
     */
-    async fn load_from_path(path: impl Into<PathBuf>) -> AftmanResult<Self> {
+    async fn load_from_path(path: impl Into<PathBuf>) -> RokitResult<Self> {
         let path: Arc<Path> = path.into().into();
 
         let (tool_storage, tool_cache) =
@@ -41,20 +41,19 @@ impl Home {
     /**
         Creates a new `Home` from the environment.
 
-        This will read, and if necessary, create the Aftman home directory
+        This will read, and if necessary, create the Rokit home directory
         and its contents - including trust storage, tools storage, etc.
 
-        If the `AFTMAN_ROOT` environment variable is set, this will use
-        that as the home directory. Otherwise, it will use `$HOME/.aftman`.
+        If the `ROKIT_ROOT` environment variable is set, this will use
+        that as the home directory. Otherwise, it will use `$HOME/.rokit`.
     */
-    pub async fn load_from_env() -> AftmanResult<Self> {
-        Ok(match var("AFTMAN_ROOT") {
+    pub async fn load_from_env() -> RokitResult<Self> {
+        Ok(match var("ROKIT_ROOT") {
             Ok(root_str) => Self::load_from_path(root_str).await?,
             Err(_) => {
                 let path = dirs::home_dir()
-                    .ok_or(AftmanError::HomeNotFound)?
-                    .join(".aftman");
-
+                    .ok_or(RokitError::HomeNotFound)?
+                    .join(".rokit");
                 Self::load_from_path(path).await?
             }
         })
@@ -84,7 +83,7 @@ impl Home {
     /**
         Saves the contents of this `Home` to disk.
     */
-    pub async fn save(&self) -> AftmanResult<()> {
+    pub async fn save(&self) -> RokitResult<()> {
         self.tool_cache.save(&self.path).await?;
         Ok(())
     }
@@ -107,7 +106,7 @@ impl Drop for Home {
         }
         if self.tool_cache.needs_saving() || self.tool_storage.needs_saving() {
             tracing::error!(
-                "Aftman home was dropped without saving!\
+                "Rokit home was dropped without saving!\
                 \nChanges to trust, tools, and more may have been lost."
             );
         }

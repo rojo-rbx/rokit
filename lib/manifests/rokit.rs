@@ -3,43 +3,43 @@ use std::{path::Path, str::FromStr};
 use toml_edit::{DocumentMut, Formatted, Item, Value};
 
 use crate::{
-    result::{AftmanError, AftmanResult},
+    result::{RokitError, RokitResult},
     tool::{ToolAlias, ToolSpec},
     util::{load_from_file, save_to_file},
 };
 
-pub const MANIFEST_FILE_NAME: &str = "aftman.toml";
+pub const MANIFEST_FILE_NAME: &str = "rokit.toml";
 const MANIFEST_DEFAULT_CONTENTS: &str = r#"
-# This file lists tools managed by Aftman, a cross-platform toolchain manager.
+# This file lists tools managed by Rokit, a toolchain manager for Roblox projects.
 # For more information, see <|REPOSITORY_URL|>
 
-# New tools can be added by running `aftman add <tool>` in a terminal.
+# New tools can be added by running `rokit add <tool>` in a terminal.
 [tools]
 "#;
 
 /**
-    Aftman manifest file.
+    Rokit manifest file.
 
-    Lists tools managed by Aftman.
+    Lists tools managed by Rokit.
 */
 #[derive(Debug, Clone)]
-pub struct AftmanManifest {
+pub struct RokitManifest {
     document: DocumentMut,
 }
 
-impl AftmanManifest {
+impl RokitManifest {
     /**
         Loads the manifest from the given directory, or creates a new one if it doesn't exist.
 
         If the manifest doesn't exist, a new one will be created with default contents and saved.
 
-        See [`AftmanManifest::load`] and [`AftmanManifest::save`] for more information.
+        See [`RokitManifest::load`] and [`RokitManifest::save`] for more information.
     */
-    pub async fn load_or_create(dir: impl AsRef<Path>) -> AftmanResult<Self> {
+    pub async fn load_or_create(dir: impl AsRef<Path>) -> RokitResult<Self> {
         let path = dir.as_ref().join(MANIFEST_FILE_NAME);
         match load_from_file(path).await {
             Ok(manifest) => Ok(manifest),
-            Err(AftmanError::FileNotFound(_)) => {
+            Err(RokitError::FileNotFound(_)) => {
                 let new = Self::default();
                 new.save(dir).await?;
                 Ok(new)
@@ -51,10 +51,10 @@ impl AftmanManifest {
     /**
         Loads the manifest from the given directory.
 
-        This will search for a file named `aftman.toml` in the given directory.
+        This will search for a file named `rokit.toml` in the given directory.
     */
     #[tracing::instrument(skip(dir), level = "trace")]
-    pub async fn load(dir: impl AsRef<Path>) -> AftmanResult<Self> {
+    pub async fn load(dir: impl AsRef<Path>) -> RokitResult<Self> {
         let path = dir.as_ref().join(MANIFEST_FILE_NAME);
         tracing::trace!(?path, "Loading manifest");
         load_from_file(path).await
@@ -63,10 +63,10 @@ impl AftmanManifest {
     /**
         Saves the manifest to the given directory.
 
-        This will write the manifest to a file named `aftman.toml` in the given directory.
+        This will write the manifest to a file named `rokit.toml` in the given directory.
     */
     #[tracing::instrument(skip(self, dir), level = "trace")]
-    pub async fn save(&self, dir: impl AsRef<Path>) -> AftmanResult<()> {
+    pub async fn save(&self, dir: impl AsRef<Path>) -> RokitResult<()> {
         let path = dir.as_ref().join(MANIFEST_FILE_NAME);
         tracing::trace!(?path, "Saving manifest");
         save_to_file(path, self.clone()).await
@@ -130,7 +130,7 @@ impl AftmanManifest {
     }
 }
 
-impl FromStr for AftmanManifest {
+impl FromStr for RokitManifest {
     type Err = toml_edit::TomlError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let document = s.parse::<DocumentMut>()?;
@@ -138,13 +138,13 @@ impl FromStr for AftmanManifest {
     }
 }
 
-impl ToString for AftmanManifest {
+impl ToString for RokitManifest {
     fn to_string(&self) -> String {
         self.document.to_string()
     }
 }
 
-impl Default for AftmanManifest {
+impl Default for RokitManifest {
     fn default() -> Self {
         let document = MANIFEST_DEFAULT_CONTENTS
             .replace("<|REPOSITORY_URL|>", env!("CARGO_PKG_REPOSITORY"))

@@ -6,7 +6,7 @@ mod sources;
 mod tracing;
 
 pub use self::discovery::{
-    discover_aftman_manifest_dir, discover_aftman_manifest_dirs, discover_closest_tool_spec,
+    discover_closest_tool_spec, discover_rokit_manifest_dir, discover_rokit_manifest_dirs,
 };
 pub use self::id_or_spec::ToolIdOrSpec;
 pub use self::progress::{finish_progress_bar, new_progress_bar};

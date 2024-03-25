@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
-pub enum AftmanError {
+pub enum RokitError {
     #[error("home directory not found")]
     HomeNotFound,
     #[error("file not found: {0}")]
@@ -24,4 +24,4 @@ pub enum AftmanError {
     Zip(#[from] zip::result::ZipError),
 }
 
-pub type AftmanResult<T> = Result<T, AftmanError>;
+pub type RokitResult<T> = Result<T, RokitError>;

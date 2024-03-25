@@ -5,12 +5,12 @@ use std::{
 
 use tokio::{task::spawn_blocking, time::Instant};
 
-use crate::result::AftmanResult;
+use crate::result::RokitResult;
 
 pub async fn extract_zip_file(
     zip_contents: Vec<u8>,
     desired_file_name: impl Into<String>,
-) -> AftmanResult<Option<Vec<u8>>> {
+) -> RokitResult<Option<Vec<u8>>> {
     let desired_file_name = format!("{}{EXE_SUFFIX}", desired_file_name.into());
     // Reading a zip file is a potentially expensive operation, so
     // spawn it as a blocking task and use the tokio thread pool.

@@ -2,7 +2,7 @@ use std::{env::current_dir, path::PathBuf};
 
 use tokio::task::spawn_blocking;
 
-use crate::result::AftmanResult;
+use crate::result::RokitResult;
 
 /**
     Discovers the given file in the current directory or any of its parents.
@@ -11,7 +11,7 @@ use crate::result::AftmanResult;
 */
 pub async fn discover_file_recursive(
     file_name: impl Into<PathBuf>,
-) -> AftmanResult<Option<PathBuf>> {
+) -> RokitResult<Option<PathBuf>> {
     let file_name = file_name.into();
     spawn_blocking(move || {
         let cwd = current_dir()?;
@@ -43,7 +43,7 @@ pub async fn discover_file_recursive(
     - If the current directory could not be determined
     - If an I/O error occurred while searching for the files
 */
-pub async fn discover_files_recursive(file_name: impl Into<PathBuf>) -> AftmanResult<Vec<PathBuf>> {
+pub async fn discover_files_recursive(file_name: impl Into<PathBuf>) -> RokitResult<Vec<PathBuf>> {
     let file_name = file_name.into();
     spawn_blocking(move || {
         let cwd = current_dir()?;

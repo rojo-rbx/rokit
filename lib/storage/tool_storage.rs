@@ -13,7 +13,7 @@ use tokio::{
 use tracing::debug;
 
 use crate::{
-    result::AftmanResult,
+    result::RokitResult,
     tool::{ToolAlias, ToolSpec},
     util::{write_executable_file, write_executable_link},
 };
@@ -43,11 +43,11 @@ impl ToolStorage {
         (tool_dir, tool_file)
     }
 
-    fn aftman_path(&self) -> PathBuf {
-        self.aliases_dir.join(format!("aftman{EXE_SUFFIX}"))
+    fn rokit_path(&self) -> PathBuf {
+        self.aliases_dir.join(format!("rokit{EXE_SUFFIX}"))
     }
 
-    async fn aftman_contents(&self) -> AftmanResult<Vec<u8>> {
+    async fn rokit_contents(&self) -> RokitResult<Vec<u8>> {
         let mut guard = self.current_exe_contents.lock().await;
         if let Some(contents) = &*guard {
             return Ok(contents.clone());
@@ -73,7 +73,7 @@ impl ToolStorage {
         &self,
         spec: &ToolSpec,
         contents: impl AsRef<[u8]>,
-    ) -> AftmanResult<()> {
+    ) -> RokitResult<()> {
         let (dir_path, file_path) = self.tool_paths(spec);
         create_dir_all(dir_path).await?;
         write_executable_file(&file_path, contents).await?;
@@ -81,7 +81,7 @@ impl ToolStorage {
     }
 
     /**
-        Replaces the contents of the stored aftman binary.
+        Replaces the contents of the stored Rokit binary.
 
         If `contents` is `None`, the current executable will
         be used, otherwise the given contents will be used.
@@ -89,7 +89,7 @@ impl ToolStorage {
         This would also update the cached contents of
         the current executable stored in this struct.
     */
-    pub async fn replace_aftman_contents(&self, contents: Option<Vec<u8>>) -> AftmanResult<()> {
+    pub async fn replace_rokit_contents(&self, contents: Option<Vec<u8>>) -> RokitResult<()> {
         let contents = match contents {
             Some(contents) => {
                 self.current_exe_contents
@@ -98,9 +98,9 @@ impl ToolStorage {
                     .replace(contents.clone());
                 contents
             }
-            None => self.aftman_contents().await?,
+            None => self.rokit_contents().await?,
         };
-        write_executable_file(self.aftman_path(), &contents).await?;
+        write_executable_file(self.rokit_path(), &contents).await?;
         Ok(())
     }
 
@@ -109,53 +109,53 @@ impl ToolStorage {
 
         Note that if the link already exists, it will be overwritten.
     */
-    pub async fn create_tool_link(&self, alias: &ToolAlias) -> AftmanResult<()> {
+    pub async fn create_tool_link(&self, alias: &ToolAlias) -> RokitResult<()> {
         let path = self.aliases_dir.join(alias.name());
-        let contents = self.aftman_contents().await?;
+        let contents = self.rokit_contents().await?;
         write_executable_file(path, &contents).await?;
         Ok(())
     }
 
     /**
         Recreates all known links for tool aliases in the binary directory.
-        This includes the link / main executable for Aftman itself.
+        This includes the link / main executable for Rokit itself.
 
-        Returns a tuple with information about any existing Aftman link:
+        Returns a tuple with information about any existing Rokit link:
 
-        - The first value is `true` if the existing Aftman link was found, `false` otherwise.
-        - The second value is `true` if the existing Aftman link was different compared to the
-          newly written Aftman binary, `false` otherwise. This is useful for determining if
-          the Aftman binary itself existed but was updated, such as during `self-install`.
+        - The first value is `true` if the existing Rokit link was found, `false` otherwise.
+        - The second value is `true` if the existing Rokit link was different compared to the
+          newly written Rokit binary, `false` otherwise. This is useful for determining if
+          the Rokit binary itself existed but was updated, such as during `self-install`.
     */
-    pub async fn recreate_all_links(&self) -> AftmanResult<(bool, bool)> {
-        let contents = self.aftman_contents().await?;
-        let aftman_path = self.aftman_path();
-        let mut aftman_found = false;
+    pub async fn recreate_all_links(&self) -> RokitResult<(bool, bool)> {
+        let contents = self.rokit_contents().await?;
+        let rokit_path = self.rokit_path();
+        let mut rokit_found = false;
 
         let mut link_paths = Vec::new();
         let mut link_reader = read_dir(&self.aliases_dir).await?;
         while let Some(entry) = link_reader.next_entry().await? {
             let path = entry.path();
-            if path != aftman_path {
+            if path != rokit_path {
                 debug!(?path, "Found existing link");
                 link_paths.push(path);
             } else {
-                aftman_found = true;
+                rokit_found = true;
             }
         }
 
-        // Always write the Aftman binary to ensure it's up-to-date
-        let existing_aftman_binary = read(&aftman_path).await.unwrap_or_default();
-        let was_aftman_updated = existing_aftman_binary != contents;
-        write_executable_file(&aftman_path, &contents).await?;
+        // Always write the Rokit binary to ensure it's up-to-date
+        let existing_rokit_binary = read(&rokit_path).await.unwrap_or_default();
+        let was_rokit_updated = existing_rokit_binary != contents;
+        write_executable_file(&rokit_path, &contents).await?;
 
         // Then we can write the rest of the links - on unix we can use
-        // symlinks pointing to the aftman binary to save on disk space.
+        // symlinks pointing to the Rokit binary to save on disk space.
         link_paths
             .into_iter()
             .map(|link_path| async {
                 if cfg!(unix) {
-                    write_executable_link(link_path, &aftman_path).await
+                    write_executable_link(link_path, &rokit_path).await
                 } else {
                     write_executable_file(link_path, &contents).await
                 }
@@ -164,10 +164,10 @@ impl ToolStorage {
             .try_collect::<Vec<_>>()
             .await?;
 
-        Ok((aftman_found, was_aftman_updated))
+        Ok((rokit_found, was_rokit_updated))
     }
 
-    pub(crate) async fn load(home_path: impl AsRef<Path>) -> AftmanResult<Self> {
+    pub(crate) async fn load(home_path: impl AsRef<Path>) -> RokitResult<Self> {
         let home_path = home_path.as_ref();
 
         let tools_dir = home_path.join("tool-storage").into();

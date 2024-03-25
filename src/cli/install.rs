@@ -3,16 +3,16 @@ use std::collections::BTreeSet;
 use anyhow::{Context, Result};
 use clap::Parser;
 
-use aftman::{description::Description, manifests::AftmanManifest, storage::Home};
 use console::style;
 use futures::{stream::FuturesUnordered, TryStreamExt};
+use rokit::{description::Description, manifests::RokitManifest, storage::Home};
 
 use crate::util::{
-    discover_aftman_manifest_dirs, finish_progress_bar, github_tool_source, new_progress_bar,
+    discover_rokit_manifest_dirs, finish_progress_bar, github_tool_source, new_progress_bar,
     prompt_for_trust_specs,
 };
 
-/// Adds a new tool to Aftman and installs it.
+/// Adds a new tool using Rokit and installs it.
 #[derive(Debug, Parser)]
 pub struct InstallSubcommand {
     /// Skip checking if tools have been trusted before.
@@ -27,10 +27,8 @@ pub struct InstallSubcommand {
 impl InstallSubcommand {
     pub async fn run(&self, home: &Home) -> Result<()> {
         let force = self.force;
-        let (manifest_paths, source) = tokio::try_join!(
-            discover_aftman_manifest_dirs(home),
-            github_tool_source(home)
-        )?;
+        let (manifest_paths, source) =
+            tokio::try_join!(discover_rokit_manifest_dirs(home), github_tool_source(home))?;
 
         let tool_cache = home.tool_cache();
         let tool_storage = home.tool_storage();
@@ -40,7 +38,7 @@ impl InstallSubcommand {
 
         let manifests = manifest_paths
             .iter()
-            .map(AftmanManifest::load)
+            .map(RokitManifest::load)
             .collect::<FuturesUnordered<_>>()
             .try_collect::<Vec<_>>()
             .await

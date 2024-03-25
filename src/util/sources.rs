@@ -1,6 +1,6 @@
 use anyhow::Result;
 
-use aftman::{
+use rokit::{
     manifests::AuthManifest,
     sources::{ArtifactProvider, GitHubSource},
     storage::Home,
