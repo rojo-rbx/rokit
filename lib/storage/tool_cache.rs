@@ -160,8 +160,7 @@ impl ToolCache {
     pub(crate) async fn save(&self, home_path: impl AsRef<Path>) -> AftmanResult<()> {
         let start = Instant::now();
         let path = Self::path(home_path);
-        let this = self.clone();
-        save_impl(path.clone(), this).await?;
+        save_impl(path.clone(), self).await?;
         trace!(?path, elapsed = ?start.elapsed(), "Saved tool cache");
         Ok(())
     }
@@ -184,7 +183,15 @@ async fn load_impl(path: PathBuf) -> AftmanResult<ToolCache> {
 }
 
 // Same as in our load implementation, see notes above.
-async fn save_impl(path: PathBuf, cache: ToolCache) -> AftmanResult<()> {
+async fn save_impl(path: PathBuf, cache: &ToolCache) -> AftmanResult<()> {
+    // NOTE: We save using sorted json arrays here, which is
+    // compatible with the deserialize implementation for DashSet,
+    // while also being easier to read for any human inspectors.
+    let json = serde_json::json!({
+        "trusted": cache.all_trusted(),
+        "installed": cache.all_installed(),
+    });
+
     spawn_blocking(move || {
         use std::{
             fs::{create_dir_all, File},
@@ -192,9 +199,10 @@ async fn save_impl(path: PathBuf, cache: ToolCache) -> AftmanResult<()> {
         };
         create_dir_all(path.parent().unwrap())?;
         let writer = BufWriter::new(File::create(path)?);
-        serde_json::to_writer(writer, &cache)?;
+        serde_json::to_writer(writer, &json)?;
         Ok::<_, Error>(())
     })
     .await??;
+
     Ok(())
 }
