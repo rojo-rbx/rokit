@@ -3,7 +3,7 @@ use std::time::Duration;
 use indicatif::{ProgressBar, ProgressStyle};
 
 const PROGRESS_BAR_TEMPLATE: &str =
-    "{spinner:.bold.cyan} {msg:>11.bold.cyan} [{bar:32}] {pos} / {len}";
+    "{spinner:.bold.cyan} {msg:11.bold.cyan} [{bar:.bold}] {pos:>2} / {len:2}";
 const PROGRESS_BAR_CHARACTERS: &str = "=> ";
 const PROGRESS_BAR_TICKERS: &str = "⠙⠹⠸⠼⠴⠦⠧⠇⠏ ";
 
