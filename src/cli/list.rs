@@ -2,6 +2,7 @@ use anyhow::Result;
 use clap::Parser;
 
 use aftman::storage::Home;
+use tracing::info;
 
 /// Lists all existing tools managed by Aftman.
 #[derive(Debug, Parser)]
@@ -17,9 +18,10 @@ impl ListSubcommand {
             .collect::<Vec<_>>();
 
         if tools.is_empty() {
-            println!("No tools installed.");
+            info!("No tools installed.");
         } else {
-            println!("Installed tools:\n");
+            let mut lines = vec![String::from("Installed tools:\n")];
+
             for (id, mut versions) in tools {
                 versions.reverse(); // List newest versions first
 
@@ -29,8 +31,11 @@ impl ListSubcommand {
                     .collect::<Vec<_>>()
                     .join(", ");
 
-                println!("{id}\n  {vers}");
+                lines.push(id.to_string());
+                lines.push(format!("  {vers}"));
             }
+
+            info!("{}", lines.join("\n"));
         }
 
         Ok(())

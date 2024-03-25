@@ -1,5 +1,6 @@
 use anyhow::{bail, Result};
 use clap::Parser;
+use tracing::info;
 
 use aftman::{storage::Home, tool::ToolId};
 
@@ -22,17 +23,30 @@ impl TrustSubcommand {
             .into_iter()
             .partition::<Vec<_>, _>(|tool| cache.add_tool(tool.clone()));
 
-        if !added_tools.is_empty() {
-            println!("The following tools have been marked as trusted:");
-            for tool in added_tools {
-                println!("  - {tool}");
+        if added_tools.len() == 1 && existing_tools.is_empty() {
+            info!("Tool has been marked as trusted: {}", added_tools[0]);
+        } else if existing_tools.len() == 1 && added_tools.is_empty() {
+            info!("Tool was already trusted: {}", existing_tools[0]);
+        } else {
+            let mut lines = Vec::new();
+
+            if !added_tools.is_empty() {
+                lines.push(String::from(
+                    "The following tools have been marked as trusted:",
+                ));
+                for tool in added_tools {
+                    lines.push(format!("  - {tool}"));
+                }
             }
-        }
-        if !existing_tools.is_empty() {
-            println!("The following tools were already trusted:");
-            for tool in existing_tools {
-                println!("  - {tool}");
+
+            if !existing_tools.is_empty() {
+                lines.push(String::from("The following tools were already trusted:"));
+                for tool in existing_tools {
+                    lines.push(format!("  - {tool}"));
+                }
             }
+
+            info!("{}", lines.join("\n"));
         }
 
         Ok(())
