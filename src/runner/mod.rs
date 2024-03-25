@@ -43,14 +43,33 @@ impl Runner {
 
 impl Default for Runner {
     fn default() -> Self {
-        let arg0 = args().next().unwrap();
+        let arg0 = args()
+            .next()
+            .expect("Arg0 was not passed to Rokit - no tool can run");
+
         let exe_path = PathBuf::from(arg0);
         let exe_name = exe_path
             .file_name()
             .expect("Invalid file name passed as arg0")
             .to_str()
-            .expect("Non-UTF8 file name passed as arg0")
-            .trim_end_matches(EXE_EXTENSION);
+            .expect("Non-UTF8 file name passed as arg0");
+
+        // NOTE: Shells on Windows can be weird sometimes and pass arg0
+        // using either a lowercase or uppercase extension, so we fix that
+        let exe_name = if !EXE_EXTENSION.is_empty() {
+            let suffix_lower = EXE_EXTENSION.to_ascii_lowercase();
+            let suffix_upper = EXE_EXTENSION.to_ascii_uppercase();
+            if let Some(stripped) = exe_name.strip_suffix(&suffix_lower) {
+                stripped
+            } else if let Some(stripped) = exe_name.strip_suffix(&suffix_upper) {
+                stripped
+            } else {
+                exe_name
+            }
+        } else {
+            exe_name
+        };
+
         Self {
             exe_name: exe_name.to_string(),
         }
