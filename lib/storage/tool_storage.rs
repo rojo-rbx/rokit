@@ -10,10 +10,12 @@ use tokio::{
     sync::Mutex as AsyncMutex,
     task::spawn_blocking,
 };
+use tracing::debug;
 
 use crate::{
     result::AftmanResult,
     tool::{ToolAlias, ToolSpec},
+    util::{write_executable_file, write_executable_link},
 };
 
 /**
@@ -74,7 +76,7 @@ impl ToolStorage {
     ) -> AftmanResult<()> {
         let (dir_path, file_path) = self.tool_paths(spec);
         create_dir_all(dir_path).await?;
-        write_executable(&file_path, contents).await?;
+        write_executable_file(&file_path, contents).await?;
         Ok(())
     }
 
@@ -98,7 +100,7 @@ impl ToolStorage {
             }
             None => self.aftman_contents().await?,
         };
-        write_executable(self.aftman_path(), &contents).await?;
+        write_executable_file(self.aftman_path(), &contents).await?;
         Ok(())
     }
 
@@ -110,17 +112,22 @@ impl ToolStorage {
     pub async fn create_tool_link(&self, alias: &ToolAlias) -> AftmanResult<()> {
         let path = self.aliases_dir.join(alias.name());
         let contents = self.aftman_contents().await?;
-        write_executable(path, &contents).await?;
+        write_executable_file(path, &contents).await?;
         Ok(())
     }
 
     /**
         Recreates all known links for tool aliases in the binary directory.
+        This includes the link / main executable for Aftman itself.
 
-        This includes the link for Aftman itself - and if the link for Aftman does
-        not exist, `true` will be returned to indicate that the link was created.
+        Returns a tuple with information about any existing Aftman link:
+
+        - The first value is `true` if the existing Aftman link was found, `false` otherwise.
+        - The second value is `true` if the existing Aftman link was different compared to the
+          newly written Aftman binary, `false` otherwise. This is useful for determining if
+          the Aftman binary itself existed but was updated, such as during `self-install`.
     */
-    pub async fn recreate_all_links(&self) -> AftmanResult<bool> {
+    pub async fn recreate_all_links(&self) -> AftmanResult<(bool, bool)> {
         let contents = self.aftman_contents().await?;
         let aftman_path = self.aftman_path();
         let mut aftman_found = false;
@@ -130,6 +137,7 @@ impl ToolStorage {
         while let Some(entry) = link_reader.next_entry().await? {
             let path = entry.path();
             if path != aftman_path {
+                debug!(?path, "Found existing link");
                 link_paths.push(path);
             } else {
                 aftman_found = true;
@@ -137,7 +145,9 @@ impl ToolStorage {
         }
 
         // Always write the Aftman binary to ensure it's up-to-date
-        write_executable(&aftman_path, &contents).await?;
+        let existing_aftman_binary = read(&aftman_path).await.unwrap_or_default();
+        let was_aftman_updated = existing_aftman_binary != contents;
+        write_executable_file(&aftman_path, &contents).await?;
 
         // Then we can write the rest of the links - on unix we can use
         // symlinks pointing to the aftman binary to save on disk space.
@@ -147,14 +157,14 @@ impl ToolStorage {
                 if cfg!(unix) {
                     write_executable_link(link_path, &aftman_path).await
                 } else {
-                    write_executable(link_path, &contents).await
+                    write_executable_file(link_path, &contents).await
                 }
             })
             .collect::<FuturesUnordered<_>>()
             .try_collect::<Vec<_>>()
             .await?;
 
-        Ok(!aftman_found)
+        Ok((aftman_found, was_aftman_updated))
     }
 
     pub(crate) async fn load(home_path: impl AsRef<Path>) -> AftmanResult<Self> {
@@ -181,47 +191,4 @@ impl ToolStorage {
             aliases_dir,
         })
     }
-}
-
-async fn write_executable(path: impl AsRef<Path>, contents: impl AsRef<[u8]>) -> AftmanResult<()> {
-    let path = path.as_ref();
-
-    use tokio::fs::write;
-    write(path, contents).await?;
-
-    #[cfg(unix)]
-    {
-        use std::fs::Permissions;
-        use std::os::unix::fs::PermissionsExt;
-        use tokio::fs::set_permissions;
-        set_permissions(path, Permissions::from_mode(0o755)).await?;
-    }
-
-    Ok(())
-}
-
-async fn write_executable_link(
-    link_path: impl AsRef<Path>,
-    target_path: impl AsRef<Path>,
-) -> AftmanResult<()> {
-    let link_path = link_path.as_ref();
-    let target_path = target_path.as_ref();
-
-    #[cfg(unix)]
-    {
-        use tokio::fs::symlink;
-        symlink(target_path, link_path).await?;
-    }
-
-    // NOTE: We set the permissions of the symlink itself only on macOS
-    // since that is the only supported OS where symlink permissions matter
-    #[cfg(target_os = "macos")]
-    {
-        use std::fs::Permissions;
-        use std::os::unix::fs::PermissionsExt;
-        use tokio::fs::set_permissions;
-        set_permissions(link_path, Permissions::from_mode(0o755)).await?;
-    }
-
-    Ok(())
 }

@@ -7,11 +7,13 @@ use aftman::storage::Home;
 mod add;
 mod install;
 mod list;
+mod self_install;
 mod trust;
 
 use self::add::AddSubcommand;
 use self::install::InstallSubcommand;
 use self::list::ListSubcommand;
+use self::self_install::SelfInstallSubcommand;
 use self::trust::TrustSubcommand;
 
 #[derive(Debug, Parser)]
@@ -64,18 +66,20 @@ impl Cli {
 #[derive(Debug, Parser)]
 pub enum Subcommand {
     Add(AddSubcommand),
-    List(ListSubcommand),
-    Trust(TrustSubcommand),
     Install(InstallSubcommand),
+    List(ListSubcommand),
+    SelfInstall(SelfInstallSubcommand),
+    Trust(TrustSubcommand),
 }
 
 impl Subcommand {
     pub async fn run(self, home: &Home) -> Result<()> {
         match self {
             Self::Add(cmd) => cmd.run(home).await,
-            Self::List(cmd) => cmd.run(home).await,
-            Self::Trust(cmd) => cmd.run(home).await,
             Self::Install(cmd) => cmd.run(home).await,
+            Self::List(cmd) => cmd.run(home).await,
+            Self::SelfInstall(cmd) => cmd.run(home).await,
+            Self::Trust(cmd) => cmd.run(home).await,
         }
     }
 }
