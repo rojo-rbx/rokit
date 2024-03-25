@@ -3,7 +3,7 @@ use clap::Parser;
 use console::style;
 
 use rokit::{
-    description::Description,
+    descriptor::Descripor,
     manifests::RokitManifest,
     storage::Home,
     tool::{ToolAlias, ToolId},
@@ -97,7 +97,7 @@ impl AddSubcommand {
         manifest.save(manifest_path).await?;
 
         // 5. Download and install the tool
-        let description = Description::current();
+        let description = Descripor::current_system();
         if !tool_cache.is_installed(&spec) || self.force {
             pb.set_message("Downloading");
             let release = source

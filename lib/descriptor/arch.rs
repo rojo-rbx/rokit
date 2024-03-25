@@ -32,7 +32,7 @@ impl Arch {
     /**
         Get the architecture of the current host system.
     */
-    pub fn current() -> Self {
+    pub fn current_system() -> Self {
         match CURRENT_ARCH {
             "aarch64" => Self::Arm64,
             "x86_64" => Self::X64,
@@ -96,7 +96,7 @@ mod tests {
 
     #[test]
     fn current_arch() {
-        let arch = Arch::current();
+        let arch = Arch::current_system();
         if cfg!(target_arch = "aarch64") {
             assert_eq!(arch, Arch::Arm64);
         } else if cfg!(target_arch = "x86_64") {

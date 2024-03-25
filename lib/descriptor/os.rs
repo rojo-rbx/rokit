@@ -22,7 +22,7 @@ impl OS {
     /**
         Get the operating system of the current host system.
     */
-    pub fn current() -> Self {
+    pub fn current_system() -> Self {
         match CURRENT_OS {
             "windows" => Self::Windows,
             "macos" => Self::MacOS,
@@ -68,7 +68,7 @@ mod tests {
 
     #[test]
     fn current_os() {
-        let os = OS::current();
+        let os = OS::current_system();
         if cfg!(target_os = "windows") {
             assert_eq!(os, OS::Windows);
         } else if cfg!(target_os = "macos") {

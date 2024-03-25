@@ -13,7 +13,7 @@ use tokio::time::sleep;
 use tracing::{debug, info, instrument};
 
 use crate::{
-    description::Description,
+    descriptor::Descripor,
     tool::{ToolId, ToolSpec},
 };
 
@@ -201,13 +201,13 @@ impl GitHubSource {
         &self,
         tool_spec: &ToolSpec,
         release: &Release,
-        description: &Description,
+        description: &Descripor,
     ) -> Vec<Artifact> {
         let mut compatible_artifacts = release
             .assets
             .iter()
             .filter_map(|asset| {
-                if let Some(asset_desc) = Description::detect(asset.name.as_str()) {
+                if let Some(asset_desc) = Descripor::detect(asset.name.as_str()) {
                     if description.is_compatible_with(&asset_desc) {
                         let artifact = Artifact::from_github_release_asset(asset, tool_spec);
                         Some((asset_desc, artifact))

@@ -5,7 +5,7 @@ use clap::Parser;
 
 use console::style;
 use futures::{stream::FuturesUnordered, TryStreamExt};
-use rokit::{description::Description, manifests::RokitManifest, storage::Home};
+use rokit::{descriptor::Descripor, manifests::RokitManifest, storage::Home};
 
 use crate::util::{
     discover_rokit_manifest_dirs, finish_progress_bar, github_tool_source, new_progress_bar,
@@ -32,7 +32,7 @@ impl InstallSubcommand {
 
         let tool_cache = home.tool_cache();
         let tool_storage = home.tool_storage();
-        let description = Description::current();
+        let description = Descripor::current_system();
 
         // 1. Gather tool specifications from all known manifests
 

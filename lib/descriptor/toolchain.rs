@@ -20,7 +20,7 @@ impl Toolchain {
     /**
         Get the toolchain of the current host system.
     */
-    pub fn current() -> Option<Self> {
+    pub fn current_system() -> Option<Self> {
         None // TODO: Implement detection of the host toolchain
     }
 

@@ -1,6 +1,6 @@
 pub(crate) mod util;
 
-pub mod description;
+pub mod descriptor;
 pub mod manifests;
 pub mod result;
 pub mod sources;
