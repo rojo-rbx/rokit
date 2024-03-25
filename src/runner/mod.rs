@@ -12,27 +12,21 @@ use aftman::{storage::Home, system::run_interruptible, tool::ToolAlias};
 use crate::util::discover_closest_tool_spec;
 
 #[derive(Debug, Clone)]
-pub struct Runner;
+pub struct Runner {
+    exe_name: String,
+}
 
 impl Runner {
     pub fn new() -> Self {
-        Self
+        Self::default()
     }
 
-    pub fn arg0_file_name(&self) -> String {
-        let arg0 = args().next().unwrap();
-        let exe_path = PathBuf::from(arg0);
-        let exe_name = exe_path
-            .file_name()
-            .expect("Invalid file name passed as arg0")
-            .to_str()
-            .expect("Non-UTF8 file name passed as arg0")
-            .trim_end_matches(EXE_EXTENSION);
-        exe_name.to_string()
+    pub fn should_run(&self) -> bool {
+        self.exe_name != "aftman"
     }
 
-    pub async fn run(&self, alias: impl AsRef<str>) -> Result<()> {
-        let alias = ToolAlias::from_str(alias.as_ref())?;
+    pub async fn run(&self) -> Result<()> {
+        let alias = ToolAlias::from_str(&self.exe_name)?;
 
         let home = Home::load_from_env().await?;
 
@@ -49,5 +43,21 @@ impl Runner {
         home.save().await?;
 
         exit(result?);
+    }
+}
+
+impl Default for Runner {
+    fn default() -> Self {
+        let arg0 = args().next().unwrap();
+        let exe_path = PathBuf::from(arg0);
+        let exe_name = exe_path
+            .file_name()
+            .expect("Invalid file name passed as arg0")
+            .to_str()
+            .expect("Non-UTF8 file name passed as arg0")
+            .trim_end_matches(EXE_EXTENSION);
+        Self {
+            exe_name: exe_name.to_string(),
+        }
     }
 }

@@ -1,7 +1,8 @@
-use aftman::storage::Home;
 use anyhow::{Context, Result};
 use clap::Parser;
 use tokio::time::Instant;
+
+use aftman::storage::Home;
 
 mod add;
 mod install;

@@ -16,9 +16,8 @@ async fn main() {
     init_tracing();
 
     let runner = Runner::new();
-    let exe_name = runner.arg0_file_name();
-    let result = if exe_name != "aftman" {
-        runner.run(exe_name).await
+    let result = if runner.should_run() {
+        runner.run().await
     } else {
         Cli::parse().run().await
     };
