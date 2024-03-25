@@ -1,5 +1,5 @@
 use std::{
-    env::{consts::EXE_SUFFIX, current_exe},
+    env::consts::EXE_SUFFIX,
     path::{Path, PathBuf},
     sync::Arc,
 };
@@ -8,12 +8,12 @@ use futures::{stream::FuturesUnordered, TryStreamExt};
 use tokio::{
     fs::{create_dir_all, read, read_dir},
     sync::Mutex as AsyncMutex,
-    task::spawn_blocking,
 };
 use tracing::debug;
 
 use crate::{
     result::RokitResult,
+    system::current_exe_contents,
     tool::{ToolAlias, ToolSpec},
     util::{write_executable_file, write_executable_link},
 };
@@ -28,8 +28,7 @@ use crate::{
 pub struct ToolStorage {
     pub(super) tools_dir: Arc<Path>,
     pub(super) aliases_dir: Arc<Path>,
-    current_exe_path: Arc<Path>,
-    current_exe_contents: Arc<AsyncMutex<Option<Vec<u8>>>>,
+    current_rokit_contents: Arc<AsyncMutex<Option<Vec<u8>>>>,
 }
 
 impl ToolStorage {
@@ -48,11 +47,11 @@ impl ToolStorage {
     }
 
     async fn rokit_contents(&self) -> RokitResult<Vec<u8>> {
-        let mut guard = self.current_exe_contents.lock().await;
+        let mut guard = self.current_rokit_contents.lock().await;
         if let Some(contents) = &*guard {
             return Ok(contents.clone());
         }
-        let contents = read(&self.current_exe_path).await?;
+        let contents = current_exe_contents().await;
         *guard = Some(contents.clone());
         Ok(contents)
     }
@@ -92,7 +91,7 @@ impl ToolStorage {
     pub async fn replace_rokit_contents(&self, contents: Option<Vec<u8>>) -> RokitResult<()> {
         let contents = match contents {
             Some(contents) => {
-                self.current_exe_contents
+                self.current_rokit_contents
                     .lock()
                     .await
                     .replace(contents.clone());
@@ -178,22 +177,14 @@ impl ToolStorage {
         let tools_dir = home_path.join("tool-storage").into();
         let aliases_dir = home_path.join("bin").into();
 
-        let (_, _, current_exe_res) = tokio::try_join!(
-            create_dir_all(&tools_dir),
-            create_dir_all(&aliases_dir),
-            // NOTE: A call to current_exe is blocking on some
-            // platforms, so we spawn it in a blocking task here.
-            async { Ok(spawn_blocking(current_exe).await?) },
-        )?;
+        tokio::try_join!(create_dir_all(&tools_dir), create_dir_all(&aliases_dir))?;
 
-        let current_exe_path = current_exe_res?.into();
-        let current_exe_contents = Arc::new(AsyncMutex::new(None));
+        let current_rokit_contents = Arc::new(AsyncMutex::new(None));
 
         Ok(Self {
-            current_exe_path,
-            current_exe_contents,
             tools_dir,
             aliases_dir,
+            current_rokit_contents,
         })
     }
 

@@ -1,14 +1,14 @@
-use std::{env::current_dir, path::PathBuf};
+use std::path::PathBuf;
 
 use anyhow::{Context, Result};
 use futures::{stream::FuturesUnordered, TryStreamExt};
-use tokio::task::spawn_blocking;
 
 use rokit::{
     manifests::{
         discover_file_recursive, discover_files_recursive, RokitManifest, ROKIT_MANIFEST_FILE_NAME,
     },
     storage::Home,
+    system::current_dir,
     tool::{ToolAlias, ToolSpec},
 };
 
@@ -40,10 +40,7 @@ pub async fn discover_rokit_manifest_dirs(home: &Home) -> Result<Vec<PathBuf>> {
 }
 
 pub async fn discover_closest_tool_spec(home: &Home, alias: &ToolAlias) -> Result<ToolSpec> {
-    let cwd = spawn_blocking(current_dir)
-        .await?
-        .context("Failed to get current working directory")?;
-
+    let cwd = current_dir().await;
     let dirs = discover_rokit_manifest_dirs(home).await?;
     let manifests = dirs
         .iter()

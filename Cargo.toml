@@ -22,6 +22,7 @@ zip = "0.6"
 
 # Async / runtime dependencies
 
+async-once-cell = "0.5"
 async-signal = "0.2"
 futures = "0.3"
 http = "1.1"

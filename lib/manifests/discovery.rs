@@ -1,8 +1,8 @@
-use std::{env::current_dir, path::PathBuf};
+use std::path::PathBuf;
 
 use tokio::task::spawn_blocking;
 
-use crate::result::RokitResult;
+use crate::{result::RokitResult, system::current_dir};
 
 /**
     Discovers the given file in the current directory or any of its parents.
@@ -13,17 +13,17 @@ pub async fn discover_file_recursive(
     file_name: impl Into<PathBuf>,
 ) -> RokitResult<Option<PathBuf>> {
     let file_name = file_name.into();
+    let cwd = current_dir().await;
     spawn_blocking(move || {
-        let cwd = current_dir()?;
-        let mut current_dir = cwd.as_path();
+        let mut current = cwd.as_path();
         loop {
-            let file_path = current_dir.join(&file_name);
+            let file_path = current.join(&file_name);
             if file_path.is_file() {
                 return Ok(Some(file_path));
             }
 
-            match current_dir.parent() {
-                Some(parent) => current_dir = parent,
+            match current.parent() {
+                Some(parent) => current = parent,
                 None => break,
             }
         }
@@ -45,18 +45,18 @@ pub async fn discover_file_recursive(
 */
 pub async fn discover_files_recursive(file_name: impl Into<PathBuf>) -> RokitResult<Vec<PathBuf>> {
     let file_name = file_name.into();
+    let cwd = current_dir().await;
     spawn_blocking(move || {
-        let cwd = current_dir()?;
-        let mut current_dir = cwd.as_path();
+        let mut current = cwd.as_path();
         let mut files = Vec::new();
         loop {
-            let file_path = current_dir.join(&file_name);
+            let file_path = current.join(&file_name);
             if file_path.is_file() {
                 files.push(file_path);
             }
 
-            match current_dir.parent() {
-                Some(parent) => current_dir = parent,
+            match current.parent() {
+                Some(parent) => current = parent,
                 None => break,
             }
         }
