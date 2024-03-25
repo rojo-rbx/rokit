@@ -5,7 +5,7 @@ use toml_edit::{DocumentMut, Formatted, Item, Value};
 use crate::{
     result::{AftmanError, AftmanResult},
     tool::{ToolAlias, ToolSpec},
-    util::{load_from_file_fallible, save_to_file},
+    util::{load_from_file, save_to_file},
 };
 
 pub const MANIFEST_FILE_NAME: &str = "aftman.toml";
@@ -37,7 +37,7 @@ impl AftmanManifest {
     */
     pub async fn load_or_create(dir: impl AsRef<Path>) -> AftmanResult<Self> {
         let path = dir.as_ref().join(MANIFEST_FILE_NAME);
-        match load_from_file_fallible(path).await {
+        match load_from_file(path).await {
             Ok(manifest) => Ok(manifest),
             Err(AftmanError::FileNotFound(_)) => {
                 let new = Self::default();
@@ -57,7 +57,7 @@ impl AftmanManifest {
     pub async fn load(dir: impl AsRef<Path>) -> AftmanResult<Self> {
         let path = dir.as_ref().join(MANIFEST_FILE_NAME);
         tracing::trace!(?path, "Loading manifest");
-        load_from_file_fallible(path).await
+        load_from_file(path).await
     }
 
     /**

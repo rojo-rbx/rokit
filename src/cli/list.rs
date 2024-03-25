@@ -10,11 +10,11 @@ pub struct ListSubcommand {}
 
 impl ListSubcommand {
     pub async fn run(&self, home: &Home) -> Result<()> {
-        let cache = home.install_cache();
+        let cache = home.tool_cache();
         let tools = cache
-            .all_ids()
+            .all_installed_ids()
             .into_iter()
-            .map(|id| (id.clone(), cache.all_versions_for_id(&id)))
+            .map(|id| (id.clone(), cache.all_installed_versions_for_id(&id)))
             .collect::<Vec<_>>();
 
         if tools.is_empty() {

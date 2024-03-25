@@ -17,11 +17,11 @@ impl TrustSubcommand {
             bail!("Please provide at least one tool to trust.");
         }
 
-        let cache = home.trust_cache();
+        let cache = home.tool_cache();
         let (added_tools, existing_tools) = self
             .tools
             .into_iter()
-            .partition::<Vec<_>, _>(|tool| cache.add_tool(tool.clone()));
+            .partition::<Vec<_>, _>(|tool| cache.add_trust(tool.clone()));
 
         if added_tools.len() == 1 && existing_tools.is_empty() {
             info!("Tool has been marked as trusted: {}", added_tools[0]);

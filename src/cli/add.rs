@@ -39,13 +39,15 @@ impl AddSubcommand {
             None => self.tool.clone().into(),
         };
 
+        let tool_cache = home.tool_cache();
+        let tool_storage = home.tool_storage();
+
         // Check for trust, or prompt the user to trust the tool
-        let trust_cache = home.trust_cache();
-        if !trust_cache.is_trusted(&id) {
+        if !tool_cache.is_trusted(&id) {
             if !self.force && !prompt_for_install_trust(&id).await? {
                 bail!("Tool is not trusted - installation was aborted");
             }
-            trust_cache.add_tool(id.clone());
+            tool_cache.add_trust(id.clone());
         }
 
         // Load tool source, manifest, and do a preflight check
@@ -95,9 +97,7 @@ impl AddSubcommand {
 
         // Install the tool and create the link for its alias
         let description = Description::current();
-        let install_cache = home.install_cache();
-        let tool_storage = home.tool_storage();
-        if !install_cache.is_installed(&spec) || self.force {
+        if !tool_cache.is_installed(&spec) || self.force {
             pb.set_message("Downloading");
             let release = source
                 .find_release(&spec)
@@ -124,7 +124,7 @@ impl AddSubcommand {
             tool_storage.replace_tool_contents(&spec, extracted).await?;
             pb.inc(1);
 
-            install_cache.add_spec(spec.clone());
+            tool_cache.add_installed(spec.clone());
         } else {
             pb.inc(4);
         }

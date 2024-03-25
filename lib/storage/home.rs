@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use crate::result::{AftmanError, AftmanResult};
 
-use super::{InstallCache, ToolStorage, TrustCache};
+use super::{ToolCache, ToolStorage};
 
 /**
     Aftman's home directory - this is where Aftman stores its
@@ -19,9 +19,8 @@ use super::{InstallCache, ToolStorage, TrustCache};
 pub struct Home {
     path: Arc<Path>,
     did_save: Arc<AtomicBool>,
-    trust_cache: TrustCache,
-    install_cache: InstallCache,
     tool_storage: ToolStorage,
+    tool_cache: ToolCache,
 }
 
 impl Home {
@@ -32,18 +31,14 @@ impl Home {
         let path: Arc<Path> = path.into().into();
         let did_save = Arc::new(AtomicBool::new(false));
 
-        let (trust_cache, install_cache, tool_storage) = tokio::try_join!(
-            TrustCache::load(&path),
-            InstallCache::load(&path),
-            ToolStorage::load(&path),
-        )?;
+        let (tool_storage, tool_cache) =
+            tokio::try_join!(ToolStorage::load(&path), ToolCache::load(&path))?;
 
         Ok(Self {
             path,
             did_save,
-            trust_cache,
-            install_cache,
             tool_storage,
+            tool_cache,
         })
     }
 
@@ -77,20 +72,6 @@ impl Home {
     }
 
     /**
-        Returns a reference to the `TrustCache` for this `Home`.
-    */
-    pub fn trust_cache(&self) -> &TrustCache {
-        &self.trust_cache
-    }
-
-    /**
-        Returns a reference to the `InstallCache` for this `Home`.
-    */
-    pub fn install_cache(&self) -> &InstallCache {
-        &self.install_cache
-    }
-
-    /**
         Returns a reference to the `ToolStorage` for this `Home`.
     */
     pub fn tool_storage(&self) -> &ToolStorage {
@@ -98,13 +79,17 @@ impl Home {
     }
 
     /**
+        Returns a reference to the `ToolCache` for this `Home`.
+    */
+    pub fn tool_cache(&self) -> &ToolCache {
+        &self.tool_cache
+    }
+
+    /**
         Saves the contents of this `Home` to disk.
     */
     pub async fn save(&self) -> AftmanResult<()> {
-        tokio::try_join!(
-            self.trust_cache.save(&self.path),
-            self.install_cache.save(&self.path),
-        )?;
+        self.tool_cache.save(&self.path).await?;
         self.did_save.store(true, Ordering::SeqCst);
         Ok(())
     }

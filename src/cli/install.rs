@@ -32,6 +32,10 @@ impl InstallSubcommand {
             github_tool_source(home)
         )?;
 
+        let tool_cache = home.tool_cache();
+        let tool_storage = home.tool_storage();
+        let description = Description::current();
+
         // 1. Gather tool specifications from all known manifests
 
         let manifests = manifest_paths
@@ -53,12 +57,11 @@ impl InstallSubcommand {
             tools
         } else {
             let mut trusted_specs = Vec::new();
-            let trust_cache = home.trust_cache();
             for (tool_alias, tool_spec) in tools {
                 let tool_id = tool_spec.clone().into_id();
-                if !trust_cache.is_trusted(&tool_id) {
+                if !tool_cache.is_trusted(&tool_id) {
                     if prompt_for_install_trust(&tool_id).await? {
-                        trust_cache.add_tool(tool_id);
+                        tool_cache.add_trust(tool_id);
                         trusted_specs.push((tool_alias, tool_spec));
                     }
                 } else {
@@ -80,15 +83,11 @@ impl InstallSubcommand {
 
         // 3. Find artifacts, download and install them
 
-        let description = Description::current();
-        let install_cache = home.install_cache();
-        let tool_storage = home.tool_storage();
-
         let pb = new_progress_bar("Installing", tool_specs.len());
         let artifacts = tool_specs
             .into_iter()
             .map(|tool_spec| async {
-                if install_cache.is_installed(&tool_spec) && !force {
+                if tool_cache.is_installed(&tool_spec) && !force {
                     pb.inc(1);
                     // HACK: Force the async closure to take ownership
                     // of tool_spec by returning it from the closure
@@ -117,7 +116,7 @@ impl InstallSubcommand {
                     .replace_tool_contents(&tool_spec, extracted)
                     .await?;
 
-                install_cache.add_spec(tool_spec.clone());
+                tool_cache.add_installed(tool_spec.clone());
                 pb.inc(1);
 
                 Ok(tool_spec)
