@@ -111,8 +111,13 @@ impl ToolStorage {
     */
     pub async fn create_tool_link(&self, alias: &ToolAlias) -> RokitResult<()> {
         let path = self.aliases_dir.join(alias.name());
-        let contents = self.rokit_contents().await?;
-        write_executable_file(path, &contents).await?;
+        if cfg!(unix) {
+            let rokit_path = self.rokit_path();
+            write_executable_link(path, &rokit_path).await?;
+        } else {
+            let contents = self.rokit_contents().await?;
+            write_executable_file(path, &contents).await?;
+        }
         Ok(())
     }
 
