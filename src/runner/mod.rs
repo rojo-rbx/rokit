@@ -29,20 +29,15 @@ impl Runner {
         let alias = ToolAlias::from_str(&self.exe_name)?;
 
         let home = Home::load_from_env().await?;
+        let spec = discover_closest_tool_spec(&home, &alias)
+            .await
+            .with_context(|| format!("Failed to find tool '{alias}'"))?;
 
-        let result = async {
-            let spec = discover_closest_tool_spec(&home, &alias)
-                .await
-                .with_context(|| format!("Failed to find tool '{alias}'"))?;
-            let path = home.tool_storage().tool_path(&spec);
-            let args = args().skip(1).collect::<Vec<_>>();
-            anyhow::Ok(run_interruptible(&path, &args).await?)
-        }
-        .await;
+        let path = home.tool_storage().tool_path(&spec);
+        let args = args().skip(1).collect::<Vec<_>>();
 
-        home.save().await?;
-
-        exit(result?);
+        let code = run_interruptible(&path, &args).await?;
+        exit(code);
     }
 }
 
