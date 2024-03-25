@@ -155,6 +155,6 @@ async fn add_executable_permissions(path: impl AsRef<Path>) -> AftmanResult<()> 
 }
 
 #[cfg(not(unix))]
-async fn set_executable_permissions(_path: impl AsRef<Path>) -> AftmanResult<()> {
+async fn add_executable_permissions(_path: impl AsRef<Path>) -> AftmanResult<()> {
     Ok(())
 }
