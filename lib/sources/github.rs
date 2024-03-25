@@ -6,7 +6,7 @@ use std::{
 
 use http_body_util::BodyExt;
 use octocrab::{models::repos::Release, Error, Octocrab, OctocrabBuilder, Result};
-use reqwest::header::ACCEPT;
+use reqwest::{header::ACCEPT, StatusCode};
 use secrecy::{ExposeSecret, SecretString};
 use semver::Version;
 use tokio::time::sleep;
@@ -151,20 +151,18 @@ impl GitHubSource {
         let releases = repository.releases();
 
         let tag_with_prefix = format!("v{}", tool_spec.version());
-        let tag_without_prefix = tool_spec.version().to_string();
-        let (response_with_prefix, response_without_prefix) = tokio::join!(
-            releases.get_by_tag(&tag_with_prefix),
-            releases.get_by_tag(&tag_without_prefix),
-        );
-
-        if response_with_prefix.is_err() && response_without_prefix.is_err() {
-            #[allow(clippy::unnecessary_unwrap)]
-            return Err(response_with_prefix.unwrap_err());
+        match releases.get_by_tag(&tag_with_prefix).await {
+            Err(err) if is_github_not_found(&err) => {}
+            Err(err) => return Err(err),
+            Ok(release) => return Ok(Some(release)),
         }
 
-        let opt_with_prefix = response_with_prefix.ok();
-        let opt_without_prefix = response_without_prefix.ok();
-        Ok(opt_with_prefix.or(opt_without_prefix))
+        let tag_without_prefix = tool_spec.version().to_string();
+        match releases.get_by_tag(&tag_without_prefix).await {
+            Err(err) if is_github_not_found(&err) => Ok(None),
+            Err(err) => Err(err),
+            Ok(release) => Ok(Some(release)),
+        }
     }
 
     /**
@@ -262,4 +260,12 @@ fn crab_builder() -> OctocrabBuilder<NoSvc, DefaultOctocrabBuilderConfig, NoAuth
         .base_uri(BASE_URI)
         .unwrap()
         .add_header(ACCEPT, String::from("application/json"))
+}
+
+fn is_github_not_found(err: &Error) -> bool {
+    if let Error::GitHub { source, .. } = err {
+        source.status_code == StatusCode::NOT_FOUND
+    } else {
+        false
+    }
 }
