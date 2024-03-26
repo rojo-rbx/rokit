@@ -3,7 +3,10 @@ use std::path::Path;
 use tokio::task::spawn_blocking;
 use winreg::{enums::HKEY_CURRENT_USER, RegKey};
 
-use crate::{result::RokitResult, storage::Home};
+use crate::{
+    result::{RokitError, RokitResult},
+    storage::Home,
+};
 
 pub async fn add_to_path(home: &Home) -> RokitResult<bool> {
     // NOTE: Calls to canonicalize may use blocking filesystem
@@ -23,13 +26,13 @@ pub async fn add_to_path(home: &Home) -> RokitResult<bool> {
         });
 
         if path_already_exists {
-            Ok(false)
+            Ok::<_, RokitError>(false)
         } else {
             let new_path = format!("{path};{}", dir.display());
             env.set_value("PATH", &new_path)?;
-            Ok(true)
+            Ok::<_, RokitError>(true)
         }
     });
 
-    Ok(task.await??)
+    task.await?
 }
