@@ -14,21 +14,36 @@ Next-generation toolchain manager for Roblox projects.
 
 ## Installation
 
-Run the installation command for your platform below to get started.
+Run the installation command for your platform, found below, in a terminal. <br/>
+Rokit will guide you through the rest.
 
-### macOS / Linux
+### macOS & Linux
+
+<details> <summary> <b>Bash / Zsh</b> </summary>
 
 ```sh
 curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/filiptibell/rokit/main/scripts/install.sh | sh
 ```
 
+</details>
+
 ### Windows
+
+<details> <summary> <b>PowerShell</b> </summary>
 
 ```ps1
 iex "& { $(irm https://raw.githubusercontent.com/filiptibell/rokit/main/scripts/install.ps1) } RunJob"
 ```
 
-You should then be able to run `rokit --help` to see available commands.
+</details>
+
+<details> <summary> <b>CMD (Legacy)</b> </summary>
+
+```bat
+# TODO: Install script using cmd.exe
+```
+
+</details>
 
 ### Upgrading
 
@@ -45,13 +60,14 @@ Installation is completely automated and you do not need to manually edit any fi
 
 ### For everyone else
 
-Foreman and Aftman both have an uncertain future as toolchain managers for the community. <br/>
+Foreman and Aftman have an uncertain future as toolchain managers for the community. <br/>
 Most of the existing problems boil down to issues with maintainership:
 
 - Foreman is maintained by Roblox itself.
 - Aftman is maintained by a third party that is no longer interested in Roblox.
 
-Rokit aims to solve this by taking a community-first approach and being built with community contributions in mind, and also acknowledges that developers will not migrate from any of the existing toolchain managers _just because_. Rokit needs to be **_substantially better_**.
+Rokit aims to solve this by taking a community-first approach and being built with community contributions in mind. <br/>
+Rokit also acknowledges that developers will not migrate from any of the existing toolchain managers _without good reason_, it needs to be **_substantially better_**.
 
 </details>
 
