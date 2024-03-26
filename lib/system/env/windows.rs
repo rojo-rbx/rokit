@@ -31,5 +31,5 @@ pub async fn add_to_path(home: &Home) -> RokitResult<bool> {
         }
     });
 
-    Ok(task??)
+    Ok(task.await??)
 }
