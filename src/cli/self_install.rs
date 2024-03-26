@@ -12,7 +12,7 @@ use crate::util::{finish_progress_bar, new_progress_bar};
 pub struct SelfInstallSubcommand {}
 
 impl SelfInstallSubcommand {
-    pub async fn run(&self, home: &Home) -> Result<()> {
+    pub async fn run(self, home: &Home) -> Result<()> {
         let storage = home.tool_storage();
 
         let pb = new_progress_bar("Linking", 2, 1);

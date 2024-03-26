@@ -41,19 +41,19 @@ impl TrustSubcommand {
         } else {
             // General case with multiple tools added and/or already trusted
             let mut lines = Vec::new();
-            let list_item = style("•").dim();
+            let list_bullet = style("•").dim();
 
             if !added_tools.is_empty() {
                 lines.push(String::from("These tools are now trusted:"));
                 for tool in &added_tools {
-                    lines.push(format!("  {list_item} {tool}"));
+                    lines.push(format!("  {list_bullet} {tool}"));
                 }
             }
 
             if !existing_tools.is_empty() {
                 lines.push(String::from("These tools were already trusted:"));
                 for tool in &existing_tools {
-                    lines.push(format!("  {list_item} {tool}"));
+                    lines.push(format!("  {list_bullet} {tool}"));
                 }
             }
 

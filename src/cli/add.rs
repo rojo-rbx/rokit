@@ -33,7 +33,7 @@ pub struct AddSubcommand {
 }
 
 impl AddSubcommand {
-    pub async fn run(&self, home: &Home) -> Result<()> {
+    pub async fn run(self, home: &Home) -> Result<()> {
         let id: ToolId = self.tool.clone().into();
         let alias: ToolAlias = match self.alias.as_ref() {
             Some(alias) => alias.clone(),

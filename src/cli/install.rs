@@ -25,7 +25,7 @@ pub struct InstallSubcommand {
 }
 
 impl InstallSubcommand {
-    pub async fn run(&self, home: &Home) -> Result<()> {
+    pub async fn run(self, home: &Home) -> Result<()> {
         let force = self.force;
         let (manifest_paths, source) =
             tokio::try_join!(discover_rokit_manifest_dirs(home), github_tool_source(home))?;
