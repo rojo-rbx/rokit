@@ -45,7 +45,7 @@ impl SelfInstallSubcommand {
         // - PATH was changed
         // - PATH does not currently contain Rokit, and adding to PATH did not error
         let should_restart_terminal = path_was_changed || (!path_errored && !path_contains_rokit);
-        let should_restart_lines = if should_restart_terminal {
+        let should_restart_message = if should_restart_terminal {
             format!(
                 "\n\nExecutables for Rokit and tools have been added to {}.\
                 \nPlease restart your terminal for the changes to take effect.",
@@ -64,14 +64,14 @@ impl SelfInstallSubcommand {
         };
 
         let help_command = style("rokit --help").bold().green();
-        let post_message = if should_restart_terminal {
+        let help_message = if should_restart_terminal {
             format!("\n\nThen, run `{help_command}` to get started using Rokit.")
         } else {
             format!("\n\nRun `{help_command}` to get started using Rokit.")
         };
 
         let msg = format!(
-            "{main_message} {}{should_restart_lines}{post_message}",
+            "{main_message} {}{should_restart_message}{help_message}",
             style(format!("(took {:.2?})", pb.elapsed())).dim(),
         );
         finish_progress_bar(pb, msg);
