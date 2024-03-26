@@ -18,7 +18,7 @@ Follow the instructions for your platform below - when installed, Rokit will gui
 
 ### macOS & Linux
 
-- Download and run the installer script in your terminal:
+- Run the automated installer script in your terminal:
 
   ```sh
   curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/filiptibell/rokit/main/scripts/install.sh | sh
@@ -27,11 +27,23 @@ Follow the instructions for your platform below - when installed, Rokit will gui
 ### Windows
 
 1. Download and unzip `rokit.exe` from the [latest release][latest-release] page.
-2. Run the downloaded `rokit.exe` file in your terminal.
+2. Open a terminal, change directory to where you downloaded Rokit, and run `./rokit.exe self-install`.
 
-### Upgrading
+## Usage
 
-Run `rokit self-update` in your terminal.
+Running `rokit --help` in your terminal will give you a full overview of all available commands. <br/>
+Running `rokit command-name --help` will give you full details about a _specific_ command.
+
+<details> <summary> <b>Brief overview of available commands</b> </summary>
+
+- `rokit init` - Initializes a new project in the current directory.
+- `rokit add` - Adds and installs a tool.
+- `rokit install` - Installs all project-specific tools.
+- `rokit update` - Updates a specific tool, or all project-specific tools, to the latest version.
+- `rokit self-update` - Updates Rokit itself to the latest version.
+- `rokit self-install` - Installs Rokit itself and updates tool executable links.
+
+</details>
 
 ## Q & A
 
@@ -40,7 +52,7 @@ Run `rokit self-update` in your terminal.
 ### For a new Roblox developer
 
 Rokit is the _fastest_ and _friendliest_ way to get set up with tooling for a new Roblox project. <br/>
-Installation is completely automated and you do not need to manually edit any files to get your tools working.
+Installation is completely automated, and you will be guided throughout the entire process, without ever manually editing any files to get your tools working.
 
 ### For everyone else
 
