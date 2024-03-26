@@ -49,7 +49,7 @@ API_URL="https://api.github.com/repos/$REPOSITORY/releases/latest"
 
 # Use curl to fetch the latest release data from GitHub API
 echo "Downloading latest release..."
-RELEASE_JSON_DATA=$(curl --proto '=https' --tlsv1.2 -sSf --connect-timeout 10 --max-time 30 "$API_URL")
+RELEASE_JSON_DATA=$(curl --proto '=https' --tlsv1.2 -sSf "$API_URL")
 
 # Check if the release was fetched successfully
 if [ -z "$RELEASE_JSON_DATA" ] || echo "$RELEASE_JSON_DATA" | grep -q "Not Found"; then
@@ -66,7 +66,7 @@ fi
 
 # Download the file using curl and make sure it was successful
 ZIP_FILE=$(echo "$RELEASE_DOWNLOAD_URL" | rev | cut -d '/' -f 1 | rev)
-curl --proto '=https' --tlsv1.2 -L -o "$ZIP_FILE" -sSf --connect-timeout 10 --max-time 60 "$RELEASE_DOWNLOAD_URL"
+curl --proto '=https' --tlsv1.2 -L -o "$ZIP_FILE" -sSf "$RELEASE_DOWNLOAD_URL"
 if [ ! -f "$ZIP_FILE" ]; then
     echo "Error: Failed to download the release archive '$ZIP_FILE'." >&2
     exit 1
