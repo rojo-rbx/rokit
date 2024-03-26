@@ -38,7 +38,11 @@ esac
 # Construct file pattern for our desired zip file based on OS + arch
 # NOTE: This only works for exact patterns "binary-X.Y.Z-os-arch.zip"
 # and WILL break if the version contains extra metadata / pre-release
-FILE_PATTERN="${BINARY_NAME}-[0-9]*\\.[0-9]*\\.[0-9]*-${OS}-${ARCH}.zip"
+VERSION_PATTERN="[0-9]*\\.[0-9]*\\.[0-9]*"
+if [ ! -z "$1" ]; then
+    VERSION_PATTERN="$1" # Custom version pattern from script argument
+fi
+FILE_PATTERN="${BINARY_NAME}-${VERSION_PATTERN}-${OS}-${ARCH}.zip"
 
 # GitHub API URL for the latest release
 API_URL="https://api.github.com/repos/$REPOSITORY/releases/latest"
