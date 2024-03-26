@@ -16,21 +16,17 @@ Next-generation toolchain manager for Roblox projects.
 
 Run the installation command for your platform below to get started.
 
-<details> <summary> <b>Windows</b> </summary>
-
-```ps1
-iex "& { $(irm https://raw.githubusercontent.com/filiptibell/rokit/main/scripts/install.ps1) } RunJob"
-```
-
-</details>
-
-<details> <summary> <b>macOS / Linux</b> </summary>
+### macOS / Linux
 
 ```sh
 curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/filiptibell/rokit/main/scripts/install.sh | sh
 ```
 
-</details>
+### Windows
+
+```ps1
+iex "& { $(irm https://raw.githubusercontent.com/filiptibell/rokit/main/scripts/install.ps1) } RunJob"
+```
 
 You should then be able to run `rokit --help` to see available commands.
 
