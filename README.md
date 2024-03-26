@@ -32,8 +32,6 @@ curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/filiptibe
 
 </details>
 
-<br/>
-
 You should then be able to run `rokit --help` to see available commands.
 
 ### Upgrading
