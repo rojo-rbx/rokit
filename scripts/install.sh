@@ -1,6 +1,6 @@
 #!/bin/sh
 
-BINARY_NAME="rokit"
+PROGRAM_NAME="rokit"
 REPOSITORY="filiptibell/rokit"
 
 # Make sure we have prerequisites installed: curl + unzip
@@ -48,12 +48,12 @@ if [ ! -z "$1" ]; then
     # Fetch a specific version from given script argument
     VERSION_PATTERN="$1"
     API_URL="https://api.github.com/repos/$REPOSITORY/releases/tags/v$1"
-    echo "\n[1 / 3] Looking for $BINARY_NAME release with tag 'v$1'"
+    echo "\n[1 / 3] Looking for $PROGRAM_NAME release with tag 'v$1'"
 else
     # Fetch the latest release from the GitHub API
-    echo "\n[1 / 3] Looking for latest $BINARY_NAME release"
+    echo "\n[1 / 3] Looking for latest $PROGRAM_NAME release"
 fi
-FILE_PATTERN="${BINARY_NAME}-${VERSION_PATTERN}-${OS}-${ARCH}.zip"
+FILE_PATTERN="${PROGRAM_NAME}-${VERSION_PATTERN}-${OS}-${ARCH}.zip"
 
 # Use curl to fetch the latest release data from GitHub API
 if [ ! -z "$GITHUB_PAT" ]; then
@@ -105,6 +105,10 @@ if [ ! -f "$ZIP_FILE" ]; then
 fi
 
 # Unzip only the specific file we want and make sure it was successful
+BINARY_NAME="$PROGRAM_NAME"
+if [ "$OS" = "windows" ]; then
+    BINARY_NAME="${BINARY_NAME}.exe"
+fi
 unzip -o -q "$ZIP_FILE" "$BINARY_NAME" -d .
 rm "$ZIP_FILE"
 if [ ! -f "$BINARY_NAME" ]; then
@@ -113,7 +117,9 @@ if [ ! -f "$BINARY_NAME" ]; then
 fi
 
 # Execute the file and remove it when done
-echo "[3 / 3] Running $BINARY_NAME installation\n"
-chmod +x "$BINARY_NAME"
+echo "[3 / 3] Running $PROGRAM_NAME installation\n"
+if [ "$OS" != "windows" ]; then
+    chmod +x "$BINARY_NAME"
+fi
 ./"$BINARY_NAME" self-install
 rm "$BINARY_NAME"
