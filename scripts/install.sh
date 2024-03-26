@@ -48,10 +48,10 @@ if [ ! -z "$1" ]; then
     # Fetch a specific version from given script argument
     VERSION_PATTERN="$1"
     API_URL="https://api.github.com/repos/$REPOSITORY/releases/tags/v$1"
-    echo "Downloading release with tag 'v$1'..."
+    echo "\n[1 / 3] Looking for $BINARY_NAME release with tag 'v$1'"
 else
     # Fetch the latest release from the GitHub API
-    echo "Downloading latest release..."
+    echo "\n[1 / 3] Looking for latest $BINARY_NAME release"
 fi
 FILE_PATTERN="${BINARY_NAME}-${VERSION_PATTERN}-${OS}-${ARCH}.zip"
 
@@ -68,19 +68,36 @@ if [ -z "$RELEASE_JSON_DATA" ] || echo "$RELEASE_JSON_DATA" | grep -q "Not Found
     exit 1
 fi
 
-# Try to extract the download URL from the response
-RELEASE_DOWNLOAD_URL=$(echo "$RELEASE_JSON_DATA" | grep -o "\"browser_download_url\": \".*${FILE_PATTERN}\"" | cut -d '"' -f 4 | head -n 1)
-if [ -z "$RELEASE_DOWNLOAD_URL" ]; then
-    echo "ERROR: Failed to find zip that matches the pattern \"$FILE_PATTERN\" in the latest release." >&2
+
+# Try to extract the asset url from the response by searching for a
+# matching asset name, and then picking the "url" that came before it
+read RELEASE_ASSET_ID RELEASE_ASSET_NAME <<EOF
+$(echo "$RELEASE_JSON_DATA" | awk -v repo="$REPOSITORY" -v pattern="$FILE_PATTERN" '
+  /"url":/ && $0 ~ "https://api.github.com/repos/" repo "/releases/assets/" {
+    gsub(/.*\/releases\/assets\/|\"|,/, "", $0)
+    asset_number=$0
+  }
+  /"name":/ && asset_number && $0 ~ pattern {
+    # Remove quotes and trailing comma for clean output
+    gsub(/\"|,/, "", $2)
+    print asset_number, $2
+    exit
+  }
+')
+EOF
+if [ -z "$RELEASE_ASSET_ID" ]; then
+    echo "ERROR: Failed to find asset that matches the pattern \"$FILE_PATTERN\" in the latest release." >&2
     exit 1
 fi
 
 # Download the file using curl and make sure it was successful
+echo "[2 / 3] Downloading '$RELEASE_ASSET_NAME'"
+RELEASE_DOWNLOAD_URL="https://api.github.com/repos/$REPOSITORY/releases/assets/$RELEASE_ASSET_ID"
 ZIP_FILE=$(echo "$RELEASE_DOWNLOAD_URL" | rev | cut -d '/' -f 1 | rev)
 if [ ! -z "$GITHUB_PAT" ]; then
-    curl --proto '=https' --tlsv1.2 -L -o "$ZIP_FILE" -sSf "$RELEASE_DOWNLOAD_URL" -H "Authorization: token $GITHUB_PAT"
+    curl --proto '=https' --tlsv1.2 -L -o "$ZIP_FILE" -sSf "$RELEASE_DOWNLOAD_URL" -H "Accept: application/octet-stream"  -H "Authorization: token $GITHUB_PAT"
 else
-    curl --proto '=https' --tlsv1.2 -L -o "$ZIP_FILE" -sSf "$RELEASE_DOWNLOAD_URL"
+    curl --proto '=https' --tlsv1.2 -L -o "$ZIP_FILE" -sSf "$RELEASE_DOWNLOAD_URL" -H "Accept: application/octet-stream"
 fi
 if [ ! -f "$ZIP_FILE" ]; then
     echo "ERROR: Failed to download the release archive '$ZIP_FILE'." >&2
@@ -88,16 +105,15 @@ if [ ! -f "$ZIP_FILE" ]; then
 fi
 
 # Unzip only the specific file we want and make sure it was successful
-echo "Unzipping '$ZIP_FILE'..."
 unzip -o -q "$ZIP_FILE" "$BINARY_NAME" -d .
 rm "$ZIP_FILE"
 if [ ! -f "$BINARY_NAME" ]; then
-    echo "ERROR: The file '$BINARY_NAME' does not exist in the archive." >&2
+    echo "ERROR: The file '$BINARY_NAME' does not exist in the downloaded archive." >&2
     exit 1
 fi
 
 # Execute the file and remove it when done
-echo "Running $BINARY_NAME installation...\n"
+echo "[3 / 3] Running $BINARY_NAME installation\n"
 chmod +x "$BINARY_NAME"
 ./"$BINARY_NAME" self-install
 rm "$BINARY_NAME"
