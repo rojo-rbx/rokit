@@ -14,6 +14,16 @@ if ! command -v unzip >/dev/null 2>&1; then
     exit 1
 fi
 
+# Warn the user if they are not using a shell we know works (bash, zsh)
+if [ -z "$BASH_VERSION" ] && [ -z "$ZSH_VERSION" ]; then
+    echo "WARNING: You are using an unsupported shell. Automatic installation may not work correctly." >&2
+fi
+
+# Let the user know their access token was detected, if provided
+if [ ! -z "$GITHUB_PAT" ]; then
+    echo "NOTE: Using provided GITHUB_PAT for authentication"
+fi
+
 # Determine OS and architecture for the current system
 OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
 case "$OS" in
@@ -34,10 +44,6 @@ case "$ARCH" in
         echo "Unsupported architecture: $ARCH" >&2;
         exit 1 ;;
 esac
-
-if [ ! -z "$GITHUB_PAT" ]; then
-    echo "NOTE: Using provided GITHUB_PAT for authentication"
-fi
 
 # Construct file pattern for our desired zip file based on OS + arch
 # NOTE: This only works for exact patterns "binary-X.Y.Z-os-arch.zip"
