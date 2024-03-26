@@ -63,9 +63,11 @@ FILE_PATTERN="${PROGRAM_NAME}-${VERSION_PATTERN}-${OS}-${ARCH}.zip"
 
 # Use curl to fetch the latest release data from GitHub API
 if [ ! -z "$GITHUB_PAT" ]; then
-    RELEASE_JSON_DATA=$(curl --proto '=https' --tlsv1.2 -sSf "$API_URL" -H "Authorization: token $GITHUB_PAT")
+    RELEASE_JSON_DATA=$(curl --proto '=https' --tlsv1.2 -sSf "$API_URL" \
+        -H "X-GitHub-Api-Version: 2022-11-28" -H "Authorization: token $GITHUB_PAT")
 else
-    RELEASE_JSON_DATA=$(curl --proto '=https' --tlsv1.2 -sSf "$API_URL")
+    RELEASE_JSON_DATA=$(curl --proto '=https' --tlsv1.2 -sSf "$API_URL" \
+        -H "X-GitHub-Api-Version: 2022-11-28")
 fi
 
 # Check if the release was fetched successfully
@@ -101,9 +103,11 @@ echo "[2 / 3] Downloading '$RELEASE_ASSET_NAME'"
 RELEASE_DOWNLOAD_URL="https://api.github.com/repos/$REPOSITORY/releases/assets/$RELEASE_ASSET_ID"
 ZIP_FILE=$(echo "$RELEASE_DOWNLOAD_URL" | rev | cut -d '/' -f 1 | rev)
 if [ ! -z "$GITHUB_PAT" ]; then
-    curl --proto '=https' --tlsv1.2 -L -o "$ZIP_FILE" -sSf "$RELEASE_DOWNLOAD_URL" -H "Accept: application/octet-stream"  -H "Authorization: token $GITHUB_PAT"
+    curl --proto '=https' --tlsv1.2 -L -o "$ZIP_FILE" -sSf "$RELEASE_DOWNLOAD_URL" \
+        -H "X-GitHub-Api-Version: 2022-11-28" -H "Accept: application/octet-stream"  -H "Authorization: token $GITHUB_PAT"
 else
-    curl --proto '=https' --tlsv1.2 -L -o "$ZIP_FILE" -sSf "$RELEASE_DOWNLOAD_URL" -H "Accept: application/octet-stream"
+    curl --proto '=https' --tlsv1.2 -L -o "$ZIP_FILE" -sSf "$RELEASE_DOWNLOAD_URL" \
+        -H "X-GitHub-Api-Version: 2022-11-28" -H "Accept: application/octet-stream"
 fi
 if [ ! -f "$ZIP_FILE" ]; then
     echo "ERROR: Failed to download the release archive '$ZIP_FILE'." >&2
