@@ -1,5 +1,6 @@
 use std::path::Path;
 
+use tokio::task::spawn_blocking;
 use winreg::{enums::HKEY_CURRENT_USER, RegKey};
 
 use crate::{result::RokitResult, storage::Home};
