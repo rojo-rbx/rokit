@@ -24,13 +24,13 @@ pub enum DescriptionParseError {
     used to check for compatibility between two or more specified systems.
 */
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Descripor {
+pub struct Descriptor {
     os: OS,
     arch: Arch,
     toolchain: Option<Toolchain>,
 }
 
-impl Descripor {
+impl Descriptor {
     /**
         Get the description for the current host system.
     */
@@ -70,7 +70,7 @@ impl Descripor {
         - Windows and Linux 64-bit can run 32-bit executables
         - macOS Apple Silicon can run x64 (Intel) executables
     */
-    pub fn is_compatible_with(&self, other: &Descripor) -> bool {
+    pub fn is_compatible_with(&self, other: &Descriptor) -> bool {
         // Operating system must _always_ match
         (self.os == other.os)
             && (
@@ -119,7 +119,7 @@ impl Descripor {
     }
 }
 
-impl FromStr for Descripor {
+impl FromStr for Descriptor {
     type Err = DescriptionParseError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let os = OS::detect(s).ok_or(DescriptionParseError::OS)?;
@@ -138,9 +138,9 @@ impl FromStr for Descripor {
 mod tests {
     use super::*;
 
-    fn check_desc(description: &str, expected: Descripor) {
+    fn check_desc(description: &str, expected: Descriptor) {
         assert_eq!(
-            Descripor::detect(description),
+            Descriptor::detect(description),
             Some(expected),
             "{description}"
         );
@@ -148,7 +148,7 @@ mod tests {
 
     #[test]
     fn current_description() {
-        let current = Descripor::current_system();
+        let current = Descriptor::current_system();
         assert_eq!(current.os, OS::current_system());
         assert_eq!(current.arch, Arch::current_system());
         assert_eq!(current.toolchain, Toolchain::current_system());
@@ -159,7 +159,7 @@ mod tests {
         // Windows
         check_desc(
             "windows-x64-msvc",
-            Descripor {
+            Descriptor {
                 os: OS::Windows,
                 arch: Arch::X64,
                 toolchain: Some(Toolchain::Msvc),
@@ -167,7 +167,7 @@ mod tests {
         );
         check_desc(
             "win64",
-            Descripor {
+            Descriptor {
                 os: OS::Windows,
                 arch: Arch::X64,
                 toolchain: None,
@@ -175,7 +175,7 @@ mod tests {
         );
         check_desc(
             "windows-x86-gnu",
-            Descripor {
+            Descriptor {
                 os: OS::Windows,
                 arch: Arch::X86,
                 toolchain: Some(Toolchain::Gnu),
@@ -183,7 +183,7 @@ mod tests {
         );
         check_desc(
             "windows-x86",
-            Descripor {
+            Descriptor {
                 os: OS::Windows,
                 arch: Arch::X86,
                 toolchain: None,
@@ -191,7 +191,7 @@ mod tests {
         );
         check_desc(
             "win32",
-            Descripor {
+            Descriptor {
                 os: OS::Windows,
                 arch: Arch::X86,
                 toolchain: None,
@@ -200,7 +200,7 @@ mod tests {
         // macOS
         check_desc(
             "aarch64-macos",
-            Descripor {
+            Descriptor {
                 os: OS::MacOS,
                 arch: Arch::Arm64,
                 toolchain: None,
@@ -208,7 +208,7 @@ mod tests {
         );
         check_desc(
             "macos-x64-gnu",
-            Descripor {
+            Descriptor {
                 os: OS::MacOS,
                 arch: Arch::X64,
                 toolchain: Some(Toolchain::Gnu),
@@ -216,7 +216,7 @@ mod tests {
         );
         check_desc(
             "macos-x64",
-            Descripor {
+            Descriptor {
                 os: OS::MacOS,
                 arch: Arch::X64,
                 toolchain: None,
@@ -225,7 +225,7 @@ mod tests {
         // Linux
         check_desc(
             "linux-x86_64-gnu",
-            Descripor {
+            Descriptor {
                 os: OS::Linux,
                 arch: Arch::X64,
                 toolchain: Some(Toolchain::Gnu),
@@ -233,7 +233,7 @@ mod tests {
         );
         check_desc(
             "linux-gnu-x86",
-            Descripor {
+            Descriptor {
                 os: OS::Linux,
                 arch: Arch::X86,
                 toolchain: Some(Toolchain::Gnu),
@@ -241,7 +241,7 @@ mod tests {
         );
         check_desc(
             "armv7-linux-musl",
-            Descripor {
+            Descriptor {
                 os: OS::Linux,
                 arch: Arch::Arm32,
                 toolchain: Some(Toolchain::Musl),
@@ -254,7 +254,7 @@ mod tests {
         // macOS universal binaries should parse as x64 (most compatible)
         check_desc(
             "macos-universal",
-            Descripor {
+            Descriptor {
                 os: OS::MacOS,
                 arch: Arch::X64,
                 toolchain: None,
@@ -262,7 +262,7 @@ mod tests {
         );
         check_desc(
             "darwin-universal",
-            Descripor {
+            Descriptor {
                 os: OS::MacOS,
                 arch: Arch::X64,
                 toolchain: None,
@@ -284,7 +284,7 @@ mod tests {
             "unknown-armv7-musl",
         ];
         for description in INVALID_DESCRIPTIONS {
-            assert_eq!(Descripor::detect(description), None);
+            assert_eq!(Descriptor::detect(description), None);
         }
     }
 
@@ -304,7 +304,7 @@ mod tests {
             "armv7-linux-musl",
         ];
         for description in VALID_STRINGS {
-            assert!(description.parse::<Descripor>().is_ok());
+            assert!(description.parse::<Descriptor>().is_ok());
         }
     }
 
@@ -318,7 +318,7 @@ mod tests {
         ];
         for description in INVALID_OS_STRINGS {
             assert_eq!(
-                description.parse::<Descripor>(),
+                description.parse::<Descriptor>(),
                 Err(DescriptionParseError::OS)
             );
         }

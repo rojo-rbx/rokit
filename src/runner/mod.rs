@@ -1,13 +1,12 @@
-use std::{
-    env::{args, consts::EXE_EXTENSION},
-    path::PathBuf,
-    process::exit,
-    str::FromStr,
-};
+use std::{env::args, process::exit, str::FromStr};
 
 use anyhow::{Context, Result};
 
-use rokit::{storage::Home, system::run_interruptible, tool::ToolAlias};
+use rokit::{
+    storage::Home,
+    system::{current_exe_name, run_interruptible},
+    tool::ToolAlias,
+};
 
 use crate::util::discover_closest_tool_spec;
 
@@ -18,11 +17,13 @@ pub struct Runner {
 
 impl Runner {
     pub fn new() -> Self {
-        Self::default()
+        Self {
+            exe_name: current_exe_name(),
+        }
     }
 
     pub fn should_run(&self) -> bool {
-        self.exe_name != env!("CARGO_PKG_NAME")
+        self.exe_name != env!("CARGO_BIN_NAME")
     }
 
     pub async fn run(&self) -> Result<()> {
@@ -43,35 +44,6 @@ impl Runner {
 
 impl Default for Runner {
     fn default() -> Self {
-        let arg0 = args()
-            .next()
-            .expect("Arg0 was not passed to Rokit - no tool can run");
-
-        let exe_path = PathBuf::from(arg0);
-        let exe_name = exe_path
-            .file_name()
-            .expect("Invalid file name passed as arg0")
-            .to_str()
-            .expect("Non-UTF8 file name passed as arg0");
-
-        // NOTE: Shells on Windows can be weird sometimes and pass arg0
-        // using either a lowercase or uppercase extension, so we fix that
-        let exe_name = if !EXE_EXTENSION.is_empty() {
-            let suffix_lower = EXE_EXTENSION.to_ascii_lowercase();
-            let suffix_upper = EXE_EXTENSION.to_ascii_uppercase();
-            if let Some(stripped) = exe_name.strip_suffix(&suffix_lower) {
-                stripped
-            } else if let Some(stripped) = exe_name.strip_suffix(&suffix_upper) {
-                stripped
-            } else {
-                exe_name
-            }
-        } else {
-            exe_name
-        };
-
-        Self {
-            exe_name: exe_name.to_string(),
-        }
+        Self::new()
     }
 }

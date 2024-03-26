@@ -24,6 +24,8 @@ pub enum RokitError {
     Json(#[from] serde_json::Error),
     #[error("Zip file error: {0}")]
     Zip(#[from] zip::result::ZipError),
+    #[error("GitHub error: {0}")]
+    GitHub(#[from] octocrab::Error),
 }
 
 pub type RokitResult<T> = Result<T, RokitError>;

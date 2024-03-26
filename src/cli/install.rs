@@ -5,11 +5,14 @@ use clap::Parser;
 
 use console::style;
 use futures::{stream::FuturesUnordered, TryStreamExt};
-use rokit::{descriptor::Descripor, manifests::RokitManifest, storage::Home};
+use rokit::{
+    manifests::{AuthManifest, RokitManifest},
+    sources::{Artifact, ArtifactProvider, ArtifactSource},
+    storage::Home,
+};
 
 use crate::util::{
-    discover_rokit_manifest_dirs, finish_progress_bar, github_tool_source, new_progress_bar,
-    prompt_for_trust_specs,
+    discover_rokit_manifest_dirs, finish_progress_bar, new_progress_bar, prompt_for_trust_specs,
 };
 
 /// Adds a new tool using Rokit and installs it.
@@ -27,12 +30,13 @@ pub struct InstallSubcommand {
 impl InstallSubcommand {
     pub async fn run(self, home: &Home) -> Result<()> {
         let force = self.force;
-        let (manifest_paths, source) =
-            tokio::try_join!(discover_rokit_manifest_dirs(home), github_tool_source(home))?;
+
+        let auth = AuthManifest::load(home.path()).await?;
+        let source = ArtifactSource::new_authenticated(&auth.get_all_tokens())?;
+        let manifest_paths = discover_rokit_manifest_dirs(home).await?;
 
         let tool_cache = home.tool_cache();
         let tool_storage = home.tool_storage();
-        let description = Descripor::current_system();
 
         // 1. Gather tool specifications from all known manifests
 
@@ -91,14 +95,12 @@ impl InstallSubcommand {
                     return anyhow::Ok(tool_spec);
                 }
 
-                let release = source
-                    .find_release(&tool_spec)
-                    .await?
-                    .with_context(|| format!("Failed to find release for {tool_spec}"))?;
+                let artifacts = source
+                    .get_specific_release(ArtifactProvider::GitHub, &tool_spec)
+                    .await?;
                 pb.inc(1);
 
-                let artifact = source
-                    .find_compatible_artifacts(&tool_spec, &release, &description)
+                let artifact = Artifact::sort_by_system_compatibility(&artifacts)
                     .first()
                     .cloned()
                     .with_context(|| format!("No compatible artifact found for {tool_spec}"))?;

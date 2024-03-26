@@ -1,4 +1,4 @@
-use std::{path::Path, str::FromStr};
+use std::{collections::HashMap, path::Path, str::FromStr};
 
 use toml_edit::{DocumentMut, Formatted, Item, Value};
 
@@ -86,6 +86,20 @@ impl AuthManifest {
     pub fn get_token(&self, artifact_provider: ArtifactProvider) -> Option<String> {
         let token = self.document.get(artifact_provider.as_str())?;
         token.as_str().map(|s| s.to_string())
+    }
+
+    /**
+        Gets all authentication tokens found in the manifest.
+    */
+    pub fn get_all_tokens(&self) -> HashMap<ArtifactProvider, String> {
+        self.document
+            .iter()
+            .filter_map(|(key, value)| {
+                let provider = ArtifactProvider::from_str(key).ok()?;
+                let token = value.as_str()?.to_string();
+                Some((provider, token))
+            })
+            .collect()
     }
 
     /**

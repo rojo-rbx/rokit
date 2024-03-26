@@ -4,7 +4,7 @@ use std::{
     time::Duration,
 };
 
-use http::{header::ACCEPT, StatusCode};
+use http::{header::ACCEPT, HeaderMap, HeaderValue, StatusCode};
 use http_body_util::BodyExt;
 use octocrab::{models::repos::Release, Error, Octocrab, OctocrabBuilder, Result};
 use secrecy::{ExposeSecret, SecretString};
@@ -12,10 +12,7 @@ use semver::Version;
 use tokio::time::sleep;
 use tracing::{debug, info, instrument};
 
-use crate::{
-    descriptor::Descripor,
-    tool::{ToolId, ToolSpec},
-};
+use crate::tool::{ToolId, ToolSpec};
 
 use super::{Artifact, ArtifactProvider};
 
@@ -23,23 +20,17 @@ const BASE_URI: &str = "https://api.github.com";
 
 const ERR_AUTH_UNRECOGNIZED: &str =
     "Unrecognized access token format - must begin with `ghp_` or `gho_`.";
-const ERR_AUTH_DEVICE_INTERACTIVE: &str =
+const _ERR_AUTH_DEVICE_INTERACTIVE: &str =
     "Device authentication flow may only be used in an interactive terminal.";
 
-// NOTE: Users typically install somewhat recent tools, and fetching
-// a smaller number of releases here lets us install tools much faster.
-const RESULTS_PER_PAGE: u8 = 8;
-
-pub struct GitHubSource {
+#[derive(Debug, Clone)]
+pub struct GithubProvider {
     client: Octocrab,
 }
 
-impl GitHubSource {
+impl GithubProvider {
     /**
         Creates a new GitHub source instance.
-
-        This instance is unauthenticated and may be rate limited and/or unable to access
-        private resources. To authenticate using an access token, use `new_authenticated`.
     */
     pub fn new() -> Result<Self> {
         let client = crab_builder().build()?;
@@ -47,7 +38,7 @@ impl GitHubSource {
     }
 
     /**
-        Creates a new authorized GitHub source instance with a personal access token.
+        Creates a new authenticated GitHub source instance with a token.
 
         May be used with either personal access tokens or tokens generated using the GitHub device flow.
     */
@@ -81,7 +72,7 @@ impl GitHubSource {
         Returns the access token if authentication is successful, but *does not* store it.
         A new client instance must be created using `new_authenticated` to use it.
     */
-    pub async fn auth_with_device<C, I, S>(&self, client_id: C, scope: I) -> Result<String>
+    pub async fn _auth_with_device<C, I, S>(&self, client_id: C, scope: I) -> Result<String>
     where
         C: Into<SecretString>,
         I: IntoIterator<Item = S>,
@@ -89,7 +80,7 @@ impl GitHubSource {
     {
         if !stdout().is_terminal() {
             return Err(Error::Other {
-                source: ERR_AUTH_DEVICE_INTERACTIVE.into(),
+                source: _ERR_AUTH_DEVICE_INTERACTIVE.into(),
                 backtrace: Backtrace::capture(),
             });
         }
@@ -122,112 +113,49 @@ impl GitHubSource {
     }
 
     /**
-        Fetches a page of releases for a given tool.
+        Fetches the latest release for a given tool.
     */
     #[instrument(skip(self), fields(%tool_id), level = "debug")]
-    pub async fn get_releases(&self, tool_id: &ToolId, page: u32) -> Result<Vec<Release>> {
-        debug!("fetching releases for tool");
+    pub async fn get_latest_release(&self, tool_id: &ToolId) -> Result<Vec<Artifact>> {
+        debug!("fetching latest release for tool");
 
         let repository = self.client.repos(tool_id.author(), tool_id.name());
-        let releases = repository
-            .releases()
-            .list()
-            .per_page(RESULTS_PER_PAGE)
-            .page(page)
-            .send()
-            .await?;
+        let releases = repository.releases();
 
-        Ok(releases.items)
+        let release = releases.get_latest().await?;
+        let version = release
+            .tag_name
+            .trim_start_matches('v')
+            .parse::<Version>()
+            .map_err(|e| Error::Other {
+                source: e.into(),
+                backtrace: Backtrace::capture(),
+            })?;
+
+        let tool_spec: ToolSpec = (tool_id.clone(), version).into();
+        Ok(artifacts_from_release(release, &tool_spec))
     }
 
     /**
         Fetches a specific release for a given tool.
     */
     #[instrument(skip(self), fields(%tool_spec), level = "debug")]
-    pub async fn find_release(&self, tool_spec: &ToolSpec) -> Result<Option<Release>> {
+    pub async fn get_specific_release(&self, tool_spec: &ToolSpec) -> Result<Vec<Artifact>> {
         debug!("fetching release for tool");
 
         let repository = self.client.repos(tool_spec.author(), tool_spec.name());
         let releases = repository.releases();
 
         let tag_with_prefix = format!("v{}", tool_spec.version());
-        match releases.get_by_tag(&tag_with_prefix).await {
-            Err(err) if is_github_not_found(&err) => {}
-            Err(err) => return Err(err),
-            Ok(release) => return Ok(Some(release)),
-        }
-
         let tag_without_prefix = tool_spec.version().to_string();
-        match releases.get_by_tag(&tag_without_prefix).await {
-            Err(err) if is_github_not_found(&err) => Ok(None),
+
+        let release = match releases.get_by_tag(&tag_with_prefix).await {
+            Err(err) if is_github_not_found(&err) => releases.get_by_tag(&tag_without_prefix).await,
             Err(err) => Err(err),
-            Ok(release) => Ok(Some(release)),
-        }
-    }
+            Ok(release) => Ok(release),
+        }?;
 
-    /**
-        Finds the latest version of a tool, optionally allowing prereleases.
-
-        If no releases are found, or no non-prerelease releases are found, this will return `None`.
-    */
-    #[instrument(skip(self), fields(%tool_id), level = "debug")]
-    pub async fn find_latest_version(
-        &self,
-        tool_id: &ToolId,
-        allow_prereleases: bool,
-    ) -> Result<Option<Version>> {
-        debug!("fetching latest version for tool");
-
-        let releases = self.get_releases(tool_id, 1).await?;
-        Ok(releases.into_iter().find_map(|release| {
-            if allow_prereleases || !release.prerelease {
-                let version = release.tag_name.trim_start_matches('v');
-                Version::parse(version).ok()
-            } else {
-                None
-            }
-        }))
-    }
-
-    /**
-        Finds compatible release artifacts for the given release and description.
-
-        The resulting list of artifacts will be sorted by preferred compatibility.
-
-        See [`Description::is_compatible_with`] and
-        [`Description::sort_by_preferred_compat`] for more information.
-    */
-    pub fn find_compatible_artifacts(
-        &self,
-        tool_spec: &ToolSpec,
-        release: &Release,
-        description: &Descripor,
-    ) -> Vec<Artifact> {
-        let mut compatible_artifacts = release
-            .assets
-            .iter()
-            .filter_map(|asset| {
-                if let Some(asset_desc) = Descripor::detect(asset.name.as_str()) {
-                    if description.is_compatible_with(&asset_desc) {
-                        let artifact = Artifact::from_github_release_asset(asset, tool_spec);
-                        Some((asset_desc, artifact))
-                    } else {
-                        None
-                    }
-                } else {
-                    None
-                }
-            })
-            .collect::<Vec<_>>();
-
-        compatible_artifacts.sort_by(|(desc_a, _), (desc_b, _)| {
-            description.sort_by_preferred_compat(desc_a, desc_b)
-        });
-
-        compatible_artifacts
-            .into_iter()
-            .map(|(_, artifact)| artifact)
-            .collect()
+        Ok(artifacts_from_release(release, tool_spec))
     }
 
     /**
@@ -235,20 +163,39 @@ impl GitHubSource {
     */
     #[instrument(skip(self, artifact), level = "debug")]
     pub async fn download_artifact_contents(&self, artifact: &Artifact) -> Result<Vec<u8>> {
+        assert_eq!(
+            artifact.provider,
+            ArtifactProvider::GitHub,
+            "artifact must be from GitHub"
+        );
+
         debug!("downloading artifact contents");
 
-        if artifact.provider != ArtifactProvider::GitHub {
-            return Err(Error::Other {
-                source: "Artifact provider mismatch".into(),
-                backtrace: Backtrace::capture(),
-            });
-        }
+        let url = format!(
+            "{BASE_URI}/repos/{owner}/{repo}/releases/assets/{id}",
+            owner = artifact.tool_spec.author(),
+            repo = artifact.tool_spec.name(),
+            id = artifact.id.as_ref().expect("GitHub artifacts must have id")
+        );
+        let headers = {
+            let mut headers = HeaderMap::new();
+            headers.insert(ACCEPT, HeaderValue::from_static("application/octet-stream"));
+            headers
+        };
 
-        let response = self.client._get(artifact.download_url.as_str()).await?;
-        let bytes = response.into_body().collect().await?.to_bytes().to_vec();
+        let response = self.client._get_with_headers(url, Some(headers)).await?;
+        let bytes = response.into_body().collect().await?.to_bytes();
 
-        Ok(bytes)
+        Ok(bytes.to_vec())
     }
+}
+
+fn artifacts_from_release(release: Release, spec: &ToolSpec) -> Vec<Artifact> {
+    release
+        .assets
+        .iter()
+        .map(|asset| Artifact::from_github_release_asset(asset, spec))
+        .collect::<Vec<_>>()
 }
 
 // So generic, such wow

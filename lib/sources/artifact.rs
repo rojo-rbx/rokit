@@ -5,6 +5,7 @@ use tracing::{debug, instrument};
 use url::Url;
 
 use crate::{
+    descriptor::Descriptor,
     result::{RokitError, RokitResult},
     tool::ToolSpec,
 };
@@ -92,25 +93,22 @@ impl fmt::Display for ArtifactFormat {
 pub struct Artifact {
     pub provider: ArtifactProvider,
     pub format: Option<ArtifactFormat>,
+    pub id: Option<String>,
+    pub url: Option<Url>,
+    pub name: Option<String>,
     pub tool_spec: ToolSpec,
-    pub source_url: Url,
-    pub download_url: Url,
 }
 
 impl Artifact {
     pub(crate) fn from_github_release_asset(asset: &Asset, spec: &ToolSpec) -> Self {
-        let download_url = asset.browser_download_url.clone();
-        let format = ArtifactFormat::from_path_or_url(&asset.name).or_else(|| {
-            // TODO: The url path here is percent-encoded ... we should
-            // probably decode it first before guessing the artifact format
-            ArtifactFormat::from_path_or_url(download_url.path())
-        });
+        let format = ArtifactFormat::from_path_or_url(&asset.name);
         Self {
             provider: ArtifactProvider::GitHub,
             format,
+            id: Some(asset.id.to_string()),
+            url: Some(asset.url.clone()),
+            name: Some(asset.name.clone()),
             tool_spec: spec.clone(),
-            source_url: asset.url.clone(),
-            download_url,
         }
     }
 
@@ -136,5 +134,44 @@ impl Artifact {
         };
 
         file_opt.ok_or(RokitError::ExtractFileMissing)
+    }
+
+    /**
+        Sorts the given artifacts by system compatibility.
+
+        See also:
+
+        - [`Descriptor::current_system`]
+        - [`Descriptor::is_compatible_with`]
+        - [`Descriptor::sort_by_preferred_compat`]
+    */
+    pub fn sort_by_system_compatibility(artifacts: impl AsRef<[Self]>) -> Vec<Self> {
+        let current_desc = Descriptor::current_system();
+
+        let mut compatible_artifacts = artifacts
+            .as_ref()
+            .iter()
+            .filter_map(|artifact| {
+                let name = artifact.name.as_deref()?;
+                if let Some(asset_desc) = Descriptor::detect(name) {
+                    if current_desc.is_compatible_with(&asset_desc) {
+                        Some((asset_desc, artifact))
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>();
+
+        compatible_artifacts.sort_by(|(desc_a, _), (desc_b, _)| {
+            current_desc.sort_by_preferred_compat(desc_a, desc_b)
+        });
+
+        compatible_artifacts
+            .into_iter()
+            .map(|(_, artifact)| artifact.clone())
+            .collect()
     }
 }
