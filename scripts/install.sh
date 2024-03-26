@@ -58,9 +58,13 @@ if [ -z "$RELEASE_DOWNLOAD_URL" ]; then
     exit 1
 fi
 
-# Download the file using curl
+# Download the file using curl and make sure it was successful
 ZIP_FILE=$(echo "$RELEASE_DOWNLOAD_URL" | rev | cut -d '/' -f 1 | rev)
 curl --proto '=https' --tlsv1.2 -L -o "$ZIP_FILE" -sSf --connect-timeout 10 --max-time 60 "$RELEASE_DOWNLOAD_URL"
+if [ ! -f "$ZIP_FILE" ]; then
+    echo "Error: Failed to download the release archive '$ZIP_FILE'." >&2
+    exit 1
+fi
 
 # Unzip only the specific file we want and make sure it was successful
 echo "Unzipping '$ZIP_FILE'..."
