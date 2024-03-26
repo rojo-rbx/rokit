@@ -12,6 +12,8 @@ pub enum RokitError {
     ExtractUnknownFormat,
     #[error("failed to extract artifact: missing binary file")]
     ExtractFileMissing,
+    #[error("unexpected invalid UTF-8")]
+    InvalidUtf8,
     #[error("task join error: {0}")]
     TaskJoinError(#[from] tokio::task::JoinError),
     #[error("TOML parse error: {0}")]
