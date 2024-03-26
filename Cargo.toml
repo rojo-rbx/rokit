@@ -10,7 +10,6 @@ keywords = ["cli"]
 categories = ["command-line-interface"]
 
 [dependencies]
-const_format = "0.2"
 dashmap = { version = "5.5", features = ["serde"] }
 dirs = "5.0"
 octocrab = "0.36"
