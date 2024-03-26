@@ -30,7 +30,9 @@ case "$ARCH" in
     x86-64) ARCH="x86_64" ;;
     arm64) ARCH="aarch64" ;;
     aarch64) ARCH="aarch64" ;;
-    *) echo "Unsupported architecture: $ARCH" >&2; exit 1 ;;
+    *)
+        echo "Unsupported architecture: $ARCH" >&2;
+        exit 1 ;;
 esac
 
 # Construct file pattern for our desired zip file based on OS + arch
