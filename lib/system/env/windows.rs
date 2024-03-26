@@ -12,7 +12,7 @@ pub async fn add_to_path(home: &Home) -> RokitResult<bool> {
 
         let key = RegKey::predef(HKEY_CURRENT_USER);
         let env = key.create_subkey("Environment")?.0;
-        let path = env.get_value::<String>("PATH")?;
+        let path = env.get_value::<String, _>("PATH")?;
 
         let path_already_exists = path.split(';').any(|entry| {
             Path::new(entry)
