@@ -48,6 +48,9 @@ tracing-subscriber = { optional = true, version = "0.3", features = [
     "env-filter",
 ] }
 
+[target.'cfg(windows)'.dependencies]
+winreg = "0.52"
+
 [features]
 default = ["cli"]
 cli = [
