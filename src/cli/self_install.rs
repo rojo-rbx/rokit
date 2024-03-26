@@ -1,9 +1,12 @@
 use anyhow::{Context, Result};
 use clap::Parser;
 use console::style;
-
-use rokit::{storage::Home, system::add_to_path};
 use tracing::warn;
+
+use rokit::{
+    storage::Home,
+    system::{add_to_path, exists_in_path},
+};
 
 use crate::util::{finish_progress_bar, new_progress_bar};
 
@@ -24,9 +27,11 @@ impl SelfInstallSubcommand {
         pb.inc(1);
         pb.set_message("Pathifying");
 
+        let mut path_errored = false;
         let path_was_changed = add_to_path(home)
             .await
             .inspect_err(|e| {
+                path_errored = true;
                 warn!(
                     "Failed to automatically add Rokit to your PATH!\
                     \nPlease add `~/.rokit/bin` to be able to run tools.
@@ -34,7 +39,13 @@ impl SelfInstallSubcommand {
                 )
             })
             .unwrap_or(false);
-        let path_message_lines = if path_was_changed {
+        let path_contains_rokit = exists_in_path(home);
+
+        // Prompt the user to restart their terminal if:
+        // - PATH was changed
+        // - PATH does not currently contain Rokit, and adding to PATH did not error
+        let should_restart_terminal = path_was_changed || (!path_errored && !path_contains_rokit);
+        let should_restart_lines = if should_restart_terminal {
             format!(
                 "\n\nExecutables for Rokit and tools have been added to {}.\
                 \nPlease restart your terminal for the changes to take effect.",
@@ -52,15 +63,15 @@ impl SelfInstallSubcommand {
             "Rokit links are already up-to-date."
         };
 
-        let help_message = style("rokit --help").bold().green();
-        let post_message = if path_was_changed {
-            format!("\n\nThen, run `{help_message}` to get started using Rokit.")
+        let help_command = style("rokit --help").bold().green();
+        let post_message = if should_restart_terminal {
+            format!("\n\nThen, run `{help_command}` to get started using Rokit.")
         } else {
-            format!("\n\nRun `{help_message}` to get started using Rokit.")
+            format!("\n\nRun `{help_command}` to get started using Rokit.")
         };
 
         let msg = format!(
-            "{main_message} {}{path_message_lines}{post_message}",
+            "{main_message} {}{should_restart_lines}{post_message}",
             style(format!("(took {:.2?})", pb.elapsed())).dim(),
         );
         finish_progress_bar(pb, msg);

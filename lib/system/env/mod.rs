@@ -1,3 +1,5 @@
+use std::{env::var, path::MAIN_SEPARATOR_STR};
+
 use crate::{result::RokitResult, storage::Home};
 
 mod shell;
@@ -22,4 +24,16 @@ pub async fn add_to_path(home: &Home) -> RokitResult<bool> {
     {
         self::windows::add_to_path(home).await
     }
+}
+
+/**
+    Checks if the Rokit binaries directory is in the system PATH.
+
+    Returns `true` if the directory is in the PATH, `false` otherwise.
+*/
+pub fn exists_in_path(_home: &Home) -> bool {
+    let pattern = format!("rokit{MAIN_SEPARATOR_STR}bin");
+    var("PATH")
+        .map(|path| path.split(':').any(|item| item.ends_with(&pattern)))
+        .unwrap_or(false)
 }
