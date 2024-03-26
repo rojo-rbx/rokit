@@ -14,36 +14,20 @@ Next-generation toolchain manager for Roblox projects.
 
 ## Installation
 
-Run the installation command for your platform, found below, in a terminal. <br/>
-Rokit will guide you through the rest.
+Follow the instructions for your platform below - when installed, Rokit will guide you through the rest.
 
 ### macOS & Linux
 
-<details> <summary> <b>Bash / Zsh</b> </summary>
+- Download and run the installer script in your terminal:
 
-```sh
-curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/filiptibell/rokit/main/scripts/install.sh | sh
-```
-
-</details>
+  ```sh
+  curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/filiptibell/rokit/main/scripts/install.sh | sh
+  ```
 
 ### Windows
 
-<details> <summary> <b>PowerShell</b> </summary>
-
-```ps1
-iex "& { $(irm https://raw.githubusercontent.com/filiptibell/rokit/main/scripts/install.ps1) } RunJob"
-```
-
-</details>
-
-<details> <summary> <b>CMD (Legacy)</b> </summary>
-
-```bat
-# TODO: Install script using cmd.exe
-```
-
-</details>
+1. Download and unzip `rokit.exe` from the [latest release][latest-release] page.
+2. Run the downloaded `rokit.exe` file in your terminal.
 
 ### Upgrading
 
@@ -83,3 +67,4 @@ Rokit also acknowledges that developers will not migrate from any of the existin
 
 [foreman]: https://github.com/Roblox/foreman
 [aftman]: https://github.com/LGPhatguy/aftman
+[latest-release]: https://github.com/filiptibell/rokit/releases/latest
