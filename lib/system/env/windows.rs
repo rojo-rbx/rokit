@@ -12,7 +12,7 @@ pub async fn add_to_path(home: &Home) -> RokitResult<bool> {
     // NOTE: Calls to canonicalize may use blocking filesystem
     // operations, so we spawn a task where that's acceptable.
     let dir = home.path().join("bin");
-    let task = spawn_blocking(|| {
+    let task = spawn_blocking(move || {
         let dir = dir.canonicalize()?;
 
         let key = RegKey::predef(HKEY_CURRENT_USER);
