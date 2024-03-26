@@ -1,11 +1,13 @@
 [package]
 name = "rokit"
-description = "Toolchain manager for Roblox projects"
 version = "0.0.0"
-license = "MIT"
 edition = "2021"
+license = "MIT"
 repository = "https://github.com/filiptibell/rokit"
+description = "Toolchain manager for Roblox projects"
 readme = "README.md"
+keywords = ["cli"]
+categories = ["command-line-interface"]
 
 [dependencies]
 const_format = "0.2"
