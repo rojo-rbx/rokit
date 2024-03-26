@@ -39,16 +39,19 @@ esac
 # NOTE: This only works for exact patterns "binary-X.Y.Z-os-arch.zip"
 # and WILL break if the version contains extra metadata / pre-release
 VERSION_PATTERN="[0-9]*\\.[0-9]*\\.[0-9]*"
+API_URL="https://api.github.com/repos/$REPOSITORY/releases/latest"
 if [ ! -z "$1" ]; then
-    VERSION_PATTERN="$1" # Custom version pattern from script argument
+    # Fetch a specific version from given script argument
+    VERSION_PATTERN="$1"
+    API_URL="https://api.github.com/repos/$REPOSITORY/releases/tags/v$1"
+    echo "Downloading release with tag 'v$1'..."
+else
+    # Fetch the latest release from the GitHub API
+    echo "Downloading latest release..."
 fi
 FILE_PATTERN="${BINARY_NAME}-${VERSION_PATTERN}-${OS}-${ARCH}.zip"
 
-# GitHub API URL for the latest release
-API_URL="https://api.github.com/repos/$REPOSITORY/releases/latest"
-
 # Use curl to fetch the latest release data from GitHub API
-echo "Downloading latest release..."
 RELEASE_JSON_DATA=$(curl --proto '=https' --tlsv1.2 -sSf "$API_URL")
 
 # Check if the release was fetched successfully
