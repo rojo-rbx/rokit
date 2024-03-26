@@ -18,16 +18,19 @@ impl SelfInstallSubcommand {
 
         let (had_rokit_installed, was_rokit_updated) = storage.recreate_all_links().await.context(
             "Failed to recreate tool links!\
-                \nYour installation may be corrupted.",
+            \nYour installation may be corrupted.",
         )?;
 
-        // TODO: Automatically populate the PATH variable
+        // TODO: Try to automatically populate the PATH variable
         let path_was_populated = false;
         let path_message_lines = if !path_was_populated {
-            "\n\nBinaries for Rokit and tools have been added to your PATH.\
-            \nPlease restart your terminal for the changes to take effect."
+            format!(
+                "\n\nExecutables for Rokit and tools have been added to {}.\
+                \nPlease restart your terminal for the changes to take effect.",
+                style("$PATH").bold()
+            )
         } else {
-            ""
+            String::new()
         };
 
         let main_message = if !had_rokit_installed {
@@ -35,11 +38,18 @@ impl SelfInstallSubcommand {
         } else if was_rokit_updated {
             "Rokit was re-linked successfully!"
         } else {
-            "Rokit is already up-to-date."
+            "Rokit links are already up-to-date."
+        };
+
+        let help_message = style("rokit --help").bold().green();
+        let post_message = if !path_was_populated {
+            format!("\n\nThen, run `{help_message}` to get started using Rokit.")
+        } else {
+            format!("\n\nRun `{help_message}` to get started using Rokit.")
         };
 
         let msg = format!(
-            "{main_message} {}{path_message_lines}",
+            "{main_message} {}{path_message_lines}{post_message}",
             style(format!("(took {:.2?})", pb.elapsed())).dim(),
         );
         finish_progress_bar(pb, msg);
