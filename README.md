@@ -18,7 +18,7 @@ Run the installation command for your platform below to get started.
 
 <details> <summary> <b>Windows</b> </summary>
 
-```pwsh
+```ps1
 iex "& { $(irm https://raw.githubusercontent.com/filiptibell/rokit/main/scripts/install.ps1) } RunJob"
 ```
 
