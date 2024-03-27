@@ -1,7 +1,7 @@
 use std::{fmt, str::FromStr};
 
 use octocrab::models::repos::Asset;
-use tracing::{debug, instrument};
+use tracing::instrument;
 use url::Url;
 
 use crate::{
@@ -124,8 +124,6 @@ impl Artifact {
     */
     #[instrument(skip(self, contents), level = "debug")]
     pub async fn extract_contents(&self, contents: Vec<u8>) -> RokitResult<Vec<u8>> {
-        debug!("Extracting artifact contents");
-
         let format = self.format.ok_or(RokitError::ExtractUnknownFormat)?;
 
         let file_name = self.tool_spec.name().to_string();
@@ -136,9 +134,9 @@ impl Artifact {
         let file_opt = file_res.map_err(|err| RokitError::ExtractError {
             source: err.into(),
             body: {
-                if contents.len() > 86 {
-                    let bytes = contents.iter().cloned().take(80).collect::<Vec<_>>();
-                    format!("{} <...>", String::from_utf8_lossy(bytes.as_slice()))
+                if contents.len() > 128 + 6 {
+                    let bytes = contents.iter().cloned().take(128).collect::<Vec<_>>();
+                    format!("{} <...>", String::from_utf8_lossy(bytes.as_slice()).trim())
                 } else {
                     String::from_utf8_lossy(&contents).to_string()
                 }

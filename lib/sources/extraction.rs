@@ -15,8 +15,6 @@ pub async fn extract_zip_file(
 
     let zip_contents = zip_contents.as_ref().to_vec();
     let num_bytes = zip_contents.len();
-
-    tracing::debug!(num_bytes, "Extracting zip file");
     let start = Instant::now();
 
     // Reading a zip file is a potentially expensive operation, so

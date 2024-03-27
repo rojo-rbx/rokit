@@ -4,8 +4,10 @@ use std::{
     time::Duration,
 };
 
-use http::{header::ACCEPT, HeaderMap, HeaderValue, StatusCode};
-use http_body_util::BodyExt;
+use http::{
+    header::{ACCEPT, USER_AGENT},
+    HeaderMap, HeaderValue, StatusCode,
+};
 use octocrab::{models::repos::Release, Error, Octocrab, OctocrabBuilder, Result};
 use secrecy::{ExposeSecret, SecretString};
 use semver::Version;
@@ -25,7 +27,8 @@ const _ERR_AUTH_DEVICE_INTERACTIVE: &str =
 
 #[derive(Debug, Clone)]
 pub struct GithubProvider {
-    client: Octocrab,
+    gh_client: Octocrab,
+    dl_client: reqwest::Client,
 }
 
 impl GithubProvider {
@@ -33,8 +36,12 @@ impl GithubProvider {
         Creates a new GitHub source instance.
     */
     pub fn new() -> Result<Self> {
-        let client = crab_builder().build()?;
-        Ok(Self { client })
+        let gh_client = crab_builder().build()?;
+        let dl_client = build_dl_client(None)?;
+        Ok(Self {
+            gh_client,
+            dl_client,
+        })
     }
 
     /**
@@ -47,11 +54,13 @@ impl GithubProvider {
         // https://github.blog/2021-04-05-behind-githubs-new-authentication-token-formats/
         if pat.starts_with("ghp_") {
             Ok(Self {
-                client: crab_builder().personal_token(pat).build()?,
+                gh_client: crab_builder().personal_token(pat.clone()).build()?,
+                dl_client: build_dl_client(Some(pat))?,
             })
         } else if pat.starts_with("gho_") {
             Ok(Self {
-                client: crab_builder().user_access_token(pat).build()?,
+                gh_client: crab_builder().user_access_token(pat.clone()).build()?,
+                dl_client: build_dl_client(Some(pat))?,
             })
         } else {
             Err(Error::Other {
@@ -87,7 +96,7 @@ impl GithubProvider {
 
         let client_id = client_id.into();
         let codes = self
-            .client
+            .gh_client
             .authenticate_as_device(&client_id, scope)
             .await?;
 
@@ -100,7 +109,7 @@ impl GithubProvider {
 
         let oauth = loop {
             sleep(Duration::from_secs(codes.interval)).await;
-            let status = codes.poll_once(&self.client, &client_id).await?;
+            let status = codes.poll_once(&self.gh_client, &client_id).await?;
             if status.is_left() {
                 break status.unwrap_left();
             }
@@ -119,7 +128,7 @@ impl GithubProvider {
     pub async fn get_latest_release(&self, tool_id: &ToolId) -> Result<Vec<Artifact>> {
         debug!(id = %tool_id, "fetching latest release for tool");
 
-        let repository = self.client.repos(tool_id.author(), tool_id.name());
+        let repository = self.gh_client.repos(tool_id.author(), tool_id.name());
         let releases = repository.releases();
 
         let release = releases.get_latest().await?;
@@ -127,10 +136,7 @@ impl GithubProvider {
             .tag_name
             .trim_start_matches('v')
             .parse::<Version>()
-            .map_err(|e| Error::Other {
-                source: e.into(),
-                backtrace: Backtrace::capture(),
-            })?;
+            .map_err(other_err)?;
 
         let tool_spec: ToolSpec = (tool_id.clone(), version).into();
         Ok(artifacts_from_release(release, &tool_spec))
@@ -143,7 +149,7 @@ impl GithubProvider {
     pub async fn get_specific_release(&self, tool_spec: &ToolSpec) -> Result<Vec<Artifact>> {
         debug!(spec = %tool_spec, "fetching release for tool");
 
-        let repository = self.client.repos(tool_spec.author(), tool_spec.name());
+        let repository = self.gh_client.repos(tool_spec.author(), tool_spec.name());
         let releases = repository.releases();
 
         let tag_with_prefix = format!("v{}", tool_spec.version());
@@ -178,14 +184,9 @@ impl GithubProvider {
             owner = artifact.tool_spec.author(),
             repo = artifact.tool_spec.name(),
         );
-        let headers = {
-            let mut headers = HeaderMap::new();
-            headers.insert(ACCEPT, HeaderValue::from_static("application/octet-stream"));
-            headers
-        };
 
-        let response = self.client._get_with_headers(url, Some(headers)).await?;
-        let bytes = response.into_body().collect().await?.to_bytes();
+        let response = self.dl_client.get(url).send().await.map_err(other_err)?;
+        let bytes = response.bytes().await.map_err(other_err)?;
 
         Ok(bytes.to_vec())
     }
@@ -197,6 +198,34 @@ fn artifacts_from_release(release: Release, spec: &ToolSpec) -> Vec<Artifact> {
         .iter()
         .map(|asset| Artifact::from_github_release_asset(asset, spec))
         .collect::<Vec<_>>()
+}
+
+fn other_err(err: impl Into<Box<dyn std::error::Error + Send + Sync>>) -> Error {
+    Error::Other {
+        source: err.into(),
+        backtrace: Backtrace::capture(),
+    }
+}
+
+fn build_dl_client(pat: Option<String>) -> Result<reqwest::Client> {
+    let headers = {
+        let mut headers = HeaderMap::new();
+        headers.insert(ACCEPT, HeaderValue::from_static("application/octet-stream"));
+        headers.insert(USER_AGENT, HeaderValue::from_static("rokit"));
+        if let Some(pat) = pat {
+            let token = format!("Bearer {pat}");
+            headers.insert(
+                "Authorization",
+                HeaderValue::from_str(&token).map_err(other_err)?,
+            );
+        }
+        headers
+    };
+    let client = reqwest::Client::builder()
+        .default_headers(headers)
+        .build()
+        .map_err(other_err)?;
+    Ok(client)
 }
 
 // So generic, such wow
