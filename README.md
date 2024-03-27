@@ -54,18 +54,22 @@ Running `rokit command-name --help` will give you full details about a _specific
 ### For a new Roblox developer
 
 Rokit is the _fastest_ and _friendliest_ way to get set up with tooling for a new Roblox project. <br/>
-Installation is completely automated, and you will be guided throughout the entire process, without ever manually editing any files to get your tools working.
+Here are some key differences between Rokit and Foreman / Aftman:
+
+- Usable in _any_ project, even projects using `foreman.toml` / `aftman.toml`, while Foreman / Aftman are incompatible with each other by design.
+- Massively improved installation times and more consistent cross-platform behavior.
+- No manual editing of manifest or link files.
 
 ### For everyone else
 
-Foreman and Aftman have an uncertain future as toolchain managers for the community. <br/>
-Most of the existing problems boil down to issues with maintainership:
+While Foreman and Aftman have been working great for a long time, they have an uncertain future as toolchain managers for the community. <br/>
+Most of their existing problems boil down to issues with maintainership:
 
-- Foreman is maintained by Roblox itself.
-- Aftman is maintained by a third party that is no longer interested in Roblox.
+- [Foreman][foreman] is maintained by Roblox itself, and has angled itself towards internal uses at Roblox.
+- [Aftman][aftman] is maintained by a third party that is no longer interested in Roblox.
 
 Rokit aims to solve this by taking a community-first approach and being built with community contributions in mind. <br/>
-Rokit also acknowledges that developers will not migrate from any of the existing toolchain managers _without good reason_, it needs to be **_substantially better_**.
+Rokit also acknowledges that developers will not migrate from any of the existing toolchain managers _without good reason_, it needs to be **_substantially better_** and require **_virtually no effort_** to migrate.
 
 </details>
 
