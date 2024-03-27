@@ -9,7 +9,8 @@ Next-generation toolchain manager for Roblox projects.
 ## Features
 
 - ⚡ Tools download and install **_really fast_**.
-- ♻️ Compatible with projects that already use [Foreman][foreman] or [Aftman][aftman].
+- ♻️ Drop-in compatibility with projects that already use [Foreman][foreman] or [Aftman][aftman].
+- 🤖 Additional commands for adding and updating tools, and even updating Rokit itself.
 - 📝 Useful output messages that are easy for humans to read and understand.
 
 ## Installation
@@ -38,6 +39,7 @@ Running `rokit command-name --help` will give you full details about a _specific
 
 - `rokit init` - Initializes a new project in the current directory.
 - `rokit add` - Adds and installs a tool.
+- `rokit list` - Lists all currently installed tools.
 - `rokit install` - Installs all project-specific tools.
 - `rokit update` - Updates a specific tool, or all project-specific tools, to the latest version.
 - `rokit self-update` - Updates Rokit itself to the latest version.
