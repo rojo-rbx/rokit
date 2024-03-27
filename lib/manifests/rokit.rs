@@ -9,13 +9,13 @@ use crate::{
 };
 
 pub const MANIFEST_FILE_NAME: &str = "rokit.toml";
-const MANIFEST_DEFAULT_CONTENTS: &str = r#"\
+const MANIFEST_DEFAULT_CONTENTS: &str = "
 # This file lists tools managed by Rokit, a toolchain manager for Roblox projects.
 # For more information, see <|REPOSITORY_URL|>
 
 # New tools can be added by running `rokit add <tool>` in a terminal.
 [tools]
-"#;
+";
 
 /**
     Rokit manifest file.
