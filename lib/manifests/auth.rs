@@ -9,7 +9,7 @@ use crate::{
 };
 
 pub const MANIFEST_FILE_NAME: &str = "auth.toml";
-const MANIFEST_DEFAULT_CONTENTS: &str = r#"
+const MANIFEST_DEFAULT_CONTENTS: &str = r#"\
 # This file lists authentication tokens managed by Rokit, a toolchain manager for Roblox projects.
 # For more information, see <|REPOSITORY_URL|>
 
