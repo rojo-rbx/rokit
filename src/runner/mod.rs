@@ -3,12 +3,11 @@ use std::{env::args, process::exit, str::FromStr};
 use anyhow::{Context, Result};
 
 use rokit::{
+    discovery::discover_tool_spec,
     storage::Home,
     system::{current_exe_name, run_interruptible},
     tool::ToolAlias,
 };
-
-use crate::util::discover_closest_tool_spec;
 
 #[derive(Debug, Clone)]
 pub struct Runner {
@@ -30,9 +29,14 @@ impl Runner {
         let alias = ToolAlias::from_str(&self.exe_name)?;
 
         let home = Home::load_from_env().await?;
-        let spec = discover_closest_tool_spec(&home, &alias)
-            .await
-            .with_context(|| format!("Failed to find tool '{alias}'"))?;
+        let spec = discover_tool_spec(&alias, false).await.with_context(|| {
+            format!(
+                "Failed to find tool '{alias}' in any project manifest file.\
+                \nAdd the tool to a project using 'rokit add' before running it."
+            )
+        })?;
+
+        // TODO: Prompt for trust and install tool if not already installed
 
         let path = home.tool_storage().tool_path(&spec);
         let args = args().skip(1).collect::<Vec<_>>();

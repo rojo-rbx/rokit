@@ -6,14 +6,13 @@ use clap::Parser;
 use console::style;
 use futures::{stream::FuturesUnordered, TryStreamExt};
 use rokit::{
-    manifests::{AuthManifest, RokitManifest},
+    discovery::discover_all_manifests,
+    manifests::AuthManifest,
     sources::{Artifact, ArtifactProvider, ArtifactSource},
     storage::Home,
 };
 
-use crate::util::{
-    discover_rokit_manifest_dirs, finish_progress_bar, new_progress_bar, prompt_for_trust_specs,
-};
+use crate::util::{finish_progress_bar, new_progress_bar, prompt_for_trust_specs};
 
 /// Adds a new tool using Rokit and installs it.
 #[derive(Debug, Parser)]
@@ -33,24 +32,16 @@ impl InstallSubcommand {
 
         let auth = AuthManifest::load(home.path()).await?;
         let source = ArtifactSource::new_authenticated(&auth.get_all_tokens())?;
-        let manifest_paths = discover_rokit_manifest_dirs(home).await?;
+        let manifests = discover_all_manifests(false).await;
 
         let tool_cache = home.tool_cache();
         let tool_storage = home.tool_storage();
 
         // 1. Gather tool specifications from all known manifests
 
-        let manifests = manifest_paths
-            .iter()
-            .map(RokitManifest::load)
-            .collect::<FuturesUnordered<_>>()
-            .try_collect::<Vec<_>>()
-            .await
-            .context("Failed to load manifest")?;
-
         let tools = manifests
             .iter()
-            .flat_map(|manifest| manifest.tool_specs())
+            .flat_map(|manifest| manifest.tools.clone().into_iter())
             .collect::<Vec<_>>();
 
         // 2. Check for trust

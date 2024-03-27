@@ -3,16 +3,14 @@ use clap::Parser;
 use console::style;
 
 use rokit::{
+    discovery::discover_all_manifests,
     manifests::{AuthManifest, RokitManifest},
     sources::{Artifact, ArtifactProvider, ArtifactSource},
     storage::Home,
     tool::{ToolAlias, ToolId},
 };
 
-use crate::util::{
-    discover_rokit_manifest_dir, finish_progress_bar, new_progress_bar, prompt_for_trust,
-    ToolIdOrSpec,
-};
+use crate::util::{finish_progress_bar, new_progress_bar, prompt_for_trust, ToolIdOrSpec};
 
 /// Adds a new tool to Rokit and installs it.
 #[derive(Debug, Parser)]
@@ -58,7 +56,14 @@ impl AddSubcommand {
         let manifest_path = if self.global {
             home.path().to_path_buf()
         } else {
-            discover_rokit_manifest_dir().await?
+            let manifests = discover_all_manifests(true).await;
+            manifests
+                .first()
+                .map(|m| m.path.parent().unwrap().to_path_buf())
+                .context(
+                    "No manifest was found for the current directory.\
+                    \nRun `rokit init` in your project root to create one.",
+                )?
         };
 
         let mut manifest = if self.global {
