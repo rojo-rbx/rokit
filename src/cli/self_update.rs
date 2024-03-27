@@ -33,7 +33,7 @@ impl SelfUpdateSubcommand {
             );
         };
 
-        let pb = new_progress_bar("Loading", 3, 1);
+        let pb = new_progress_bar("Loading", 4, 1);
 
         // NOTE: Auth is not really necessary here since we know Rokit is not
         // a private repository, but it may still help against rate limiting.
@@ -61,19 +61,27 @@ impl SelfUpdateSubcommand {
             return Ok(());
         }
 
+        // Download the most compatible artifact - this should always exist,
+        // otherwise we wouldn't be able to run Rokit in the first place...?
         pb.inc(1);
         pb.set_message("Downloading");
 
-        // Download the most compatible binary - this should always exist,
-        // otherwise we wouldn't be able to run Rokit in the first place...?
         let artifact = Artifact::sort_by_system_compatibility(&artifacts)
             .first()
             .cloned()
             .context("No compatible Rokit artifact was found (WAT???)")?;
-        let binary_contents = source
+        let artifact_contents = source
             .download_artifact_contents(&artifact)
             .await
             .context("Failed to download latest Rokit binary")?;
+
+        // Extract the binary contents from the artifact
+        pb.inc(1);
+        pb.set_message("Extracting");
+        let binary_contents = artifact
+            .extract_contents(artifact_contents)
+            .await
+            .context("Failed to extract Rokit binary from archive")?;
 
         // Finally, we need to replace the current binary contents and all links to it.
         pb.inc(1);
@@ -95,8 +103,6 @@ impl SelfUpdateSubcommand {
             style(&version_current).bold().magenta(),
         );
         finish_progress_bar(pb, msg);
-
-        // FIXME: After running self-update, we get an exec format error :-(
 
         Ok(())
     }
