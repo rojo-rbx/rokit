@@ -27,7 +27,7 @@ pub struct AddSubcommand {
     /// Force add and install the tool, even
     /// if it is already added or installed.
     #[clap(long)]
-    force: bool,
+    pub force: bool,
 }
 
 impl AddSubcommand {

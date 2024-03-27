@@ -5,16 +5,22 @@ use tokio::time::Instant;
 use rokit::storage::Home;
 
 mod add;
+mod init;
 mod install;
 mod list;
 mod self_install;
+mod self_update;
 mod trust;
+mod update;
 
 use self::add::AddSubcommand;
+use self::init::InitSubcommand;
 use self::install::InstallSubcommand;
 use self::list::ListSubcommand;
 use self::self_install::SelfInstallSubcommand;
+use self::self_update::SelfUpdateSubcommand;
 use self::trust::TrustSubcommand;
+use self::update::UpdateSubcommand;
 
 #[derive(Debug, Parser)]
 #[clap(author, version, about)]
@@ -66,20 +72,26 @@ impl Cli {
 #[derive(Debug, Parser)]
 pub enum Subcommand {
     Add(AddSubcommand),
+    Init(InitSubcommand),
     Install(InstallSubcommand),
     List(ListSubcommand),
     SelfInstall(SelfInstallSubcommand),
+    SelfUpdate(SelfUpdateSubcommand),
     Trust(TrustSubcommand),
+    Update(UpdateSubcommand),
 }
 
 impl Subcommand {
     pub async fn run(self, home: &Home) -> Result<()> {
         match self {
             Self::Add(cmd) => cmd.run(home).await,
+            Self::Init(cmd) => cmd.run(home).await,
             Self::Install(cmd) => cmd.run(home).await,
             Self::List(cmd) => cmd.run(home).await,
             Self::SelfInstall(cmd) => cmd.run(home).await,
+            Self::SelfUpdate(cmd) => cmd.run(home).await,
             Self::Trust(cmd) => cmd.run(home).await,
+            Self::Update(cmd) => cmd.run(home).await,
         }
     }
 }

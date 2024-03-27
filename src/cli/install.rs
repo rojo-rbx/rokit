@@ -20,10 +20,10 @@ pub struct InstallSubcommand {
     /// Skip checking if tools have been trusted before.
     /// It is recommended to only use this on CI machines.
     #[clap(long)]
-    no_trust_check: bool,
+    pub no_trust_check: bool,
     /// Force install all tools, even if they are already installed.
     #[clap(long)]
-    force: bool,
+    pub force: bool,
 }
 
 impl InstallSubcommand {

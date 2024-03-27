@@ -8,7 +8,7 @@ use rokit::{storage::Home, tool::ToolId};
 #[derive(Debug, Parser)]
 pub struct ListSubcommand {
     /// A specific tool identifier to list versions for.
-    id: Option<ToolId>,
+    pub id: Option<ToolId>,
 }
 
 impl ListSubcommand {
