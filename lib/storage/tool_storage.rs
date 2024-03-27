@@ -1,5 +1,5 @@
 use std::{
-    env::consts::EXE_SUFFIX,
+    env::{consts::EXE_SUFFIX, var},
     path::{Path, PathBuf},
     sync::Arc,
 };
@@ -30,6 +30,7 @@ pub struct ToolStorage {
     pub(super) tools_dir: Arc<Path>,
     pub(super) aliases_dir: Arc<Path>,
     current_rokit_contents: Arc<AsyncMutex<Option<Vec<u8>>>>,
+    no_symlinks: bool,
 }
 
 impl ToolStorage {
@@ -81,27 +82,14 @@ impl ToolStorage {
     }
 
     /**
-        Replaces the contents of the stored Rokit binary.
+        Replaces the contents of the stored Rokit binary in memory.
 
-        If `contents` is `None`, the current executable will
-        be used, otherwise the given contents will be used.
+        Note that this **does not** update the actual Rokit binary or any links.
 
-        This would also update the cached contents of
-        the current executable stored in this struct.
+        To update the Rokit binary and all links, use `recreate_all_links`.
     */
-    pub async fn replace_rokit_contents(&self, contents: Option<Vec<u8>>) -> RokitResult<()> {
-        let contents = match contents {
-            Some(contents) => {
-                self.current_rokit_contents
-                    .lock()
-                    .await
-                    .replace(contents.clone());
-                contents
-            }
-            None => self.rokit_contents().await?,
-        };
-        write_executable_file(self.rokit_path(), &contents).await?;
-        Ok(())
+    pub async fn replace_rokit_contents(&self, contents: Vec<u8>) {
+        self.current_rokit_contents.lock().await.replace(contents);
     }
 
     /**
@@ -111,7 +99,7 @@ impl ToolStorage {
     */
     pub async fn create_tool_link(&self, alias: &ToolAlias) -> RokitResult<()> {
         let path = self.aliases_dir.join(alias.name());
-        if cfg!(unix) {
+        if cfg!(unix) && !self.no_symlinks {
             let rokit_path = self.rokit_path();
             write_executable_link(path, &rokit_path).await?;
         } else {
@@ -159,7 +147,7 @@ impl ToolStorage {
         link_paths
             .into_iter()
             .map(|link_path| async {
-                if cfg!(unix) {
+                if cfg!(unix) && !self.no_symlinks {
                     write_executable_link(link_path, &rokit_path).await
                 } else {
                     write_executable_file(link_path, &contents).await
@@ -186,11 +174,15 @@ impl ToolStorage {
         )?;
 
         let current_rokit_contents = Arc::new(AsyncMutex::new(None));
+        let no_symlinks = var("ROKIT_NO_SYMLINKS")
+            .map(|val| matches!(val.to_ascii_lowercase().as_str(), "1" | "true"))
+            .unwrap_or_default();
 
         Ok(Self {
             tools_dir,
             aliases_dir,
             current_rokit_contents,
+            no_symlinks,
         })
     }
 
