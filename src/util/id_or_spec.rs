@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use serde_with::DeserializeFromStr;
 
-use rokit::tool::{ToolAlias, ToolId, ToolSpec, ToolSpecParseError};
+use rokit::tool::{ToolAlias, ToolId, ToolSpec};
 
 use super::constants::KNOWN_TOOLS;
 
@@ -27,7 +27,7 @@ pub enum ToolIdOrSpec {
 }
 
 impl FromStr for ToolIdOrSpec {
-    type Err = ToolSpecParseError;
+    type Err = anyhow::Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.contains('@') {
             Ok(Self::Spec(s.parse()?))

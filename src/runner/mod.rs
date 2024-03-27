@@ -29,12 +29,14 @@ impl Runner {
         let alias = ToolAlias::from_str(&self.exe_name)?;
 
         let home = Home::load_from_env().await?;
-        let spec = discover_tool_spec(&alias, false).await.with_context(|| {
-            format!(
-                "Failed to find tool '{alias}' in any project manifest file.\
-                \nAdd the tool to a project using 'rokit add' before running it."
-            )
-        })?;
+        let spec = discover_tool_spec(&alias, false, false)
+            .await
+            .with_context(|| {
+                format!(
+                    "Failed to find tool '{alias}' in any project manifest file.\
+                    \nAdd the tool to a project using 'rokit add' before running it."
+                )
+            })?;
 
         // TODO: Prompt for trust and install tool if not already installed
 

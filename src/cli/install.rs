@@ -32,7 +32,7 @@ impl InstallSubcommand {
 
         let auth = AuthManifest::load(home.path()).await?;
         let source = ArtifactSource::new_authenticated(&auth.get_all_tokens())?;
-        let manifests = discover_all_manifests(false).await;
+        let manifests = discover_all_manifests(false, false).await;
 
         let tool_cache = home.tool_cache();
         let tool_storage = home.tool_storage();
@@ -76,7 +76,7 @@ impl InstallSubcommand {
         // 3. Find artifacts, download and install them
 
         let pb = new_progress_bar("Installing", tool_specs.len(), 5);
-        let artifacts = tool_specs
+        let installed_specs = tool_specs
             .into_iter()
             .map(|tool_spec| async {
                 if tool_cache.is_installed(&tool_spec) && !force {
@@ -136,9 +136,9 @@ impl InstallSubcommand {
         // 5. Finally, display a nice message to the user
         let msg = format!(
             "Installed and created link{} for {} tool{} {}",
-            if artifacts.len() == 1 { "" } else { "s" },
-            style(artifacts.len()).bold().magenta(),
-            if artifacts.len() == 1 { "" } else { "s" },
+            if installed_specs.len() == 1 { "" } else { "s" },
+            style(installed_specs.len()).bold().magenta(),
+            if installed_specs.len() == 1 { "" } else { "s" },
             style(format!("(took {:.2?})", pb.elapsed())).dim(),
         );
         finish_progress_bar(pb, msg);

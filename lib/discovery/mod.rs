@@ -48,7 +48,7 @@ pub struct DiscoveredManifest {
     pub tools: HashMap<ToolAlias, ToolSpec>,
 }
 
-fn search_paths(cwd: &Path, rokit_only: bool) -> Vec<(ManifestKind, PathBuf)> {
+fn search_paths(cwd: &Path, rokit_only: bool, skip_home: bool) -> Vec<(ManifestKind, PathBuf)> {
     let mut ordered_paths = Vec::new();
 
     // Gather paths from current directory and up
@@ -71,24 +71,26 @@ fn search_paths(cwd: &Path, rokit_only: bool) -> Vec<(ManifestKind, PathBuf)> {
         current = dir.parent();
     }
 
-    // Gather paths from program-specific home directories
-    if let Some(home) = dirs::home_dir() {
-        ordered_paths.push((
-            ManifestKind::Rokit,
-            home.join(RokitManifest::home_dir())
-                .join(RokitManifest::manifest_file_name()),
-        ));
-        if !rokit_only {
+    // Gather paths from program-specific home directories, if desired
+    if !skip_home {
+        if let Some(home) = dirs::home_dir() {
             ordered_paths.push((
-                ManifestKind::Aftman,
-                home.join(AftmanManifest::home_dir())
-                    .join(AftmanManifest::manifest_file_name()),
+                ManifestKind::Rokit,
+                home.join(RokitManifest::home_dir())
+                    .join(RokitManifest::manifest_file_name()),
             ));
-            ordered_paths.push((
-                ManifestKind::Foreman,
-                home.join(ForemanManifest::home_dir())
-                    .join(ForemanManifest::manifest_file_name()),
-            ));
+            if !rokit_only {
+                ordered_paths.push((
+                    ManifestKind::Aftman,
+                    home.join(AftmanManifest::home_dir())
+                        .join(AftmanManifest::manifest_file_name()),
+                ));
+                ordered_paths.push((
+                    ManifestKind::Foreman,
+                    home.join(ForemanManifest::home_dir())
+                        .join(ForemanManifest::manifest_file_name()),
+                ));
+            }
         }
     }
 
@@ -102,11 +104,11 @@ fn search_paths(cwd: &Path, rokit_only: bool) -> Vec<(ManifestKind, PathBuf)> {
 
     This is a slow operation that reads many potential files - use `discover_tool_spec` if possible.
 */
-pub async fn discover_all_manifests(rokit_only: bool) -> Vec<DiscoveredManifest> {
+pub async fn discover_all_manifests(rokit_only: bool, skip_home: bool) -> Vec<DiscoveredManifest> {
     let cwd = current_dir().await;
     let cwd_depth = cwd.components().count();
 
-    let found_manifest_contents = search_paths(&cwd, rokit_only)
+    let found_manifest_contents = search_paths(&cwd, rokit_only, skip_home)
         .into_iter()
         .map(|(kind, path)| async move {
             let contents = read_to_string(&path).await.ok()?;
@@ -144,10 +146,14 @@ pub async fn discover_all_manifests(rokit_only: bool) -> Vec<DiscoveredManifest>
 
     This is a fast operation that reads only the necessary files.
 */
-pub async fn discover_tool_spec(alias: &ToolAlias, rokit_only: bool) -> Option<ToolSpec> {
+pub async fn discover_tool_spec(
+    alias: &ToolAlias,
+    rokit_only: bool,
+    skip_home: bool,
+) -> Option<ToolSpec> {
     let cwd = current_dir().await;
 
-    for (kind, path) in search_paths(&cwd, rokit_only) {
+    for (kind, path) in search_paths(&cwd, rokit_only, skip_home) {
         let contents = match read_to_string(&path).await {
             Ok(contents) => contents,
             Err(_) => continue,

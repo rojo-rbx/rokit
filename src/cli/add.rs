@@ -56,8 +56,8 @@ impl AddSubcommand {
         let manifest_path = if self.global {
             home.path().to_path_buf()
         } else {
-            let manifests = discover_all_manifests(true).await;
-            manifests
+            let non_global_manifests = discover_all_manifests(true, true).await;
+            non_global_manifests
                 .first()
                 .map(|m| m.path.parent().unwrap().to_path_buf())
                 .context(

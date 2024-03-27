@@ -17,6 +17,7 @@ pub struct InitSubcommand {
 impl InitSubcommand {
     pub async fn run(self, _home: &Home) -> Result<()> {
         let cwd = current_dir().await;
+
         if RokitManifest::load(&cwd).await.is_ok() && !self.force {
             bail!(
                 "A Rokit project already exists in this directory.\n\

@@ -112,6 +112,28 @@ impl RokitManifest {
     }
 
     /**
+        Updates a tool in the manifest with a new tool specification.
+
+        If the tool doesn't exist, this will return `false` and do nothing.
+    */
+    pub fn update_tool(&mut self, alias: &ToolAlias, spec: &ToolSpec) -> bool {
+        let doc = self.document.as_table_mut();
+        if !doc.contains_table("tools") {
+            return false;
+        }
+        let tools = doc["tools"].as_table_mut().unwrap();
+        if tools.contains_value(alias.name()) {
+            tools.insert(
+                alias.name(),
+                Item::Value(Value::String(Formatted::new(spec.to_string()))),
+            );
+            true
+        } else {
+            false
+        }
+    }
+
+    /**
         Returns all valid tool specifications in the manifest.
 
         This will ignore any tools that are not valid tool specifications.
