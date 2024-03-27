@@ -117,7 +117,7 @@ impl GithubProvider {
     */
     #[instrument(skip(self), fields(%tool_id), level = "debug")]
     pub async fn get_latest_release(&self, tool_id: &ToolId) -> Result<Vec<Artifact>> {
-        debug!("fetching latest release for tool");
+        debug!(id = %tool_id, "fetching latest release for tool");
 
         let repository = self.client.repos(tool_id.author(), tool_id.name());
         let releases = repository.releases();
@@ -141,7 +141,7 @@ impl GithubProvider {
     */
     #[instrument(skip(self), fields(%tool_spec), level = "debug")]
     pub async fn get_specific_release(&self, tool_spec: &ToolSpec) -> Result<Vec<Artifact>> {
-        debug!("fetching release for tool");
+        debug!(spec = %tool_spec, "fetching release for tool");
 
         let repository = self.client.repos(tool_spec.author(), tool_spec.name());
         let releases = repository.releases();
@@ -169,13 +169,14 @@ impl GithubProvider {
             "artifact must be from GitHub"
         );
 
-        debug!("downloading artifact contents");
+        let id = artifact.id.as_ref().expect("GitHub artifacts have ids");
+        let name = artifact.name.as_ref().expect("GitHub artifacts have names");
+        debug!(id, name, "downloading artifact contents");
 
         let url = format!(
             "{BASE_URI}/repos/{owner}/{repo}/releases/assets/{id}",
             owner = artifact.tool_spec.author(),
             repo = artifact.tool_spec.name(),
-            id = artifact.id.as_ref().expect("GitHub artifacts must have id")
         );
         let headers = {
             let mut headers = HeaderMap::new();

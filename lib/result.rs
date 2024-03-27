@@ -12,6 +12,11 @@ pub enum RokitError {
     ExtractUnknownFormat,
     #[error("failed to extract artifact: missing binary file")]
     ExtractFileMissing,
+    #[error("failed to extract artifact:\n{source}\nresponse body first bytes:\n{body}")]
+    ExtractError {
+        source: Box<dyn std::error::Error + Send + Sync>,
+        body: String,
+    },
     #[error("unexpected invalid UTF-8")]
     InvalidUtf8,
     #[error("task join error: {0}")]

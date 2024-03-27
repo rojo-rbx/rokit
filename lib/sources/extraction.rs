@@ -8,17 +8,20 @@ use tokio::{task::spawn_blocking, time::Instant};
 use crate::result::RokitResult;
 
 pub async fn extract_zip_file(
-    zip_contents: Vec<u8>,
+    zip_contents: impl AsRef<[u8]>,
     desired_file_name: impl Into<String>,
 ) -> RokitResult<Option<Vec<u8>>> {
     let desired_file_name = format!("{}{EXE_SUFFIX}", desired_file_name.into());
+
+    let zip_contents = zip_contents.as_ref().to_vec();
+    let num_bytes = zip_contents.len();
+
+    tracing::debug!(num_bytes, "Extracting zip file");
+    let start = Instant::now();
+
     // Reading a zip file is a potentially expensive operation, so
     // spawn it as a blocking task and use the tokio thread pool.
     spawn_blocking(move || {
-        let num_bytes = zip_contents.len();
-        tracing::debug!(num_bytes, "Extracting zip file");
-        let start = Instant::now();
-
         let mut found = None;
         let mut reader = io::Cursor::new(&zip_contents);
         let mut zip = zip::ZipArchive::new(&mut reader)?;

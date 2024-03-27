@@ -129,9 +129,21 @@ impl Artifact {
         let format = self.format.ok_or(RokitError::ExtractUnknownFormat)?;
 
         let file_name = self.tool_spec.name().to_string();
-        let file_opt = match format {
-            ArtifactFormat::Zip => extract_zip_file(contents, &file_name).await?,
+        let file_res = match format {
+            ArtifactFormat::Zip => extract_zip_file(&contents, &file_name).await,
         };
+
+        let file_opt = file_res.map_err(|err| RokitError::ExtractError {
+            source: err.into(),
+            body: {
+                if contents.len() > 86 {
+                    let bytes = contents.iter().cloned().take(80).collect::<Vec<_>>();
+                    format!("{} <...>", String::from_utf8_lossy(bytes.as_slice()))
+                } else {
+                    String::from_utf8_lossy(&contents).to_string()
+                }
+            },
+        })?;
 
         file_opt.ok_or(RokitError::ExtractFileMissing)
     }
