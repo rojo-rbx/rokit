@@ -223,6 +223,11 @@ fn build_dl_client(pat: Option<String>) -> Result<reqwest::Client> {
     };
     let client = reqwest::Client::builder()
         .default_headers(headers)
+        .gzip(true)
+        .brotli(true)
+        .deflate(true)
+        .connect_timeout(Duration::from_secs(15))
+        .timeout(Duration::from_secs(60))
         .build()
         .map_err(other_err)?;
     Ok(client)
