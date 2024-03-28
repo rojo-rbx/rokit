@@ -9,6 +9,25 @@ readme = "README.md"
 keywords = ["cli"]
 categories = ["command-line-interface"]
 
+[[bin]]
+name = "rokit"
+path = "src/main.rs"
+
+[lib]
+name = "rokit"
+path = "lib/lib.rs"
+
+[features]
+default = ["cli"]
+cli = [
+    "dep:anyhow",
+    "dep:clap",
+    "dep:console",
+    "dep:dialoguer",
+    "dep:indicatif",
+    "dep:tracing-subscriber",
+]
+
 [dependencies]
 dashmap = { version = "5.5", features = ["serde"] }
 dirs = "5.0"
@@ -61,22 +80,3 @@ tracing-subscriber = { optional = true, version = "0.3", features = [
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.52"
-
-[features]
-default = ["cli"]
-cli = [
-    "dep:anyhow",
-    "dep:clap",
-    "dep:console",
-    "dep:dialoguer",
-    "dep:indicatif",
-    "dep:tracing-subscriber",
-]
-
-[[bin]]
-name = "rokit"
-path = "src/main.rs"
-
-[lib]
-name = "rokit"
-path = "lib/lib.rs"
