@@ -10,6 +10,7 @@ Next-generation toolchain manager for Roblox projects.
 
 - ⚡ Tools download and install **_really fast_**.
 - ♻️ Drop-in compatibility with projects that already use [Foreman][foreman] or [Aftman][aftman].
+- 📦 Supports additional formats and compressed files, such as `.tar` and `.tar.gz`.
 - 🤖 Additional commands for adding and updating tools, and even updating Rokit itself.
 - 📝 Useful output messages that are easy for humans to read and understand.
 
