@@ -75,7 +75,7 @@ impl UpdateSubcommand {
                         let found = manifest
                             .tool_specs()
                             .iter()
-                            .flat_map(|(a, s)| {
+                            .filter_map(|(a, s)| {
                                 if s.id() == &search_id {
                                     Some(a.clone())
                                 } else {
@@ -94,9 +94,8 @@ impl UpdateSubcommand {
                                 "Multiple tools with the id '{search_id}' have been added to this project.\
                                 \nPlease specify the tool by its alias, or update the manifest manually."
                             )
-                        } else {
-                            found.first().unwrap().clone()
                         }
+                        found.first().unwrap().clone()
                     };
                     // Transform tool alias, id, or spec -> (alias, id or spec)
                     match tool {
@@ -166,7 +165,7 @@ impl UpdateSubcommand {
         pb.set_message("Modifying");
         let tools_changed = tool_releases
             .iter()
-            .flat_map(|(alias, _, artifact)| {
+            .filter_map(|(alias, _, artifact)| {
                 let spec_old = manifest.get_tool(alias).unwrap();
                 let spec_new = artifact.tool_spec.clone();
                 if spec_old == spec_new {
@@ -183,7 +182,13 @@ impl UpdateSubcommand {
         manifest.save(&manifest_path).await?;
 
         // 5. Finally, display a nice message to the user
-        if !tools_changed.is_empty() {
+        if tools_changed.is_empty() {
+            let msg = format!(
+                "All tools are already up-to-date! {}",
+                style(format!("(took {:.2?})", pb.elapsed())).dim()
+            );
+            finish_progress_bar(&pb, msg);
+        } else {
             let bullet = style("•").dim();
             let msg = format!(
                 "Updated versions for {} tool{} {}\n\n{}\n\n\
@@ -205,13 +210,7 @@ impl UpdateSubcommand {
                     .join("\n"),
                 style("rokit install").bold().green(),
             );
-            finish_progress_bar(pb, msg);
-        } else {
-            let msg = format!(
-                "All tools are already up-to-date! {}",
-                style(format!("(took {:.2?})", pb.elapsed())).dim()
-            );
-            finish_progress_bar(pb, msg);
+            finish_progress_bar(&pb, msg);
         }
 
         // FUTURE: Install the newly updated tools automatically

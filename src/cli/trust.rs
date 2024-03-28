@@ -33,11 +33,11 @@ impl TrustSubcommand {
         if added_tools.len() == 1 && existing_tools.is_empty() {
             // Special case 1 with shorter output - a singular tool was added
             let msg = format!("Tool {} is now trusted {took}", added_tools[0]);
-            finish_progress_bar(pb, msg);
+            finish_progress_bar(&pb, msg);
         } else if existing_tools.len() == 1 && added_tools.is_empty() {
             // Special case 2 with shorter output - a singular tool was already trusted
             let msg = format!("Tool {} was already trusted {took}", existing_tools[0]);
-            finish_progress_bar(pb, msg);
+            finish_progress_bar(&pb, msg);
         } else {
             // General case with multiple tools added and/or already trusted
             let mut lines = Vec::new();
@@ -63,7 +63,7 @@ impl TrustSubcommand {
                 if added_tools.len() == 1 { "" } else { "s" },
                 lines.join("\n")
             );
-            finish_progress_bar(pb, msg);
+            finish_progress_bar(&pb, msg);
         }
 
         Ok(())

@@ -141,7 +141,7 @@ impl InstallSubcommand {
             if installed_specs.len() == 1 { "" } else { "s" },
             style(format!("(took {:.2?})", pb.elapsed())).dim(),
         );
-        finish_progress_bar(pb, msg);
+        finish_progress_bar(&pb, msg);
 
         Ok(())
     }

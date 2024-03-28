@@ -36,7 +36,7 @@ impl SelfInstallSubcommand {
                     "Failed to automatically add Rokit to your PATH!\
                     \nPlease add `~/.rokit/bin` to be able to run tools.
                     \nError: {e:?}",
-                )
+                );
             })
             .unwrap_or(false);
         let path_contains_rokit = exists_in_path(home);
@@ -74,7 +74,7 @@ impl SelfInstallSubcommand {
             "{main_message} {}{should_restart_message}{help_message}",
             style(format!("(took {:.2?})", pb.elapsed())).dim(),
         );
-        finish_progress_bar(pb, msg);
+        finish_progress_bar(&pb, msg);
 
         Ok(())
     }

@@ -57,7 +57,7 @@ impl SelfUpdateSubcommand {
                 style(format!("(took {:.2?})", pb.elapsed())).dim(),
                 style(&version_latest).bold().magenta(),
             );
-            finish_progress_bar(pb, msg);
+            finish_progress_bar(&pb, msg);
             return Ok(());
         }
 
@@ -102,7 +102,7 @@ impl SelfUpdateSubcommand {
             style(&version_latest).bold().magenta(),
             style(&version_current).bold().magenta(),
         );
-        finish_progress_bar(pb, msg);
+        finish_progress_bar(&pb, msg);
 
         Ok(())
     }

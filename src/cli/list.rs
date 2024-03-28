@@ -25,7 +25,7 @@ impl ListSubcommand {
 
         println!(
             "{header}{}{}",
-            if !lines.is_empty() { "\n\n" } else { "\n" },
+            if lines.is_empty() { "\n" } else { "\n\n" },
             lines.join("\n")
         );
 
@@ -46,7 +46,10 @@ fn list_versions_for_id(home: &Home, id: &ToolId) -> (String, Vec<String>) {
     let mut versions = cache.all_installed_versions_for_id(id);
     versions.reverse(); // List newest versions first
 
-    if !versions.is_empty() {
+    if versions.is_empty() {
+        let header = format!("🛠️  No versions of {id} are installed.");
+        (header, Vec::new())
+    } else {
         let header = format!("🛠️  Installed versions of {id}:");
         let bullet = style("•").dim();
         let lines = versions
@@ -54,9 +57,6 @@ fn list_versions_for_id(home: &Home, id: &ToolId) -> (String, Vec<String>) {
             .map(|version| format!("  {bullet} {version}"))
             .collect();
         (header, lines)
-    } else {
-        let header = format!("🛠️  No versions of {id} are installed.");
-        (header, Vec::new())
     }
 }
 

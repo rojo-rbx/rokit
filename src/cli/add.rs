@@ -140,14 +140,14 @@ impl AddSubcommand {
             "Added version {} of tool {}{} {}",
             style(spec.version()).bold().yellow(),
             style(spec.name()).bold().magenta(),
-            if alias.name() != id.name() {
-                format!(" with alias {}", style(alias.to_string()).bold().cyan())
+            if alias.name() == id.name() {
+                String::new()
             } else {
-                "".into()
+                format!(" with alias {}", style(alias.to_string()).bold().cyan())
             },
             style(format!("(took {:.2?})", pb.elapsed())).dim(),
         );
-        finish_progress_bar(pb, msg);
+        finish_progress_bar(&pb, msg);
 
         Ok(())
     }

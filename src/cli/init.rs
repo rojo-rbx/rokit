@@ -15,7 +15,7 @@ pub struct InitSubcommand {
 }
 
 impl InitSubcommand {
-    pub async fn run(self, _home: &Home) -> Result<()> {
+    pub async fn run(self, _: &Home) -> Result<()> {
         let cwd = current_dir().await;
 
         if RokitManifest::load(&cwd).await.is_ok() && !self.force {
@@ -52,7 +52,7 @@ impl InitSubcommand {
             style(format!("(took {:.2?})", pb.elapsed())).dim(),
             style("rokit add").bold().green()
         );
-        finish_progress_bar(pb, msg);
+        finish_progress_bar(&pb, msg);
 
         Ok(())
     }

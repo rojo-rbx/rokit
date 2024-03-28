@@ -26,9 +26,7 @@ pub static KNOWN_TOOLS: Lazy<BTreeMap<&'static str, ToolId>> = Lazy::new(|| {
 
     for (author, tools) in KNOWN_TOOL_AUTHORS_AND_IDS {
         for tool in tools {
-            if set.contains(tool) {
-                panic!("Duplicate known tool id: {tool}");
-            }
+            assert!(!set.contains(tool), "Duplicate known tool id: {tool}");
             let id = ToolId::from_str(&format!("{author}/{tool}"))
                 .expect("Known tool id should be valid");
             map.insert(*tool, id);
