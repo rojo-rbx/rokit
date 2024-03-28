@@ -46,7 +46,7 @@ impl AddSubcommand {
             if !self.force && !prompt_for_trust(id.clone()).await? {
                 bail!("Tool is not trusted - operation was aborted");
             }
-            tool_cache.add_trust(id.clone());
+            let _ = tool_cache.add_trust(id.clone());
         }
 
         // 2. Load tool source, manifest, and do a preflight check
@@ -126,7 +126,7 @@ impl AddSubcommand {
                 .with_context(|| format!("Failed to extract contents for {spec}"))?;
             tool_storage.replace_tool_contents(&spec, extracted).await?;
             pb.inc(1);
-            tool_cache.add_installed(spec.clone());
+            let _ = tool_cache.add_installed(spec.clone());
         } else {
             pb.inc(2);
         }

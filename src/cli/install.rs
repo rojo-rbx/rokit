@@ -64,7 +64,7 @@ impl InstallSubcommand {
                 .partition(|spec| tool_cache.is_trusted(spec.id()));
             let newly_trusted_specs = prompt_for_trust_specs(untrusted_specs).await?;
             for spec in &newly_trusted_specs {
-                tool_cache.add_trust(spec.id().clone());
+                let _ = tool_cache.add_trust(spec.id().clone());
             }
             trusted_specs
                 .iter()
@@ -114,7 +114,7 @@ impl InstallSubcommand {
                     .await?;
                 pb.inc(1);
 
-                tool_cache.add_installed(tool_spec.clone());
+                let _ = tool_cache.add_installed(tool_spec.clone());
                 Ok(tool_spec)
             })
             .collect::<FuturesUnordered<_>>()
