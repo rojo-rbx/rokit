@@ -78,6 +78,7 @@ impl ArtifactFormat {
         match extension {
             ext if ext.eq_ignore_ascii_case("zip") => Some(Self::Zip),
             ext if ext.eq_ignore_ascii_case("tar") => Some(Self::Tar),
+            ext if ext.eq_ignore_ascii_case("tgz") => Some(Self::TarGz),
             ext if ext.eq_ignore_ascii_case("gz") => {
                 let stem = Path::new(&lowercased).file_stem()?;
                 let ext2 = Path::new(stem).extension()?;
