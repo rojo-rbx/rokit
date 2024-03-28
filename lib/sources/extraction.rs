@@ -100,7 +100,7 @@ pub async fn extract_zip_file(
     let desired_file_path = PathBuf::from(&desired_file_name);
 
     let zip_contents = zip_contents.as_ref().to_vec();
-    let num_bytes = zip_contents.len();
+    let num_kilobytes = zip_contents.len() / 1024;
     let start = Instant::now();
 
     // Reading a zip file is a potentially expensive operation, so
@@ -140,7 +140,7 @@ pub async fn extract_zip_file(
         }
 
         tracing::debug!(
-            num_bytes,
+            num_kilobytes,
             elapsed = ?start.elapsed(),
             found = found.is_some(),
             "extracted zip file"
@@ -163,7 +163,7 @@ pub async fn extract_tar_file(
     let desired_file_path = PathBuf::from(&desired_file_name);
 
     let tar_contents = tar_contents.as_ref().to_vec();
-    let num_bytes = tar_contents.len();
+    let num_kilobytes = tar_contents.len() / 1024;
     let start = Instant::now();
 
     // Reading a tar file is a potentially expensive operation, so
@@ -218,7 +218,7 @@ pub async fn extract_tar_file(
         }
 
         tracing::debug!(
-            num_bytes,
+            num_kilobytes,
             elapsed = ?start.elapsed(),
             found = found.is_some(),
             "extracted tar file"
