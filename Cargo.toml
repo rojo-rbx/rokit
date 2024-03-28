@@ -80,3 +80,12 @@ tracing-subscriber = { optional = true, version = "0.3", features = [
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.52"
+
+[lints.clippy]
+all = { level = "deny", priority = -3 }
+cargo = { level = "warn", priority = -2 }
+pedantic = { level = "warn", priority = -1 }
+
+missing_panics_doc = { level = "allow", priority = 1 }
+module_name_repetitions = { level = "allow", priority = 1 }
+multiple_crate_versions = { level = "allow", priority = 1 }
