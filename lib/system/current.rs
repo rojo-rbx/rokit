@@ -57,7 +57,9 @@ pub fn current_exe_name() -> String {
 
             // NOTE: Shells on Windows can be weird sometimes and pass arg0
             // using either a lowercase or uppercase extension, so we fix that
-            let exe_name = if !EXE_EXTENSION.is_empty() {
+            let exe_name = if EXE_EXTENSION.is_empty() {
+                exe_name
+            } else {
                 let suffix_lower = EXE_EXTENSION.to_ascii_lowercase();
                 let suffix_upper = EXE_EXTENSION.to_ascii_uppercase();
                 if let Some(stripped) = exe_name.strip_suffix(&suffix_lower) {
@@ -67,8 +69,6 @@ pub fn current_exe_name() -> String {
                 } else {
                     exe_name
                 }
-            } else {
-                exe_name
             };
 
             exe_name.to_string()

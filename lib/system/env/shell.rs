@@ -10,7 +10,7 @@ pub enum Shell {
 impl Shell {
     pub const ALL: [Self; 3] = [Self::Posix, Self::Bash, Self::Zsh];
 
-    pub const fn name(&self) -> &'static str {
+    pub const fn name(self) -> &'static str {
         match self {
             Self::Posix => "sh",
             Self::Bash => "bash",
@@ -18,7 +18,7 @@ impl Shell {
         }
     }
 
-    pub const fn env_file_path(&self) -> &'static str {
+    pub const fn env_file_path(self) -> &'static str {
         match self {
             Self::Posix => ".profile",
             Self::Bash => ".bashrc",
@@ -26,7 +26,7 @@ impl Shell {
         }
     }
 
-    pub fn env_file_should_create_if_nonexistent(&self) -> bool {
+    pub fn env_file_should_create_if_nonexistent(self) -> bool {
         // Create a new shell env file for the user if we are
         // confident that this is the shell that they are using
         var("SHELL").map_or(false, |current_shell| {

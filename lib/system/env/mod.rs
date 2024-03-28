@@ -14,6 +14,10 @@ mod windows;
     Tries to add the Rokit binaries directory to the system PATH.
 
     Returns `true` if the directory was added to the PATH, `false` otherwise.
+
+    # Errors
+
+    - If the directory could not be added to the PATH.
 */
 pub async fn add_to_path(home: &Home) -> RokitResult<bool> {
     #[cfg(unix)]
@@ -31,6 +35,7 @@ pub async fn add_to_path(home: &Home) -> RokitResult<bool> {
 
     Returns `true` if the directory is in the PATH, `false` otherwise.
 */
+#[must_use]
 pub fn exists_in_path(_home: &Home) -> bool {
     let pattern = format!("rokit{MAIN_SEPARATOR_STR}bin");
     var("PATH")

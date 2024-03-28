@@ -86,13 +86,11 @@ async fn append_to_shell_file(
 }
 
 fn replace_home_path_with_var(path: &str) -> String {
-    let home_dir = match dirs::home_dir() {
-        Some(home_dir) => home_dir,
-        None => return path.to_string(),
+    let Some(home_dir) = dirs::home_dir() else {
+        return path.to_string();
     };
-    let home_dir_str = match home_dir.to_str() {
-        Some(home_dir_str) => home_dir_str,
-        None => return path.to_string(),
+    let Some(home_dir_str) = home_dir.to_str() else {
+        return path.to_string();
     };
     path.replace(home_dir_str, "$HOME")
 }
