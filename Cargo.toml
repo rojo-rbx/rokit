@@ -28,6 +28,11 @@ cli = [
     "dep:tracing-subscriber",
 ]
 
+[profile.release]
+opt-level = "z"
+strip = true
+lto = true
+
 [dependencies]
 dashmap = { version = "5.5", features = ["serde"] }
 dirs = "5.0"
