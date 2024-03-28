@@ -15,10 +15,10 @@ pub enum ToolIdParseError {
     Empty,
     #[error("missing '/' separator")]
     MissingSeparator,
-    #[error("author is empty or invalid")]
-    InvalidAuthor,
-    #[error("name is empty or invalid")]
-    InvalidName,
+    #[error("author '{0}' is empty or invalid")]
+    InvalidAuthor(String),
+    #[error("name '{0}' is empty or invalid")]
+    InvalidName(String),
 }
 
 /**
@@ -67,10 +67,10 @@ impl FromStr for ToolId {
         let after = after.trim();
 
         if is_invalid_identifier(before) {
-            return Err(ToolIdParseError::InvalidAuthor);
+            return Err(ToolIdParseError::InvalidAuthor(before.to_string()));
         }
         if is_invalid_identifier(after) {
-            return Err(ToolIdParseError::InvalidName);
+            return Err(ToolIdParseError::InvalidName(after.to_string()));
         }
 
         Ok(Self {

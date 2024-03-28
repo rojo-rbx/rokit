@@ -12,10 +12,10 @@ use super::util::is_invalid_identifier;
 pub enum ToolAliasParseError {
     #[error("alias is empty")]
     Empty,
-    #[error("alias is invalid")]
-    Invalid,
-    #[error("alias contains whitespace")]
-    ContainsWhitespace,
+    #[error("alias '{0}' is invalid")]
+    Invalid(String),
+    #[error("alias '{0}' contains whitespace")]
+    ContainsWhitespace(String),
 }
 
 /**
@@ -46,13 +46,13 @@ impl FromStr for ToolAlias {
             return Err(ToolAliasParseError::Empty);
         }
         if is_invalid_identifier(s) {
-            return Err(ToolAliasParseError::Invalid);
+            return Err(ToolAliasParseError::Invalid(s.to_string()));
         }
         if s.chars().any(char::is_whitespace) {
-            return Err(ToolAliasParseError::ContainsWhitespace);
+            return Err(ToolAliasParseError::ContainsWhitespace(s.to_string()));
         }
         if s.eq_ignore_ascii_case("rokit") {
-            return Err(ToolAliasParseError::Invalid);
+            return Err(ToolAliasParseError::Invalid(s.to_string()));
         }
         Ok(Self {
             name: s.to_string(),

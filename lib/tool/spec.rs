@@ -17,8 +17,8 @@ pub enum ToolSpecParseError {
     MissingVersionSeparator,
     #[error(transparent)]
     IdParseError(#[from] ToolIdParseError),
-    #[error("version is invalid")]
-    InvalidVersion,
+    #[error("version '{0}' is invalid")]
+    InvalidVersion(String),
     #[error(transparent)]
     VersionParseError(#[from] semver::Error),
 }
@@ -80,7 +80,7 @@ impl FromStr for ToolSpec {
         let id = before.parse::<ToolId>()?;
 
         if is_invalid_identifier(after) {
-            return Err(ToolSpecParseError::InvalidVersion);
+            return Err(ToolSpecParseError::InvalidVersion(after.to_string()));
         }
 
         let version = after.parse::<Version>()?;
