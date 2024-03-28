@@ -1,13 +1,9 @@
 use anyhow::{bail, Context, Result};
 use clap::Parser;
-
 use console::style;
-use rokit::{
-    sources::{Artifact, ArtifactProvider},
-    storage::Home,
-    tool::ToolId,
-};
 use semver::Version;
+
+use rokit::{sources::Artifact, storage::Home, tool::ToolId};
 
 use crate::util::{finish_progress_bar, new_progress_bar};
 
@@ -38,9 +34,7 @@ impl SelfUpdateSubcommand {
         pb.inc(1);
         pb.set_message("Fetching");
 
-        let artifacts = source
-            .get_latest_release(ArtifactProvider::GitHub, &tool_id)
-            .await?;
+        let artifacts = source.get_latest_release(&tool_id).await?;
 
         // Skip updating if we are already on the latest version
         let version_current = env!("CARGO_PKG_VERSION").parse::<Version>().unwrap();

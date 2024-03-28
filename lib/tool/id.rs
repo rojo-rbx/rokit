@@ -4,6 +4,8 @@ use semver::Version;
 use serde_with::{DeserializeFromStr, SerializeDisplay};
 use thiserror::Error;
 
+use crate::sources::ArtifactProvider;
+
 use super::{util::is_invalid_identifier, ToolAlias, ToolSpec};
 
 /**
@@ -15,6 +17,8 @@ pub enum ToolIdParseError {
     Empty,
     #[error("missing '/' separator")]
     MissingSeparator,
+    #[error("artifact provider '{0}' is invalid")]
+    InvalidProvider(String),
     #[error("author '{0}' is empty or invalid")]
     InvalidAuthor(String),
     #[error("name '{0}' is empty or invalid")]
@@ -24,17 +28,23 @@ pub enum ToolIdParseError {
 /**
     A tool identifier, which includes the author and name of a tool.
 
+    Also includes the provider of the artifact, which by default is `GitHub`.
+
     Used to uniquely identify a tool, but not its version.
 */
-#[derive(
-    Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, DeserializeFromStr, SerializeDisplay,
-)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, DeserializeFromStr, SerializeDisplay)]
 pub struct ToolId {
+    pub(super) provider: ArtifactProvider,
     pub(super) author: String,
     pub(super) name: String,
 }
 
 impl ToolId {
+    #[must_use]
+    pub fn provider(&self) -> ArtifactProvider {
+        self.provider
+    }
+
     #[must_use]
     pub fn author(&self) -> &str {
         &self.author
@@ -56,6 +66,20 @@ impl ToolId {
     }
 }
 
+impl Ord for ToolId {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.author
+            .cmp(&other.author)
+            .then_with(|| self.name.cmp(&other.name))
+    }
+}
+
+impl PartialOrd for ToolId {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
 impl FromStr for ToolId {
     type Err = ToolIdParseError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -63,7 +87,16 @@ impl FromStr for ToolId {
             return Err(ToolIdParseError::Empty);
         }
 
-        let Some((before, after)) = s.split_once('/') else {
+        let (provider, after_provider) = match s.split_once(':') {
+            None => (ArtifactProvider::default(), s),
+            Some((left, right)) => {
+                let provider = ArtifactProvider::from_str(left)
+                    .map_err(|e| ToolIdParseError::InvalidProvider(e.to_string()))?;
+                (provider, right)
+            }
+        };
+
+        let Some((before, after)) = after_provider.split_once('/') else {
             return Err(ToolIdParseError::MissingSeparator);
         };
 
@@ -78,6 +111,7 @@ impl FromStr for ToolId {
         }
 
         Ok(Self {
+            provider,
             author: before.to_string(),
             name: after.to_string(),
         })
@@ -96,6 +130,15 @@ mod tests {
 
     fn new_id(author: &str, name: &str) -> ToolId {
         ToolId {
+            provider: ArtifactProvider::default(),
+            author: author.to_string(),
+            name: name.to_string(),
+        }
+    }
+
+    fn new_id_with_provider(provider: ArtifactProvider, author: &str, name: &str) -> ToolId {
+        ToolId {
+            provider,
             author: author.to_string(),
             name: name.to_string(),
         }
@@ -137,6 +180,17 @@ mod tests {
     }
 
     #[test]
+    fn parse_valid_provider() {
+        // Known provider strings should parse ok
+        assert!("github:a/b".parse::<ToolId>().is_ok());
+        // The parsed ToolId should match the input
+        assert_eq!(
+            "github:a/b".parse::<ToolId>().unwrap(),
+            new_id_with_provider(ArtifactProvider::GitHub, "a", "b")
+        );
+    }
+
+    #[test]
     fn parse_invalid_missing() {
         // Empty strings or parts should not be allowed
         assert!("".parse::<ToolId>().is_err());
@@ -150,5 +204,17 @@ mod tests {
         // Superfluous separators should not be allowed
         assert!("a/b/".parse::<ToolId>().is_err());
         assert!("a/b/c".parse::<ToolId>().is_err());
+    }
+
+    #[test]
+    fn parse_invalid_provider() {
+        // Empty provider should not be allowed
+        assert!(":a/b".parse::<ToolId>().is_err());
+        assert!(":a/b".parse::<ToolId>().is_err());
+        assert!(":a/b".parse::<ToolId>().is_err());
+        // Unrecognized provider should not be allowed
+        assert!("unknown:a/b".parse::<ToolId>().is_err());
+        assert!("hubgit:a/b".parse::<ToolId>().is_err());
+        assert!("bitbab:a/b".parse::<ToolId>().is_err());
     }
 }

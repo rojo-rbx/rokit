@@ -5,11 +5,7 @@ use clap::Parser;
 
 use console::style;
 use futures::{stream::FuturesUnordered, TryStreamExt};
-use rokit::{
-    discovery::discover_all_manifests,
-    sources::{Artifact, ArtifactProvider},
-    storage::Home,
-};
+use rokit::{discovery::discover_all_manifests, sources::Artifact, storage::Home};
 
 use crate::util::{finish_progress_bar, new_progress_bar, prompt_for_trust_specs};
 
@@ -84,9 +80,7 @@ impl InstallSubcommand {
                     return anyhow::Ok(tool_spec);
                 }
 
-                let artifacts = source
-                    .get_specific_release(ArtifactProvider::GitHub, &tool_spec)
-                    .await?;
+                let artifacts = source.get_specific_release(&tool_spec).await?;
                 pb.inc(1);
 
                 let artifact = Artifact::sort_by_system_compatibility(&artifacts)

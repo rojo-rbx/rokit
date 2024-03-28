@@ -17,9 +17,12 @@ use super::{
 
 /**
     An artifact provider supported by Rokit.
+
+    The default provider is [`ArtifactProvider::GitHub`].
 */
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ArtifactProvider {
+    #[default]
     GitHub,
 }
 

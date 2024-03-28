@@ -57,12 +57,8 @@ impl ArtifactSource {
 
         - If the latest release could not be fetched.
     */
-    pub async fn get_latest_release(
-        &self,
-        provider: ArtifactProvider,
-        id: &ToolId,
-    ) -> RokitResult<Vec<Artifact>> {
-        Ok(match provider {
+    pub async fn get_latest_release(&self, id: &ToolId) -> RokitResult<Vec<Artifact>> {
+        Ok(match id.provider() {
             ArtifactProvider::GitHub => self.github.get_latest_release(id).await?,
         })
     }
@@ -74,12 +70,8 @@ impl ArtifactSource {
 
         - If the specific release could not be fetched.
     */
-    pub async fn get_specific_release(
-        &self,
-        provider: ArtifactProvider,
-        spec: &ToolSpec,
-    ) -> RokitResult<Vec<Artifact>> {
-        Ok(match provider {
+    pub async fn get_specific_release(&self, spec: &ToolSpec) -> RokitResult<Vec<Artifact>> {
+        Ok(match spec.provider() {
             ArtifactProvider::GitHub => self.github.get_specific_release(spec).await?,
         })
     }

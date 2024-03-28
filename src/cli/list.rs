@@ -1,7 +1,7 @@
 use anyhow::Result;
 use clap::Parser;
-
 use console::style;
+
 use rokit::{storage::Home, tool::ToolId};
 
 /// Lists all existing tools managed by Rokit.

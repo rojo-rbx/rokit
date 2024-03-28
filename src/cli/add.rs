@@ -5,7 +5,7 @@ use console::style;
 use rokit::{
     discovery::discover_all_manifests,
     manifests::RokitManifest,
-    sources::{Artifact, ArtifactProvider},
+    sources::Artifact,
     storage::Home,
     tool::{ToolAlias, ToolId},
 };
@@ -84,9 +84,7 @@ impl AddSubcommand {
         let pb = new_progress_bar("Fetching", 3, 1);
         let (spec, artifact) = match self.tool.clone() {
             ToolIdOrSpec::Spec(spec) => {
-                let artifacts = source
-                    .get_specific_release(ArtifactProvider::GitHub, &spec)
-                    .await?;
+                let artifacts = source.get_specific_release(&spec).await?;
                 let artifact = Artifact::sort_by_system_compatibility(&artifacts)
                     .first()
                     .cloned()
@@ -95,9 +93,7 @@ impl AddSubcommand {
                 (spec, artifact)
             }
             ToolIdOrSpec::Id(id) => {
-                let artifacts = source
-                    .get_latest_release(ArtifactProvider::GitHub, &id)
-                    .await?;
+                let artifacts = source.get_latest_release(&id).await?;
                 let artifact = Artifact::sort_by_system_compatibility(&artifacts)
                     .first()
                     .cloned()

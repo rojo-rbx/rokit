@@ -4,6 +4,8 @@ use semver::Version;
 use serde_with::{DeserializeFromStr, SerializeDisplay};
 use thiserror::Error;
 
+use crate::sources::ArtifactProvider;
+
 use super::{util::is_invalid_identifier, ToolId, ToolIdParseError};
 
 /**
@@ -39,13 +41,18 @@ pub struct ToolSpec {
 
 impl ToolSpec {
     #[must_use]
+    pub fn provider(&self) -> ArtifactProvider {
+        self.id.provider()
+    }
+
+    #[must_use]
     pub fn author(&self) -> &str {
-        &self.id.author
+        self.id.author()
     }
 
     #[must_use]
     pub fn name(&self) -> &str {
-        &self.id.name
+        self.id.name()
     }
 
     #[must_use]
@@ -115,6 +122,7 @@ mod tests {
     fn new_spec(author: &str, name: &str, version: &str) -> ToolSpec {
         ToolSpec {
             id: ToolId {
+                provider: ArtifactProvider::default(),
                 author: author.to_string(),
                 name: name.to_string(),
             },

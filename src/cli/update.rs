@@ -1,13 +1,10 @@
 use anyhow::{bail, Context, Result};
 use clap::Parser;
-
 use console::style;
 use futures::{stream::FuturesUnordered, TryStreamExt};
+
 use rokit::{
-    discovery::discover_all_manifests,
-    manifests::RokitManifest,
-    sources::{Artifact, ArtifactProvider},
-    storage::Home,
+    discovery::discover_all_manifests, manifests::RokitManifest, sources::Artifact, storage::Home,
 };
 
 use crate::util::{finish_progress_bar, new_progress_bar, ToolAliasOrIdOrSpec, ToolIdOrSpec};
@@ -123,10 +120,8 @@ impl UpdateSubcommand {
             .map(|(alias, tool)| async {
                 let (alias, id, artifacts) = match tool {
                     ToolIdOrSpec::Spec(spec) => {
-                        let artifacts = source
-                            .get_specific_release(ArtifactProvider::GitHub, &spec)
-                            .await
-                            .with_context(|| {
+                        let artifacts =
+                            source.get_specific_release(&spec).await.with_context(|| {
                                 format!(
                                     "Failed to fetch release for '{spec}'!\
                                     \nMake sure the given tool version exists."
@@ -135,10 +130,8 @@ impl UpdateSubcommand {
                         (alias, spec.id().clone(), artifacts)
                     }
                     ToolIdOrSpec::Id(id) => {
-                        let artifacts = source
-                            .get_latest_release(ArtifactProvider::GitHub, &id)
-                            .await
-                            .with_context(|| {
+                        let artifacts =
+                            source.get_latest_release(&id).await.with_context(|| {
                                 format!(
                                     "Failed to fetch latest release for '{id}'!\
                                     \nMake sure the given tool identifier exists."
