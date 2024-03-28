@@ -32,6 +32,7 @@ impl Arch {
     /**
         Get the architecture of the current host system.
     */
+    #[must_use]
     pub fn current_system() -> Self {
         match CURRENT_ARCH {
             "aarch64" => Self::Arm64,
@@ -77,6 +78,9 @@ impl Arch {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::uninlined_format_args)]
+    #![allow(clippy::inefficient_to_string)]
+
     use super::*;
 
     #[test]

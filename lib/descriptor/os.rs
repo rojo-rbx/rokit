@@ -22,6 +22,7 @@ impl OS {
     /**
         Get the operating system of the current host system.
     */
+    #[must_use]
     pub fn current_system() -> Self {
         match CURRENT_OS {
             "windows" => Self::Windows,
@@ -49,6 +50,9 @@ impl OS {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::uninlined_format_args)]
+    #![allow(clippy::inefficient_to_string)]
+
     use super::*;
 
     #[test]

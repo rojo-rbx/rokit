@@ -20,6 +20,7 @@ impl Toolchain {
     /**
         Get the toolchain of the current host system.
     */
+    #[must_use]
     pub fn current_system() -> Option<Self> {
         None // TODO: Implement detection of the host toolchain
     }
@@ -42,6 +43,9 @@ impl Toolchain {
 
 #[cfg(test)]
 mod tests {
+    #![allow(clippy::uninlined_format_args)]
+    #![allow(clippy::inefficient_to_string)]
+
     use super::*;
 
     #[test]

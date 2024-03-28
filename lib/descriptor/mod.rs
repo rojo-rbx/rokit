@@ -34,6 +34,7 @@ impl Descriptor {
     /**
         Get the description for the current host system.
     */
+    #[must_use]
     pub fn current_system() -> Self {
         Self {
             os: OS::current_system(),
@@ -70,6 +71,8 @@ impl Descriptor {
         - Windows and Linux 64-bit can run 32-bit executables
         - macOS Apple Silicon can run x64 (Intel) executables
     */
+    #[must_use]
+    #[allow(clippy::unnested_or_patterns)]
     pub fn is_compatible_with(&self, other: &Descriptor) -> bool {
         // Operating system must _always_ match
         (self.os == other.os)
@@ -95,6 +98,7 @@ impl Descriptor {
 
         Two descriptions that are not compatible _at all_ have no defined order.
     */
+    #[must_use]
     pub fn sort_by_preferred_compat(self, a: &Self, b: &Self) -> Ordering {
         // Check for strict compatibility first (exact matches)
         let a_compat = a.os == self.os && a.arch == self.arch;
