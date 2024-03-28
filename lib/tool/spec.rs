@@ -7,7 +7,7 @@ use thiserror::Error;
 use super::{util::is_invalid_identifier, ToolId, ToolIdParseError};
 
 /**
-    Error type representing the possible errors that can occur when parsing a ToolSpec.
+    Error type representing the possible errors that can occur when parsing a `ToolSpec`.
 */
 #[derive(Debug, Error)]
 pub enum ToolSpecParseError {
@@ -38,22 +38,27 @@ pub struct ToolSpec {
 }
 
 impl ToolSpec {
+    #[must_use]
     pub fn author(&self) -> &str {
         &self.id.author
     }
 
+    #[must_use]
     pub fn name(&self) -> &str {
         &self.id.name
     }
 
+    #[must_use]
     pub fn id(&self) -> &ToolId {
         &self.id
     }
 
+    #[must_use]
     pub fn version(&self) -> &Version {
         &self.version
     }
 
+    #[must_use]
     pub fn matches_id(&self, id: &ToolId) -> bool {
         self.id == *id
     }

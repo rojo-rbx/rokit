@@ -6,7 +6,7 @@ use thiserror::Error;
 use super::util::is_invalid_identifier;
 
 /**
-    Error type representing the possible errors that can occur when parsing a ToolAlias.
+    Error type representing the possible errors that can occur when parsing a `ToolAlias`.
 */
 #[derive(Debug, Error)]
 pub enum ToolAliasParseError {
@@ -34,6 +34,7 @@ pub struct ToolAlias {
 }
 
 impl ToolAlias {
+    #[must_use]
     pub fn name(&self) -> &str {
         &self.name
     }
