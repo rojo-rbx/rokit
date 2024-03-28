@@ -102,35 +102,25 @@ pub async fn extract_zip_file(
         let mut reader = io::Cursor::new(&zip_contents);
         let mut zip = ZipArchive::new(&mut reader)?;
 
-        // Gather paths and their permissions
-        // TODO: Avoid reading the entire zip file
-        // and try to seek through contents instead.
-        let entry_paths = (0..zip.len())
-            .filter_map(|i| {
-                let entry = zip.by_index(i).ok()?;
-                if entry.is_dir() {
-                    return None;
-                }
-                let path = entry.enclosed_name()?;
-                let perms = entry.unix_mode();
-                Some((path.to_path_buf(), perms))
+        // Gather paths and their permissions,
+        // avoiding reading the entire zip file
+        let entry_paths = zip
+            .file_names()
+            .map(|name| {
+                // NOTE: We don't need to sanitize the files names here
+                // since we only use them for matching *within the zip file*
+                (PathBuf::from(name), None::<u32>)
             })
             .collect::<Vec<_>>();
 
         // Find the best candidate to extract, if any
         let best = Candidate::find_best(entry_paths, &desired_file_path);
         if let Some(candidate) = best {
-            for i in 0..zip.len() {
-                let mut entry = zip.by_index(i)?;
-                let entry_path = match entry.enclosed_name() {
-                    Some(path) => path,
-                    None => continue,
-                };
-                if entry_path == candidate.path.as_path() {
+            if let Some(path_str) = candidate.path.to_str() {
+                if let Ok(mut entry) = zip.by_name(path_str) {
                     let mut bytes = Vec::new();
                     entry.read_to_end(&mut bytes)?;
                     found = Some(bytes);
-                    break;
                 }
             }
             if found.is_none() {
