@@ -33,7 +33,7 @@ impl Manifest for ForemanManifest {
     fn into_tools(self) -> HashMap<ToolAlias, ToolSpec> {
         let mut tools = HashMap::new();
         if let Some(map) = self.document.get("tools").and_then(|t| t.as_table()) {
-            for (alias, tool_def) in map.iter() {
+            for (alias, tool_def) in map {
                 let tool_alias = alias.parse::<ToolAlias>().ok();
                 let tool_spec = tool_def.as_table().and_then(parse_foreman_tool_definition);
                 if let (Some(alias), Some(spec)) = (tool_alias, tool_spec) {

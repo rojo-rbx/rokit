@@ -123,7 +123,7 @@ pub async fn discover_all_manifests(rokit_only: bool, skip_home: bool) -> Vec<Di
 
     found_manifest_contents
         .into_iter()
-        .flat_map(|(kind, path, contents)| {
+        .filter_map(|(kind, path, contents)| {
             let tools = match kind {
                 ManifestKind::Rokit => RokitManifest::load_manifest(&contents)?.into_tools(),
                 ManifestKind::Aftman => AftmanManifest::load_manifest(&contents)?.into_tools(),
@@ -154,9 +154,8 @@ pub async fn discover_tool_spec(
     let cwd = current_dir().await;
 
     for (kind, path) in search_paths(&cwd, rokit_only, skip_home) {
-        let contents = match read_to_string(&path).await {
-            Ok(contents) => contents,
-            Err(_) => continue,
+        let Ok(contents) = read_to_string(&path).await else {
+            continue;
         };
 
         let tools = match kind {
