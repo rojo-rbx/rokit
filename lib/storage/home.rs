@@ -46,22 +46,26 @@ impl Home {
 
         If the `ROKIT_ROOT` environment variable is set, this will use
         that as the home directory. Otherwise, it will use `$HOME/.rokit`.
+
+        # Errors
+
+        - If the home directory could not be read or created.
     */
     pub async fn load_from_env() -> RokitResult<Self> {
-        Ok(match var("ROKIT_ROOT") {
-            Ok(root_str) => Self::load_from_path(root_str).await?,
-            Err(_) => {
-                let path = dirs::home_dir()
-                    .ok_or(RokitError::HomeNotFound)?
-                    .join(".rokit");
-                Self::load_from_path(path).await?
-            }
-        })
+        if let Ok(root_str) = var("ROKIT_ROOT") {
+            Self::load_from_path(root_str).await
+        } else {
+            let path = dirs::home_dir()
+                .ok_or(RokitError::HomeNotFound)?
+                .join(".rokit");
+            Self::load_from_path(path).await
+        }
     }
 
     /**
         Gets a reference to the path for this `Home`.
     */
+    #[must_use]
     pub fn path(&self) -> &Path {
         &self.path
     }
@@ -69,6 +73,7 @@ impl Home {
     /**
         Returns a reference to the `ToolStorage` for this `Home`.
     */
+    #[must_use]
     pub fn tool_storage(&self) -> &ToolStorage {
         &self.tool_storage
     }
@@ -76,12 +81,17 @@ impl Home {
     /**
         Returns a reference to the `ToolCache` for this `Home`.
     */
+    #[must_use]
     pub fn tool_cache(&self) -> &ToolCache {
         &self.tool_cache
     }
 
     /**
         Saves the contents of this `Home` to disk.
+
+        # Errors
+
+        - If the contents could not be saved to disk.
     */
     pub async fn save(&self) -> RokitResult<()> {
         self.tool_cache.save(&self.path).await?;

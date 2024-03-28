@@ -63,12 +63,17 @@ impl ToolStorage {
 
         Note that this does not check if the binary actually exists.
     */
+    #[must_use]
     pub fn tool_path(&self, spec: &ToolSpec) -> PathBuf {
         self.tool_paths(spec).1
     }
 
     /**
         Replaces the binary contents for the given tool.
+
+        # Errors
+
+        - If the binary could not be written.
     */
     pub async fn replace_tool_contents(
         &self,
@@ -96,6 +101,10 @@ impl ToolStorage {
         Creates a link for the given tool alias.
 
         Note that if the link already exists, it will be overwritten.
+
+        # Errors
+
+        - If the link could not be written.
     */
     pub async fn create_tool_link(&self, alias: &ToolAlias) -> RokitResult<()> {
         let path = self.aliases_dir.join(alias.name());
@@ -119,6 +128,10 @@ impl ToolStorage {
         - The second value is `true` if the existing Rokit link was different compared to the
           newly written Rokit binary, `false` otherwise. This is useful for determining if
           the Rokit binary itself existed but was updated, such as during `self-install`.
+
+        # Errors
+
+        - If any link could not be written.
     */
     pub async fn recreate_all_links(&self) -> RokitResult<(bool, bool)> {
         let contents = self.rokit_contents().await?;
@@ -129,11 +142,11 @@ impl ToolStorage {
         let mut link_reader = read_dir(&self.aliases_dir).await?;
         while let Some(entry) = link_reader.next_entry().await? {
             let path = entry.path();
-            if path != rokit_path {
+            if path == rokit_path {
+                rokit_found = true;
+            } else {
                 debug!(?path, "Found existing link");
                 link_paths.push(path);
-            } else {
-                rokit_found = true;
             }
         }
 
@@ -186,6 +199,7 @@ impl ToolStorage {
         })
     }
 
+    #[allow(clippy::unused_self)]
     pub(crate) fn needs_saving(&self) -> bool {
         // Tool storage always writes all state directly
         // to the disk, but this may change in the future

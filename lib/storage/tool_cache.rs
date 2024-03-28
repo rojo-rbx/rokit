@@ -38,6 +38,7 @@ impl ToolCache {
     /**
         Create a new, **empty** `ToolCache`.
     */
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
@@ -47,6 +48,7 @@ impl ToolCache {
 
         Returns `true` if the tool was added and not already trusted.
     */
+    #[must_use]
     pub fn add_trust(&self, tool: ToolId) -> bool {
         self.needs_saving.store(true, Ordering::SeqCst);
         self.trusted.insert(tool)
@@ -57,6 +59,7 @@ impl ToolCache {
 
         Returns `true` if the tool was previously trusted and has now been removed.
     */
+    #[must_use]
     pub fn remove_trust(&self, tool: &ToolId) -> bool {
         self.needs_saving.store(true, Ordering::SeqCst);
         self.trusted.remove(tool).is_some()
@@ -65,6 +68,7 @@ impl ToolCache {
     /**
         Check if a tool is trusted by this `ToolCache`.
     */
+    #[must_use]
     pub fn is_trusted(&self, tool: &ToolId) -> bool {
         self.trusted.contains(tool)
     }
@@ -72,6 +76,7 @@ impl ToolCache {
     /**
         Get a sorted copy of the trusted tools in this `ToolCache`.
     */
+    #[must_use]
     pub fn all_trusted(&self) -> Vec<ToolId> {
         let mut sorted_tools = self.trusted.iter().map(|id| id.clone()).collect::<Vec<_>>();
         sorted_tools.sort();
@@ -83,6 +88,7 @@ impl ToolCache {
 
         Returns `true` if the tool was added and not already cached.
     */
+    #[must_use]
     pub fn add_installed(&self, tool: ToolSpec) -> bool {
         self.needs_saving.store(true, Ordering::SeqCst);
         self.installed.insert(tool)
@@ -93,6 +99,7 @@ impl ToolCache {
 
         Returns `true` if the tool was previously cached and has now been removed.
     */
+    #[must_use]
     pub fn remove_installed(&self, tool: &ToolSpec) -> bool {
         self.needs_saving.store(true, Ordering::SeqCst);
         self.installed.remove(tool).is_some()
@@ -101,6 +108,7 @@ impl ToolCache {
     /**
         Check if a tool is cached in this `ToolCache`.
     */
+    #[must_use]
     pub fn is_installed(&self, tool: &ToolSpec) -> bool {
         self.installed.contains(tool)
     }
@@ -108,6 +116,7 @@ impl ToolCache {
     /**
         Get a sorted copy of the cached tools in this `ToolCache`.
     */
+    #[must_use]
     pub fn all_installed(&self) -> Vec<ToolSpec> {
         let mut sorted_tools = self
             .installed
@@ -137,6 +146,7 @@ impl ToolCache {
         Get a sorted list of all unique versions for
         a given tool identifier in this `ToolCache`.
     */
+    #[must_use]
     pub fn all_installed_versions_for_id(&self, id: &ToolId) -> Vec<Version> {
         let sorted_set = self
             .all_installed()
