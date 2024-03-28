@@ -2,6 +2,8 @@ use std::path::PathBuf;
 
 use thiserror::Error;
 
+use crate::sources::ArtifactFormat;
+
 #[derive(Debug, Error)]
 pub enum RokitError {
     #[error("home directory not found")]
@@ -10,8 +12,12 @@ pub enum RokitError {
     FileNotFound(PathBuf),
     #[error("failed to extract artifact: unknown format")]
     ExtractUnknownFormat,
-    #[error("failed to extract artifact: missing binary file")]
-    ExtractFileMissing,
+    #[error("failed to extract artifact: missing binary '{file_name}' in {format} file '{archive_name}'")]
+    ExtractFileMissing {
+        format: ArtifactFormat,
+        file_name: String,
+        archive_name: String,
+    },
     #[error("failed to extract artifact:\n{source}\nresponse body first bytes:\n{body}")]
     ExtractError {
         source: Box<dyn std::error::Error + Send + Sync>,

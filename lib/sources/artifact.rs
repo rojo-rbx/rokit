@@ -159,7 +159,11 @@ impl Artifact {
             },
         })?;
 
-        file_opt.ok_or(RokitError::ExtractFileMissing)
+        file_opt.ok_or(RokitError::ExtractFileMissing {
+            format,
+            file_name: self.tool_spec.name().to_string(),
+            archive_name: self.name.clone().unwrap_or_default(),
+        })
     }
 
     /**
