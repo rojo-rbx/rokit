@@ -10,7 +10,7 @@ use crate::{
     tool::ToolSpec,
 };
 
-use super::extraction::extract_zip_file;
+use super::extraction::{extract_tar_file, extract_zip_file};
 
 /**
     An artifact provider supported by Rokit.
@@ -51,12 +51,14 @@ impl fmt::Display for ArtifactProvider {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ArtifactFormat {
     Zip,
+    Tar,
 }
 
 impl ArtifactFormat {
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::Zip => "zip",
+            Self::Tar => "tar",
         }
     }
 
@@ -64,6 +66,7 @@ impl ArtifactFormat {
         let l = path_or_url.as_ref().trim().to_lowercase();
         match l.as_str() {
             s if s.ends_with(".zip") => Some(Self::Zip),
+            s if s.ends_with(".tar") => Some(Self::Tar),
             _ => None,
         }
     }
@@ -75,6 +78,7 @@ impl FromStr for ArtifactFormat {
         let l = s.trim().to_lowercase();
         match l.as_str() {
             "zip" => Ok(Self::Zip),
+            "tar" => Ok(Self::Tar),
             _ => Err(format!("unknown artifact format '{l}'")),
         }
     }
@@ -129,6 +133,7 @@ impl Artifact {
         let file_name = self.tool_spec.name().to_string();
         let file_res = match format {
             ArtifactFormat::Zip => extract_zip_file(&contents, &file_name).await,
+            ArtifactFormat::Tar => extract_tar_file(&contents, &file_name).await,
         };
 
         let file_opt = file_res.map_err(|err| RokitError::ExtractError {
