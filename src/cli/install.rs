@@ -7,8 +7,7 @@ use console::style;
 use futures::{stream::FuturesUnordered, TryStreamExt};
 use rokit::{
     discovery::discover_all_manifests,
-    manifests::AuthManifest,
-    sources::{Artifact, ArtifactProvider, ArtifactSource},
+    sources::{Artifact, ArtifactProvider},
     storage::Home,
 };
 
@@ -30,8 +29,7 @@ impl InstallSubcommand {
     pub async fn run(self, home: &Home) -> Result<()> {
         let force = self.force;
 
-        let auth = AuthManifest::load(home.path()).await?;
-        let source = ArtifactSource::new_authenticated(&auth.get_all_tokens())?;
+        let source = home.artifact_source().await?;
         let manifests = discover_all_manifests(false, false).await;
 
         let tool_cache = home.tool_cache();

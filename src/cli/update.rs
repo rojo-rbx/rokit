@@ -5,8 +5,8 @@ use console::style;
 use futures::{stream::FuturesUnordered, TryStreamExt};
 use rokit::{
     discovery::discover_all_manifests,
-    manifests::{AuthManifest, RokitManifest},
-    sources::{Artifact, ArtifactProvider, ArtifactSource},
+    manifests::RokitManifest,
+    sources::{Artifact, ArtifactProvider},
     storage::Home,
 };
 
@@ -26,8 +26,7 @@ pub struct UpdateSubcommand {
 impl UpdateSubcommand {
     pub async fn run(self, home: &Home) -> Result<()> {
         // 1. Load tool source and the desired manifest
-        let auth = AuthManifest::load(home.path()).await?;
-        let source = ArtifactSource::new_authenticated(&auth.get_all_tokens())?;
+        let source = home.artifact_source().await?;
         let manifest_path = if self.global {
             home.path().to_path_buf()
         } else {

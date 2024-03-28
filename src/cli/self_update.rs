@@ -3,8 +3,7 @@ use clap::Parser;
 
 use console::style;
 use rokit::{
-    manifests::AuthManifest,
-    sources::{Artifact, ArtifactProvider, ArtifactSource},
+    sources::{Artifact, ArtifactProvider},
     storage::Home,
     tool::ToolId,
 };
@@ -34,11 +33,7 @@ impl SelfUpdateSubcommand {
         };
 
         let pb = new_progress_bar("Loading", 4, 1);
-
-        // NOTE: Auth is not really necessary here since we know Rokit is not
-        // a private repository, but it may still help against rate limiting.
-        let auth = AuthManifest::load(home.path()).await?;
-        let source = ArtifactSource::new_authenticated(&auth.get_all_tokens())?;
+        let source = home.artifact_source().await?;
 
         pb.inc(1);
         pb.set_message("Fetching");

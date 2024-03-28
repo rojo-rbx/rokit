@@ -4,8 +4,8 @@ use console::style;
 
 use rokit::{
     discovery::discover_all_manifests,
-    manifests::{AuthManifest, RokitManifest},
-    sources::{Artifact, ArtifactProvider, ArtifactSource},
+    manifests::RokitManifest,
+    sources::{Artifact, ArtifactProvider},
     storage::Home,
     tool::{ToolAlias, ToolId},
 };
@@ -40,6 +40,7 @@ impl AddSubcommand {
 
         let tool_cache = home.tool_cache();
         let tool_storage = home.tool_storage();
+        let source = home.artifact_source().await?;
 
         // 1. Check for trust, or prompt the user to trust the tool
         if !tool_cache.is_trusted(&id) {
@@ -49,10 +50,8 @@ impl AddSubcommand {
             let _ = tool_cache.add_trust(id.clone());
         }
 
-        // 2. Load tool source, manifest, and do a preflight check
-        // to make sure we don't overwrite any existing tool(s)
-        let auth = AuthManifest::load(home.path()).await?;
-        let source = ArtifactSource::new_authenticated(&auth.get_all_tokens())?;
+        // 2. Load manifest and do a preflight check to
+        // ensure we don't overwrite any existing tool(s)
         let manifest_path = if self.global {
             home.path().to_path_buf()
         } else {

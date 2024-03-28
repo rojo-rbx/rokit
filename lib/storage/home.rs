@@ -2,7 +2,9 @@ use std::env::var;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use crate::manifests::AuthManifest;
 use crate::result::{RokitError, RokitResult};
+use crate::sources::ArtifactSource;
 
 use super::{ToolCache, ToolStorage};
 
@@ -84,6 +86,22 @@ impl Home {
     #[must_use]
     pub fn tool_cache(&self) -> &ToolCache {
         &self.tool_cache
+    }
+
+    /**
+        Creates a new `ArtifactSource` for this `Home`.
+
+        This will load any stored authentication from disk and use
+        it to authenticate with the artifact source and various providers.
+
+        # Errors
+
+        - If the auth manifest could not be loaded or created.
+        - If the artifact source could not be created.
+    */
+    pub async fn artifact_source(&self) -> RokitResult<ArtifactSource> {
+        let auth = AuthManifest::load_or_create(&self.path).await?;
+        ArtifactSource::new_authenticated(&auth.get_all_tokens())
     }
 
     /**
