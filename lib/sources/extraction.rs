@@ -20,15 +20,17 @@ use crate::result::RokitResult;
 struct Candidate {
     path: PathBuf,
     matched_full_path: bool,
-    matched_file_name: bool,
-    has_exec_perms: bool,
-    has_exec_suffix: bool,
+    matched_file_exact: bool,   // Case-sensitive filename match
+    matched_file_inexact: bool, // Case-insensitive filename match
+    has_exec_perms: bool,       // Has executable permissions (UNIX only)
+    has_exec_suffix: bool,      // Has an executable suffix (e.g. `.exe`)
 }
 
 impl Candidate {
     fn priority(&self) -> u32 {
         (self.matched_full_path as u32)
-            + (self.matched_file_name as u32)
+            + (self.matched_file_exact as u32)
+            + (self.matched_file_inexact as u32)
             + (self.has_exec_perms as u32)
             + (self.has_exec_suffix as u32)
     }
@@ -52,7 +54,10 @@ impl Candidate {
                 let file_name = path.file_name().and_then(|name| name.to_str());
 
                 let matched_full_path = path == desired_file_path;
-                let matched_file_name = file_name == Some(desired_file_name);
+                let matched_file_exact = file_name == Some(desired_file_name);
+                let matched_file_inexact = file_name
+                    .map(|name| name.eq_ignore_ascii_case(desired_file_name))
+                    .unwrap_or_default();
 
                 let has_exec_perms = perms.map_or(false, |perms| (perms & 0o111) != 0);
                 let has_exec_suffix = path.extension().map_or(false, |ext| ext == EXE_SUFFIX);
@@ -60,7 +65,8 @@ impl Candidate {
                 Some(Self {
                     path: path.clone(),
                     matched_full_path,
-                    matched_file_name,
+                    matched_file_exact,
+                    matched_file_inexact,
                     has_exec_perms,
                     has_exec_suffix,
                 })
