@@ -1,4 +1,5 @@
 mod artifact;
+mod decompression;
 mod extraction;
 mod github;
 mod source;

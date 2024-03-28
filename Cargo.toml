@@ -12,6 +12,7 @@ categories = ["command-line-interface"]
 [dependencies]
 dashmap = { version = "5.5", features = ["serde"] }
 dirs = "5.0"
+flate2 = "1.0"
 octocrab = "0.37"
 once_cell = "1.8"
 secrecy = "0.8"

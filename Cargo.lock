@@ -1615,6 +1615,7 @@ dependencies = [
  "dashmap",
  "dialoguer",
  "dirs",
+ "flate2",
  "futures",
  "http",
  "http-body-util",
