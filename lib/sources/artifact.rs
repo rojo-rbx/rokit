@@ -1,4 +1,4 @@
-use std::{fmt, str::FromStr};
+use std::{fmt, path::Path, str::FromStr};
 
 use octocrab::models::repos::Asset;
 use tracing::instrument;
@@ -24,6 +24,7 @@ pub enum ArtifactProvider {
 }
 
 impl ArtifactProvider {
+    #[must_use]
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::GitHub => "github",
@@ -59,6 +60,7 @@ pub enum ArtifactFormat {
 }
 
 impl ArtifactFormat {
+    #[must_use]
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::Zip => "zip",
@@ -68,11 +70,20 @@ impl ArtifactFormat {
     }
 
     pub fn from_path_or_url(path_or_url: impl AsRef<str>) -> Option<Self> {
-        let l = path_or_url.as_ref().trim().to_lowercase();
-        match l.as_str() {
-            s if s.ends_with(".zip") => Some(Self::Zip),
-            s if s.ends_with(".tar") => Some(Self::Tar),
-            s if s.ends_with(".tar.gz") => Some(Self::TarGz),
+        let lowercased = path_or_url.as_ref().trim().to_lowercase();
+        let extension = Path::new(&lowercased).extension()?.to_str()?;
+        match extension {
+            ext if ext.eq_ignore_ascii_case("zip") => Some(Self::Zip),
+            ext if ext.eq_ignore_ascii_case("tar") => Some(Self::Tar),
+            ext if ext.eq_ignore_ascii_case("gz") => {
+                let stem = Path::new(&lowercased).file_stem()?;
+                let ext2 = Path::new(stem).extension()?;
+                if ext2.eq_ignore_ascii_case("tar") {
+                    Some(Self::TarGz)
+                } else {
+                    None
+                }
+            }
             _ => None,
         }
     }
@@ -151,7 +162,7 @@ impl Artifact {
             source: err.into(),
             body: {
                 if contents.len() > 128 + 6 {
-                    let bytes = contents.iter().cloned().take(128).collect::<Vec<_>>();
+                    let bytes = contents.iter().copied().take(128).collect::<Vec<_>>();
                     format!("{} <...>", String::from_utf8_lossy(bytes.as_slice()).trim())
                 } else {
                     String::from_utf8_lossy(&contents).to_string()

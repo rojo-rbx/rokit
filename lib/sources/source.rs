@@ -23,6 +23,10 @@ impl ArtifactSource {
 
         This source is unauthenticated and may be rate limited and/or unable to access
         private resources. To authenticate using auth tokens, use `new_authenticated`.
+
+        # Errors
+
+        - If the artifact source could not be created.
     */
     pub fn new() -> RokitResult<Self> {
         let github = GithubProvider::new()?;
@@ -31,6 +35,12 @@ impl ArtifactSource {
 
     /**
         Creates a new authenticated artifact source.
+
+        This source is authenticated and can access private resources.
+
+        # Errors
+
+        - If the artifact source could not be created.
     */
     pub fn new_authenticated(auth: &HashMap<ArtifactProvider, String>) -> RokitResult<Self> {
         let github = match auth.get(&ArtifactProvider::GitHub) {
@@ -42,6 +52,10 @@ impl ArtifactSource {
 
     /**
         Gets the latest release for a tool.
+
+        # Errors
+
+        - If the latest release could not be fetched.
     */
     pub async fn get_latest_release(
         &self,
@@ -55,6 +69,10 @@ impl ArtifactSource {
 
     /**
         Gets a specific release for a tool.
+
+        # Errors
+
+        - If the specific release could not be fetched.
     */
     pub async fn get_specific_release(
         &self,
@@ -68,6 +86,10 @@ impl ArtifactSource {
 
     /**
         Downloads the contents of an artifact.
+
+        # Errors
+
+        - If the artifact contents could not be downloaded.
     */
     pub async fn download_artifact_contents(&self, artifact: &Artifact) -> RokitResult<Vec<u8>> {
         Ok(match &artifact.provider {

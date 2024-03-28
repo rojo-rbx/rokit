@@ -139,7 +139,7 @@ impl GithubProvider {
             .map_err(other_err)?;
 
         let tool_spec: ToolSpec = (tool_id.clone(), version).into();
-        Ok(artifacts_from_release(release, &tool_spec))
+        Ok(artifacts_from_release(&release, &tool_spec))
     }
 
     /**
@@ -161,7 +161,7 @@ impl GithubProvider {
             Ok(release) => Ok(release),
         }?;
 
-        Ok(artifacts_from_release(release, tool_spec))
+        Ok(artifacts_from_release(&release, tool_spec))
     }
 
     /**
@@ -192,7 +192,7 @@ impl GithubProvider {
     }
 }
 
-fn artifacts_from_release(release: Release, spec: &ToolSpec) -> Vec<Artifact> {
+fn artifacts_from_release(release: &Release, spec: &ToolSpec) -> Vec<Artifact> {
     release
         .assets
         .iter()

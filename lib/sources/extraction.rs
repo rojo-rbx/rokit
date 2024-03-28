@@ -1,3 +1,5 @@
+#![allow(clippy::struct_excessive_bools)]
+
 use std::{
     env::consts::EXE_SUFFIX,
     io::{self, Read},
@@ -28,11 +30,11 @@ struct Candidate {
 
 impl Candidate {
     fn priority(&self) -> u32 {
-        (self.matched_full_path as u32)
-            + (self.matched_file_exact as u32)
-            + (self.matched_file_inexact as u32)
-            + (self.has_exec_perms as u32)
-            + (self.has_exec_suffix as u32)
+        u32::from(self.matched_full_path)
+            + u32::from(self.matched_file_exact)
+            + u32::from(self.matched_file_inexact)
+            + u32::from(self.has_exec_perms)
+            + u32::from(self.has_exec_suffix)
     }
 
     fn find_best(
@@ -46,7 +48,7 @@ impl Candidate {
         // Gather all candidates
         let mut candidates = entry_paths
             .iter()
-            .flat_map(|(path, perms)| {
+            .filter_map(|(path, perms)| {
                 if path.ends_with(MAIN_SEPARATOR_STR) {
                     return None;
                 }
@@ -75,7 +77,7 @@ impl Candidate {
             .collect::<Vec<_>>();
 
         // Sort by their priority, best first
-        candidates.sort_by_key(|c| c.priority());
+        candidates.sort_by_key(Candidate::priority);
         candidates.reverse();
 
         // The first candidate, if one exists, should now be the best one
