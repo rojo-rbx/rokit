@@ -27,7 +27,7 @@ pub async fn prompt_for_trust_specs(tool_specs: Vec<ToolSpec>) -> Result<Vec<Too
         } else if tool_specs.len() == 1 {
             println!("A tool is not yet trusted and needs your approval.");
             let spec = tool_specs.first().unwrap();
-            if prompt_for_install_trust_inner(TrustPromptKind::Install, &spec.clone().into_id())? {
+            if prompt_for_install_trust_inner(TrustPromptKind::Install, spec.id())? {
                 Ok(vec![spec.clone()])
             } else {
                 Ok(Vec::new())
@@ -40,7 +40,7 @@ pub async fn prompt_for_trust_specs(tool_specs: Vec<ToolSpec>) -> Result<Vec<Too
             );
             let ids_to_prompt_for = tool_specs
                 .iter()
-                .map(|spec| spec.clone().into_id())
+                .map(|spec| spec.id().clone())
                 .collect::<BTreeSet<_>>();
 
             let mut newly_trusted_ids = Vec::new();
@@ -52,7 +52,7 @@ pub async fn prompt_for_trust_specs(tool_specs: Vec<ToolSpec>) -> Result<Vec<Too
 
             let newly_trusted_specs = tool_specs
                 .into_iter()
-                .filter(|spec| newly_trusted_ids.contains(&spec.clone().into_id()))
+                .filter(|spec| newly_trusted_ids.contains(spec.id()))
                 .collect();
             Ok(newly_trusted_specs)
         }

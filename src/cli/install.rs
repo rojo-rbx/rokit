@@ -61,10 +61,10 @@ impl InstallSubcommand {
         } else {
             let (trusted_specs, untrusted_specs) = tool_specs
                 .into_iter()
-                .partition(|spec| tool_cache.is_trusted(&spec.clone().into_id()));
+                .partition(|spec| tool_cache.is_trusted(spec.id()));
             let newly_trusted_specs = prompt_for_trust_specs(untrusted_specs).await?;
             for spec in &newly_trusted_specs {
-                tool_cache.add_trust(spec.clone().into_id());
+                tool_cache.add_trust(spec.id().clone());
             }
             trusted_specs
                 .iter()

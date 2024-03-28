@@ -33,18 +33,21 @@ pub enum ToolSpecParseError {
     Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, DeserializeFromStr, SerializeDisplay,
 )]
 pub struct ToolSpec {
-    pub(super) author: String,
-    pub(super) name: String,
+    pub(super) id: ToolId,
     pub(super) version: Version,
 }
 
 impl ToolSpec {
     pub fn author(&self) -> &str {
-        &self.author
+        &self.id.author
     }
 
     pub fn name(&self) -> &str {
-        &self.name
+        &self.id.name
+    }
+
+    pub fn id(&self) -> &ToolId {
+        &self.id
     }
 
     pub fn version(&self) -> &Version {
@@ -52,14 +55,7 @@ impl ToolSpec {
     }
 
     pub fn matches_id(&self, id: &ToolId) -> bool {
-        self.author == id.author && self.name == id.name
-    }
-
-    pub fn into_id(self) -> ToolId {
-        ToolId {
-            author: self.author,
-            name: self.name,
-        }
+        self.id == *id
     }
 }
 
@@ -85,36 +81,25 @@ impl FromStr for ToolSpec {
 
         let version = after.parse::<Version>()?;
 
-        Ok(ToolSpec {
-            author: id.author,
-            name: id.name,
-            version,
-        })
+        Ok(ToolSpec { id, version })
     }
 }
 
 impl fmt::Display for ToolSpec {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}/{}@{}", self.author, self.name, self.version)
+        write!(f, "{}@{}", self.id, self.version)
     }
 }
 
 impl From<(ToolId, Version)> for ToolSpec {
     fn from((id, version): (ToolId, Version)) -> Self {
-        ToolSpec {
-            author: id.author,
-            name: id.name,
-            version,
-        }
+        ToolSpec { id, version }
     }
 }
 
 impl From<ToolSpec> for ToolId {
     fn from(spec: ToolSpec) -> Self {
-        ToolId {
-            author: spec.author,
-            name: spec.name,
-        }
+        spec.id.clone()
     }
 }
 
@@ -124,8 +109,10 @@ mod tests {
 
     fn new_spec(author: &str, name: &str, version: &str) -> ToolSpec {
         ToolSpec {
-            author: author.to_string(),
-            name: name.to_string(),
+            id: ToolId {
+                author: author.to_string(),
+                name: name.to_string(),
+            },
             version: version.parse().unwrap(),
         }
     }

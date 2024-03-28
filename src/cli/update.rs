@@ -54,7 +54,7 @@ impl UpdateSubcommand {
                 .tool_specs()
                 .iter()
                 .cloned()
-                .map(|(alias, spec)| (alias, ToolIdOrSpec::Id(spec.into_id())))
+                .map(|(alias, spec)| (alias, ToolIdOrSpec::Id(spec.id().clone())))
                 .collect::<Vec<_>>()
         } else {
             // FUTURE: Refactor this logic here below, it's quite difficult to read
@@ -69,14 +69,14 @@ impl UpdateSubcommand {
                     } else {
                         let search_id = match &tool {
                             ToolAliasOrIdOrSpec::Id(id) => id.clone(),
-                            ToolAliasOrIdOrSpec::Spec(spec) => spec.clone().into_id(),
+                            ToolAliasOrIdOrSpec::Spec(spec) => spec.id().clone(),
                             ToolAliasOrIdOrSpec::Alias(_) => unreachable!(),
                         };
                         let found = manifest
                             .tool_specs()
                             .iter()
                             .flat_map(|(a, s)| {
-                                if s.clone().into_id() == search_id {
+                                if s.id() == &search_id {
                                     Some(a.clone())
                                 } else {
                                     None
@@ -110,7 +110,7 @@ impl UpdateSubcommand {
                                 style("rokit add").bold().green(),
                             )
                             })?;
-                            let id = ToolIdOrSpec::Id(spec.into_id());
+                            let id = ToolIdOrSpec::Id(spec.id().clone());
                             Ok::<_, anyhow::Error>((alias, id))
                         }
                     }
@@ -134,7 +134,7 @@ impl UpdateSubcommand {
                                     \nMake sure the given tool version exists."
                                 )
                             })?;
-                        (alias, spec.into_id(), artifacts)
+                        (alias, spec.id().clone(), artifacts)
                     }
                     ToolIdOrSpec::Id(id) => {
                         let artifacts = source
