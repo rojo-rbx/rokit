@@ -3,7 +3,7 @@ use std::env::consts::OS as CURRENT_OS;
 #[rustfmt::skip]
 const OS_KEYWORDS: [(OS, &[&str]); 3] = [
     (OS::Windows, &["windows", "win32", "win64", "win-x86", "win-x64"]),
-    (OS::MacOS,   &["macos", "osx", "darwin"]),
+    (OS::MacOS,   &["macos", "osx", "darwin", "apple"]),
     (OS::Linux,   &["linux", "ubuntu", "debian"]),
 ];
 
@@ -92,6 +92,7 @@ mod tests {
         assert_eq!(OS::detect("APP-macos-ARCH-VER"), Some(OS::MacOS));
         assert_eq!(OS::detect("APP-osx-ARCH-VER"), Some(OS::MacOS));
         assert_eq!(OS::detect("APP-darwin-ARCH-VER"), Some(OS::MacOS));
+        assert_eq!(OS::detect("APP-apple-ARCH-VER"), Some(OS::MacOS));
         assert_eq!(OS::detect("APP-linux-ARCH-VER"), Some(OS::Linux));
         assert_eq!(OS::detect("APP-ubuntu-ARCH-VER"), Some(OS::Linux));
         assert_eq!(OS::detect("APP-debian-ARCH-VER"), Some(OS::Linux));
