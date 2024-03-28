@@ -33,6 +33,10 @@ impl AuthManifest {
         If the manifest doesn't exist, a new one will be created with default contents and saved.
 
         See [`AuthManifest::load`] and [`AuthManifest::save`] for more information.
+
+        # Errors
+
+        - If the manifest file could not be loaded or created.
     */
     pub async fn load_or_create(dir: impl AsRef<Path>) -> RokitResult<Self> {
         let path = dir.as_ref().join(MANIFEST_FILE_NAME);
@@ -51,6 +55,10 @@ impl AuthManifest {
         Loads the manifest from the given directory.
 
         This will search for a file named `auth.toml` in the given directory.
+
+        # Errors
+
+        - If the manifest file could not be loaded.
     */
     #[tracing::instrument(skip(dir), level = "trace")]
     pub async fn load(dir: impl AsRef<Path>) -> RokitResult<Self> {
@@ -63,6 +71,10 @@ impl AuthManifest {
         Saves the manifest to the given directory.
 
         This will write the manifest to a file named `auth.toml` in the given directory.
+
+        # Errors
+
+        - If the manifest file could not be saved.
     */
     #[tracing::instrument(skip(self, dir), level = "trace")]
     pub async fn save(&self, dir: impl AsRef<Path>) -> RokitResult<()> {
@@ -74,6 +86,7 @@ impl AuthManifest {
     /**
         Checks if the manifest contains an authentication token for the given artifact provider.
     */
+    #[must_use]
     pub fn has_token(&self, artifact_provider: ArtifactProvider) -> bool {
         self.document.contains_key(artifact_provider.as_str())
     }
@@ -83,14 +96,16 @@ impl AuthManifest {
 
         Returns `None` if the token is not present.
     */
+    #[must_use]
     pub fn get_token(&self, artifact_provider: ArtifactProvider) -> Option<String> {
         let token = self.document.get(artifact_provider.as_str())?;
-        token.as_str().map(|s| s.to_string())
+        token.as_str().map(ToString::to_string)
     }
 
     /**
         Gets all authentication tokens found in the manifest.
     */
+    #[must_use]
     pub fn get_all_tokens(&self) -> HashMap<ArtifactProvider, String> {
         self.document
             .iter()

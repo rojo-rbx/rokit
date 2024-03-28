@@ -34,6 +34,10 @@ impl RokitManifest {
         If the manifest doesn't exist, a new one will be created with default contents and saved.
 
         See [`RokitManifest::load`] and [`RokitManifest::save`] for more information.
+
+        # Errors
+
+        - If the manifest could not be loaded or created.
     */
     pub async fn load_or_create(dir: impl AsRef<Path>) -> RokitResult<Self> {
         let path = dir.as_ref().join(MANIFEST_FILE_NAME);
@@ -52,6 +56,10 @@ impl RokitManifest {
         Loads the manifest from the given directory.
 
         This will search for a file named `rokit.toml` in the given directory.
+
+        # Errors
+
+        - If the manifest file could not be loaded.
     */
     #[tracing::instrument(skip(dir), level = "trace")]
     pub async fn load(dir: impl AsRef<Path>) -> RokitResult<Self> {
@@ -64,6 +72,10 @@ impl RokitManifest {
         Saves the manifest to the given directory.
 
         This will write the manifest to a file named `rokit.toml` in the given directory.
+
+        # Errors
+
+        - If the manifest could not be saved.
     */
     #[tracing::instrument(skip(self, dir), level = "trace")]
     pub async fn save(&self, dir: impl AsRef<Path>) -> RokitResult<()> {
@@ -75,6 +87,7 @@ impl RokitManifest {
     /**
         Checks if the manifest has a tool with the given alias.
     */
+    #[must_use]
     pub fn has_tool(&self, alias: &ToolAlias) -> bool {
         let tools = self.document["tools"].as_table();
         tools.is_some_and(|t| t.contains_key(alias.name()))
@@ -83,6 +96,7 @@ impl RokitManifest {
     /**
         Gets a tool specification from the manifest by its alias, if it exists.
     */
+    #[must_use]
     pub fn get_tool(&self, alias: &ToolAlias) -> Option<ToolSpec> {
         let tools = self.document["tools"].as_table()?;
         let tool_str = tools.get(alias.name())?.as_str()?;
@@ -100,14 +114,14 @@ impl RokitManifest {
             doc.insert("tools", toml_edit::table());
         }
         let tools = doc["tools"].as_table_mut().unwrap();
-        if !tools.contains_value(alias.name()) {
+        if tools.contains_value(alias.name()) {
+            false
+        } else {
             tools.insert(
                 alias.name(),
                 Item::Value(Value::String(Formatted::new(spec.to_string()))),
             );
             true
-        } else {
-            false
         }
     }
 
@@ -138,6 +152,7 @@ impl RokitManifest {
 
         This will ignore any tools that are not valid tool specifications.
     */
+    #[must_use]
     pub fn tool_specs(&self) -> Vec<(ToolAlias, ToolSpec)> {
         self.document["tools"]
             .as_table()
