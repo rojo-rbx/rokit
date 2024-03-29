@@ -31,7 +31,7 @@ where
 {
     fn home_dir() -> &'static str;
     fn manifest_file_name() -> &'static str;
-    fn load_manifest(contents: &str) -> Option<Self>;
+    fn parse_manifest(contents: &str) -> Option<Self>;
     fn into_tools(self) -> HashMap<ToolAlias, ToolSpec>;
 }
 
@@ -94,8 +94,6 @@ fn search_paths(cwd: &Path, rokit_only: bool, skip_home: bool) -> Vec<(ManifestK
         }
     }
 
-    // Reverse all our dirs so that highest priority comes first
-    ordered_paths.reverse();
     ordered_paths
 }
 
@@ -125,9 +123,9 @@ pub async fn discover_all_manifests(rokit_only: bool, skip_home: bool) -> Vec<Di
         .into_iter()
         .filter_map(|(kind, path, contents)| {
             let tools = match kind {
-                ManifestKind::Rokit => RokitManifest::load_manifest(&contents)?.into_tools(),
-                ManifestKind::Aftman => AftmanManifest::load_manifest(&contents)?.into_tools(),
-                ManifestKind::Foreman => ForemanManifest::load_manifest(&contents)?.into_tools(),
+                ManifestKind::Rokit => RokitManifest::parse_manifest(&contents)?.into_tools(),
+                ManifestKind::Aftman => AftmanManifest::parse_manifest(&contents)?.into_tools(),
+                ManifestKind::Foreman => ForemanManifest::parse_manifest(&contents)?.into_tools(),
             };
             let path_depth = path.components().count();
             let depth = cwd_depth - path_depth;
@@ -159,9 +157,9 @@ pub async fn discover_tool_spec(
         };
 
         let tools = match kind {
-            ManifestKind::Rokit => RokitManifest::load_manifest(&contents)?.into_tools(),
-            ManifestKind::Aftman => AftmanManifest::load_manifest(&contents)?.into_tools(),
-            ManifestKind::Foreman => ForemanManifest::load_manifest(&contents)?.into_tools(),
+            ManifestKind::Rokit => RokitManifest::parse_manifest(&contents)?.into_tools(),
+            ManifestKind::Aftman => AftmanManifest::parse_manifest(&contents)?.into_tools(),
+            ManifestKind::Foreman => ForemanManifest::parse_manifest(&contents)?.into_tools(),
         };
 
         if let Some(spec) = tools.get(alias) {

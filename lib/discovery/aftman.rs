@@ -28,7 +28,7 @@ impl Manifest for AftmanManifest {
         "aftman.toml"
     }
 
-    fn load_manifest(contents: &str) -> Option<Self>
+    fn parse_manifest(contents: &str) -> Option<Self>
     where
         Self: Sized,
     {
