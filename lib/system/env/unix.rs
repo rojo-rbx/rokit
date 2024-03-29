@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use futures::{stream::FuturesUnordered, TryStreamExt};
+use futures::{stream::FuturesUnordered, StreamExt};
 use tokio::{
     fs::{read_to_string, write},
     io::ErrorKind,
@@ -45,10 +45,7 @@ pub async fn add_to_path(home: &Home) -> RokitResult<bool> {
                 )
             })
             .collect::<FuturesUnordered<_>>();
-        futs.try_collect::<Vec<_>>()
-            .await?
-            .iter()
-            .any(|added| *added)
+        futs.collect::<Vec<_>>().await.iter().any(Result::is_ok)
     } else {
         false
     };
