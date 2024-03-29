@@ -57,9 +57,8 @@ impl Candidate {
 
                 let matched_full_path = path == desired_file_path;
                 let matched_file_exact = file_name == Some(desired_file_name);
-                let matched_file_inexact = file_name
-                    .map(|name| name.eq_ignore_ascii_case(desired_file_name))
-                    .unwrap_or_default();
+                let matched_file_inexact =
+                    file_name.is_some_and(|name| name.eq_ignore_ascii_case(desired_file_name));
 
                 let has_exec_perms = perms.map_or(false, |perms| (perms & 0o111) != 0);
                 let has_exec_suffix = path.extension().map_or(false, |ext| ext == EXE_SUFFIX);

@@ -188,8 +188,7 @@ impl ToolStorage {
 
         let current_rokit_contents = Arc::new(AsyncMutex::new(None));
         let no_symlinks = var("ROKIT_NO_SYMLINKS")
-            .map(|val| matches!(val.to_ascii_lowercase().as_str(), "1" | "true"))
-            .unwrap_or_default();
+            .is_ok_and(|val| matches!(val.to_ascii_lowercase().as_str(), "1" | "true"));
 
         Ok(Self {
             tools_dir,
