@@ -1,5 +1,7 @@
 use std::env::consts::OS as CURRENT_OS;
 
+use super::executable_parsing::parse_executable;
+
 #[rustfmt::skip]
 const OS_KEYWORDS: [(OS, &[&str]); 3] = [
     (OS::Windows, &["windows", "win32", "win64", "win-x86", "win-x64"]),
@@ -45,6 +47,16 @@ impl OS {
             }
         }
         None
+    }
+
+    /**
+        Detect an operating system from the binary contents of an executable file.
+
+        Parsing binaries is a potentially expensive operation, so this method should
+        preferrably only be used as a fallback or for more descriptive error messages.
+    */
+    pub fn detect_from_executable(binary_contents: impl AsRef<[u8]>) -> Option<Self> {
+        Some(parse_executable(binary_contents)?.0)
     }
 }
 

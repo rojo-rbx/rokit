@@ -3,8 +3,11 @@ use std::{cmp::Ordering, str::FromStr};
 use thiserror::Error;
 
 mod arch;
+mod executable_parsing;
 mod os;
 mod toolchain;
+
+use self::executable_parsing::parse_executable;
 
 pub use self::arch::Arch;
 pub use self::os::OS;
@@ -44,7 +47,7 @@ impl Descriptor {
     }
 
     /**
-        Detect system description by identifying keywords in a search string.
+        Detect system descriptor by identifying keywords in a search string.
 
         Returns `None` if operating system or architecture could not be detected.
     */
@@ -59,6 +62,22 @@ impl Descriptor {
             os,
             arch,
             toolchain,
+        })
+    }
+
+    /**
+        Detect system descriptor from the binary contents of an executable file.
+
+        Parsing binaries is a potentially expensive operation, so this method should
+        preferrably only be used as a fallback or for more descriptive error messages.
+    */
+    #[must_use]
+    pub fn detect_from_executable(binary_contents: impl AsRef<[u8]>) -> Option<Self> {
+        let (os, arch) = parse_executable(binary_contents)?;
+        Some(Self {
+            os,
+            arch,
+            toolchain: None,
         })
     }
 

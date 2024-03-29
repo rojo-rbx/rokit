@@ -1,6 +1,6 @@
 use std::env::consts::ARCH as CURRENT_ARCH;
 
-use super::OS;
+use super::{executable_parsing::parse_executable, OS};
 
 #[rustfmt::skip]
 const ARCH_KEYWORDS: [(Arch, &[&str]); 4] = [
@@ -73,6 +73,16 @@ impl Arch {
         }
 
         None
+    }
+
+    /**
+        Detect an architecture from the binary contents of an executable file.
+
+        Parsing binaries is a potentially expensive operation, so this method should
+        preferrably only be used as a fallback or for more descriptive error messages.
+    */
+    pub fn detect_from_executable(binary_contents: impl AsRef<[u8]>) -> Option<Self> {
+        Some(parse_executable(binary_contents)?.1)
     }
 }
 
