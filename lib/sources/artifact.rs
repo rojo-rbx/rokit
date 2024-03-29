@@ -1,6 +1,5 @@
 use std::{fmt, path::Path, str::FromStr};
 
-use octocrab::models::repos::Asset;
 use tracing::instrument;
 use url::Url;
 
@@ -13,6 +12,7 @@ use crate::{
 use super::{
     decompression::decompress_gzip,
     extraction::{extract_tar_file, extract_zip_file},
+    github::models::Asset,
 };
 
 /**

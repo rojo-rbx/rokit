@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use thiserror::Error;
 
-use crate::sources::ArtifactFormat;
+use crate::sources::{github::GithubError, ArtifactFormat};
 
 #[derive(Debug, Error)]
 pub enum RokitError {
@@ -36,7 +36,7 @@ pub enum RokitError {
     #[error("Zip file error: {0}")]
     Zip(#[from] zip::result::ZipError),
     #[error("GitHub error: {0}")]
-    GitHub(#[from] octocrab::Error),
+    GitHub(#[from] GithubError),
 }
 
 pub type RokitResult<T> = Result<T, RokitError>;
