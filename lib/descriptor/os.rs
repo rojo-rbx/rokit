@@ -58,6 +58,18 @@ impl OS {
     pub fn detect_from_executable(binary_contents: impl AsRef<[u8]>) -> Option<Self> {
         Some(parse_executable(binary_contents)?.0)
     }
+
+    /**
+        Get the name of the operating system as a string.
+    */
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Windows => "windows",
+            Self::MacOS => "macos",
+            Self::Linux => "linux",
+        }
+    }
 }
 
 #[cfg(test)]

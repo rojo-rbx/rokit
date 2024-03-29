@@ -119,6 +119,31 @@ impl ToolStorage {
     }
 
     /**
+        Reads all currently known link paths for tool aliases in the binary directory.
+
+        This *does not* include the link / main executable for Rokit itself.
+
+        # Errors
+
+        - If the directory could not be read.
+        - If any link could not be read.
+    */
+    pub async fn all_link_paths(&self) -> RokitResult<Vec<PathBuf>> {
+        let rokit_path = self.rokit_path();
+
+        let mut link_paths = Vec::new();
+        let mut link_reader = read_dir(&self.aliases_dir).await?;
+        while let Some(entry) = link_reader.next_entry().await? {
+            let path = entry.path();
+            if path != rokit_path {
+                link_paths.push(path);
+            }
+        }
+
+        Ok(link_paths)
+    }
+
+    /**
         Recreates all known links for tool aliases in the binary directory.
         This includes the link / main executable for Rokit itself.
 

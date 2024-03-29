@@ -84,6 +84,19 @@ impl Arch {
     pub fn detect_from_executable(binary_contents: impl AsRef<[u8]>) -> Option<Self> {
         Some(parse_executable(binary_contents)?.1)
     }
+
+    /**
+        Get the architecture as a string, such as "x64" or "arm64".
+    */
+    #[must_use]
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Arm64 => "arm64",
+            Self::X64 => "x64",
+            Self::Arm32 => "arm32",
+            Self::X86 => "x86",
+        }
+    }
 }
 
 #[cfg(test)]

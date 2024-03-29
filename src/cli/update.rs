@@ -182,6 +182,7 @@ impl UpdateSubcommand {
             finish_progress_bar(&pb, msg);
         } else {
             let bullet = style("•").dim();
+            let arrow = style("→").dim();
             let msg = format!(
                 "Updated versions for {} tool{} {}\n\n{}\n\n\
                 Run `{}` to install the updated tools.",
@@ -192,7 +193,7 @@ impl UpdateSubcommand {
                     .into_iter()
                     .map(|(alias, spec_old, spec_new)| {
                         format!(
-                            "{bullet} {} {} → {}",
+                            "{bullet} {} {} {arrow} {}",
                             style(alias.to_string()).bold().cyan(),
                             style(spec_old.version()).yellow(),
                             style(spec_new.version()).bold().yellow()

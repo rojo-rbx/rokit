@@ -39,6 +39,18 @@ impl Toolchain {
         }
         None
     }
+
+    /**
+        Get the name of the toolchain as a string.
+    */
+    #[must_use]
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Msvc => "msvc",
+            Self::Gnu => "gnu",
+            Self::Musl => "musl",
+        }
+    }
 }
 
 #[cfg(test)]

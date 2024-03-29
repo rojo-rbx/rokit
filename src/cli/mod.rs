@@ -10,6 +10,7 @@ mod install;
 mod list;
 mod self_install;
 mod self_update;
+mod system_info;
 mod trust;
 mod update;
 
@@ -19,6 +20,7 @@ use self::install::InstallSubcommand;
 use self::list::ListSubcommand;
 use self::self_install::SelfInstallSubcommand;
 use self::self_update::SelfUpdateSubcommand;
+use self::system_info::SystemInfoSubcommand;
 use self::trust::TrustSubcommand;
 use self::update::UpdateSubcommand;
 
@@ -77,6 +79,7 @@ pub enum Subcommand {
     List(ListSubcommand),
     SelfInstall(SelfInstallSubcommand),
     SelfUpdate(SelfUpdateSubcommand),
+    SystemInfo(SystemInfoSubcommand),
     Trust(TrustSubcommand),
     Update(UpdateSubcommand),
 }
@@ -90,6 +93,7 @@ impl Subcommand {
             Self::List(cmd) => cmd.run(home).await,
             Self::SelfInstall(cmd) => cmd.run(home).await,
             Self::SelfUpdate(cmd) => cmd.run(home).await,
+            Self::SystemInfo(cmd) => cmd.run(home).await,
             Self::Trust(cmd) => cmd.run(home).await,
             Self::Update(cmd) => cmd.run(home).await,
         }
