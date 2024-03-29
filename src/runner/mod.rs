@@ -1,6 +1,6 @@
 use std::{env::args, process::exit, str::FromStr};
 
-use anyhow::{Context, Result};
+use anyhow::{Context, Error, Result};
 
 use rokit::{
     discovery::discover_tool_spec,
@@ -8,6 +8,9 @@ use rokit::{
     system::{current_exe_name, run_interruptible},
     tool::ToolAlias,
 };
+
+mod info;
+use self::info::inform_user_about_potential_fixes;
 
 #[derive(Debug, Clone)]
 pub struct Runner {
@@ -43,7 +46,11 @@ impl Runner {
         let path = home.tool_storage().tool_path(&spec);
         let args = args().skip(1).collect::<Vec<_>>();
 
-        let code = run_interruptible(&path, &args).await?;
+        let code = run_interruptible(&path, &args)
+            .await
+            .map_err(Error::from)
+            .inspect_err(|e| inform_user_about_potential_fixes(&alias, e))?;
+
         exit(code);
     }
 }

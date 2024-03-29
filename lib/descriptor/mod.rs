@@ -82,6 +82,30 @@ impl Descriptor {
     }
 
     /**
+        Get the operating system of this description.
+    */
+    #[must_use]
+    pub fn os(&self) -> OS {
+        self.os
+    }
+
+    /**
+        Get the architecture of this description.
+    */
+    #[must_use]
+    pub fn arch(&self) -> Arch {
+        self.arch
+    }
+
+    /**
+        Get the preferred toolchain of this description.
+    */
+    #[must_use]
+    pub fn toolchain(&self) -> Option<Toolchain> {
+        self.toolchain
+    }
+
+    /**
         Check if this description is compatible with another description.
 
         Two descriptions are compatible if they have the same operating
