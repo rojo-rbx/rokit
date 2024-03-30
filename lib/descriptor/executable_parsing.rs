@@ -1,4 +1,5 @@
 use goblin::{elf::Elf, mach::Mach, pe::header::Header as PEHeader};
+use tokio::time::Instant;
 
 use super::{Arch, OS};
 
@@ -8,11 +9,41 @@ use super::{Arch, OS};
 
     Currently supports ELF, Mach-O and PE formats.
 */
+#[tracing::instrument(skip(binary_contents), level = "debug")]
 pub fn parse_executable(binary_contents: impl AsRef<[u8]>) -> Option<(OS, Arch)> {
     let binary_contents = binary_contents.as_ref();
-    parse_elf(binary_contents)
-        .or_else(|| parse_mach(binary_contents))
-        .or_else(|| parse_pe(binary_contents))
+
+    // Prioritize parsing the current OS's format first since
+    // it's the most likely to be correct, for most use cases.
+    let start = Instant::now();
+
+    #[cfg(target_os = "linux")]
+    let opt = {
+        parse_elf(binary_contents)
+            .or_else(|| parse_mach(binary_contents))
+            .or_else(|| parse_pe(binary_contents))
+    };
+
+    #[cfg(target_os = "macos")]
+    let opt = {
+        parse_mach(binary_contents)
+            .or_else(|| parse_elf(binary_contents))
+            .or_else(|| parse_pe(binary_contents))
+    };
+
+    #[cfg(target_os = "windows")]
+    let opt = {
+        parse_pe(binary_contents)
+            .or_else(|| parse_elf(binary_contents))
+            .or_else(|| parse_mach(binary_contents))
+    };
+
+    tracing::debug!(
+        elapsed = ?start.elapsed(),
+        "parsed executable format"
+    );
+
+    opt
 }
 
 fn parse_elf(binary_contents: &[u8]) -> Option<(OS, Arch)> {
@@ -32,17 +63,24 @@ fn parse_elf(binary_contents: &[u8]) -> Option<(OS, Arch)> {
 }
 
 fn parse_mach(binary_contents: &[u8]) -> Option<(OS, Arch)> {
-    use goblin::mach::constants::cputype::{
-        CPU_TYPE_ARM, CPU_TYPE_ARM64, CPU_TYPE_ARM64_32, CPU_TYPE_X86, CPU_TYPE_X86_64,
+    use goblin::mach::{
+        constants::cputype::{
+            CPU_TYPE_ARM, CPU_TYPE_ARM64, CPU_TYPE_ARM64_32, CPU_TYPE_X86, CPU_TYPE_X86_64,
+        },
+        cputype::CpuType,
     };
 
-    let cputype_to_arch = |cputype| match cputype {
-        CPU_TYPE_ARM64 => Some(Arch::Arm64),
-        CPU_TYPE_X86_64 => Some(Arch::X64),
-        CPU_TYPE_ARM64_32 | CPU_TYPE_ARM => Some(Arch::Arm32),
-        CPU_TYPE_X86 => Some(Arch::X86),
-        _ => None,
-    };
+    #[allow(clippy::inline_always)]
+    #[inline(always)]
+    const fn cputype_to_arch(cputype: CpuType) -> Option<Arch> {
+        match cputype {
+            CPU_TYPE_ARM64 => Some(Arch::Arm64),
+            CPU_TYPE_X86_64 => Some(Arch::X64),
+            CPU_TYPE_ARM64_32 | CPU_TYPE_ARM => Some(Arch::Arm32),
+            CPU_TYPE_X86 => Some(Arch::X86),
+            _ => None,
+        }
+    }
 
     match Mach::parse(binary_contents).ok()? {
         Mach::Binary(macho) => {
