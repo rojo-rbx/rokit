@@ -8,7 +8,7 @@ use rokit::{
     system::{add_to_path, exists_in_path},
 };
 
-use crate::util::{finish_progress_bar, new_progress_bar};
+use crate::util::CliProgressTracker;
 
 /// Installs / re-installs Rokit, and updates all tool links.
 #[derive(Debug, Parser)]
@@ -18,14 +18,14 @@ impl SelfInstallSubcommand {
     pub async fn run(self, home: &Home) -> Result<()> {
         let storage = home.tool_storage();
 
-        let pb = new_progress_bar("Linking", 2, 1);
+        let pt = CliProgressTracker::new_with_message("Linking", 2);
         let (had_rokit_installed, was_rokit_updated) = storage.recreate_all_links().await.context(
             "Failed to recreate tool links!\
             \nYour installation may be corrupted.",
         )?;
 
-        pb.inc(1);
-        pb.set_message("Pathifying");
+        pt.task_completed();
+        pt.update_message("Pathifying");
 
         let mut path_errored = false;
         let path_was_changed = add_to_path(home)
@@ -70,11 +70,10 @@ impl SelfInstallSubcommand {
             format!("\n\nRun `{help_command}` to get started using Rokit.")
         };
 
-        let msg = format!(
+        pt.finish_with_message(format!(
             "{main_message} {}{should_restart_message}{help_message}",
-            style(format!("(took {:.2?})", pb.elapsed())).dim(),
-        );
-        finish_progress_bar(&pb, msg);
+            pt.formatted_elapsed(),
+        ));
 
         Ok(())
     }

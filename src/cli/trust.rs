@@ -4,7 +4,7 @@ use console::style;
 
 use rokit::{storage::Home, tool::ToolId};
 
-use crate::util::{finish_progress_bar, new_progress_bar};
+use crate::util::CliProgressTracker;
 
 /// Mark the given tool(s) as being trusted.
 #[derive(Debug, Parser)]
@@ -21,23 +21,28 @@ impl TrustSubcommand {
 
         // NOTE: We use a progress bar only to show the final message to the
         // user below, to maintain consistent formatting with other commands.
-        let pb = new_progress_bar("Trusting", 1, 1);
+        let pt = CliProgressTracker::new_with_message("Trusting", 1);
 
         let cache = home.tool_cache();
         let (added_tools, existing_tools) = self
             .tools
             .into_iter()
             .partition::<Vec<_>, _>(|tool| cache.add_trust(tool.clone()));
-        let took = style(format!("(took {:.2?})", pb.elapsed())).dim();
 
         if added_tools.len() == 1 && existing_tools.is_empty() {
             // Special case 1 with shorter output - a singular tool was added
-            let msg = format!("Tool {} is now trusted {took}", added_tools[0]);
-            finish_progress_bar(&pb, msg);
+            pt.finish_with_message(format!(
+                "Tool {} is now trusted {}",
+                added_tools[0],
+                pt.formatted_elapsed(),
+            ));
         } else if existing_tools.len() == 1 && added_tools.is_empty() {
             // Special case 2 with shorter output - a singular tool was already trusted
-            let msg = format!("Tool {} was already trusted {took}", existing_tools[0]);
-            finish_progress_bar(&pb, msg);
+            pt.finish_with_message(format!(
+                "Tool {} was already trusted {}",
+                existing_tools[0],
+                pt.formatted_elapsed(),
+            ));
         } else {
             // General case with multiple tools added and/or already trusted
             let mut lines = Vec::new();
@@ -57,13 +62,13 @@ impl TrustSubcommand {
                 }
             }
 
-            let msg = format!(
-                "Changed trust for {} tool{} {took}\n\n{}",
+            pt.finish_with_message(format!(
+                "Changed trust for {} tool{} {}\n\n{}",
                 added_tools.len(),
                 if added_tools.len() == 1 { "" } else { "s" },
+                pt.formatted_elapsed(),
                 lines.join("\n")
-            );
-            finish_progress_bar(&pb, msg);
+            ));
         }
 
         Ok(())

@@ -5,7 +5,7 @@ use semver::Version;
 
 use rokit::{sources::Artifact, storage::Home, tool::ToolId};
 
-use crate::util::{finish_progress_bar, new_progress_bar};
+use crate::util::CliProgressTracker;
 
 /// Updates Rokit to the latest version.
 #[derive(Debug, Parser)]
@@ -28,11 +28,11 @@ impl SelfUpdateSubcommand {
             );
         };
 
-        let pb = new_progress_bar("Loading", 4, 1);
+        let pt = CliProgressTracker::new_with_message("Loading", 4);
         let source = home.artifact_source().await?;
 
-        pb.inc(1);
-        pb.set_message("Fetching");
+        pt.task_completed();
+        pt.update_message("Fetching");
 
         let artifacts = source.get_latest_release(&tool_id).await?;
 
@@ -43,17 +43,17 @@ impl SelfUpdateSubcommand {
             let msg = format!(
                 "Rokit is already up-to-date! {}\n\n\
                 The latest version is {}.",
-                style(format!("(took {:.2?})", pb.elapsed())).dim(),
+                pt.formatted_elapsed(),
                 style(&version_latest).bold().magenta(),
             );
-            finish_progress_bar(&pb, msg);
+            pt.finish_with_message(msg);
             return Ok(());
         }
 
         // Download the most compatible artifact - this should always exist,
         // otherwise we wouldn't be able to run Rokit in the first place...?
-        pb.inc(1);
-        pb.set_message("Downloading");
+        pt.task_completed();
+        pt.update_message("Downloading");
 
         let artifact = Artifact::sort_by_system_compatibility(&artifacts)
             .first()
@@ -65,16 +65,16 @@ impl SelfUpdateSubcommand {
             .context("Failed to download latest Rokit binary")?;
 
         // Extract the binary contents from the artifact
-        pb.inc(1);
-        pb.set_message("Extracting");
+        pt.task_completed();
+        pt.update_message("Extracting");
         let binary_contents = artifact
             .extract_contents(artifact_contents)
             .await
             .context("Failed to extract Rokit binary from archive")?;
 
         // Finally, we need to replace the current binary contents and all links to it.
-        pb.inc(1);
-        pb.set_message("Linking");
+        pt.task_completed();
+        pt.update_message("Linking");
 
         let storage = home.tool_storage();
         storage.replace_rokit_contents(binary_contents).await;
@@ -87,11 +87,11 @@ impl SelfUpdateSubcommand {
         let msg = format!(
             "Rokit has been updated successfully! {}\n\
             \nYou are now running version {}, updated from {}.",
-            style(format!("(took {:.2?})", pb.elapsed())).dim(),
+            pt.formatted_elapsed(),
             style(&version_latest).bold().magenta(),
             style(&version_current).bold().magenta(),
         );
-        finish_progress_bar(&pb, msg);
+        pt.finish_with_message(msg);
 
         Ok(())
     }

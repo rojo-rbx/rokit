@@ -10,7 +10,7 @@ use rokit::{
     tool::{ToolAlias, ToolId},
 };
 
-use crate::util::{finish_progress_bar, new_progress_bar, prompt_for_trust, ToolIdOrSpec};
+use crate::util::{prompt_for_trust, CliProgressTracker, ToolIdOrSpec};
 
 /// Adds a new tool to Rokit and installs it.
 #[derive(Debug, Parser)]
@@ -81,7 +81,7 @@ impl AddSubcommand {
 
         // 3. If we only got an id without a specified version, we
         // will fetch the latest non-prerelease release and use that
-        let pb = new_progress_bar("Fetching", 3, 1);
+        let pt = CliProgressTracker::new_with_message("Fetching", 3);
         let (spec, artifact) = match self.tool.clone() {
             ToolIdOrSpec::Spec(spec) => {
                 let artifacts = source.get_specific_release(&spec).await?;
@@ -89,7 +89,6 @@ impl AddSubcommand {
                     .first()
                     .cloned()
                     .with_context(|| format!("No compatible artifact found for {id}"))?;
-                pb.inc(1);
                 (spec, artifact)
             }
             ToolIdOrSpec::Id(id) => {
@@ -98,10 +97,10 @@ impl AddSubcommand {
                     .first()
                     .cloned()
                     .with_context(|| format!("No compatible artifact found for {id}"))?;
-                pb.inc(1);
                 (artifact.tool_spec.clone(), artifact)
             }
         };
+        pt.task_completed();
 
         // 4. Add the tool spec to the desired manifest file and save it
         manifest.add_tool(&alias, &spec);
@@ -113,25 +112,26 @@ impl AddSubcommand {
                 .download_artifact_contents(&artifact)
                 .await
                 .with_context(|| format!("Failed to download contents for {spec}"))?;
-            pb.inc(1);
-            pb.set_message("Installing");
+            pt.task_completed();
+            pt.update_message("Installing");
             let extracted = artifact
                 .extract_contents(contents)
                 .await
                 .with_context(|| format!("Failed to extract contents for {spec}"))?;
             tool_storage.replace_tool_contents(&spec, extracted).await?;
-            pb.inc(1);
+            pt.task_completed();
             let _ = tool_cache.add_installed(spec.clone());
         } else {
-            pb.inc(2);
+            pt.task_completed();
+            pt.task_completed();
         }
 
         // 6. Create the tool alias link
-        pb.set_message("Linking");
+        pt.update_message("Linking");
         tool_storage.create_tool_link(&alias).await?;
 
         // 7. Finally, display a nice message to the user
-        let msg = format!(
+        pt.finish_with_message(format!(
             "Added version {} of tool {}{} {}",
             style(spec.version()).bold().yellow(),
             style(spec.name()).bold().magenta(),
@@ -140,9 +140,8 @@ impl AddSubcommand {
             } else {
                 format!(" with alias {}", style(alias.to_string()).bold().cyan())
             },
-            style(format!("(took {:.2?})", pb.elapsed())).dim(),
-        );
-        finish_progress_bar(&pb, msg);
+            pt.formatted_elapsed(),
+        ));
 
         Ok(())
     }

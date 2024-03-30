@@ -7,7 +7,7 @@ use rokit::{
     discovery::discover_all_manifests, manifests::RokitManifest, sources::Artifact, storage::Home,
 };
 
-use crate::util::{finish_progress_bar, new_progress_bar, ToolAliasOrIdOrSpec, ToolIdOrSpec};
+use crate::util::{CliProgressTracker, ToolAliasOrIdOrSpec, ToolIdOrSpec};
 
 /// Updates all tools, or specific tools, to the latest version.
 #[derive(Debug, Parser)]
@@ -112,7 +112,7 @@ impl UpdateSubcommand {
                 })
                 .collect::<Result<Vec<_>>>()?
         };
-        let pb = new_progress_bar("Fetching", tools.len(), 3);
+        let pt = CliProgressTracker::new_with_message_and_subtasks("Fetching", tools.len(), 3);
 
         // 3. Fetch the latest or desired versions of the tools
         let tool_releases = tools
@@ -146,7 +146,7 @@ impl UpdateSubcommand {
                     .cloned()
                     .with_context(|| format!("No compatible artifact found for {id}"))?;
 
-                pb.inc(1);
+                pt.subtask_completed();
                 Ok::<_, anyhow::Error>((alias, id, artifact))
             })
             .collect::<FuturesUnordered<_>>()
@@ -154,7 +154,7 @@ impl UpdateSubcommand {
             .await?;
 
         // 4. Modify the manifest with the desired new tools, save
-        pb.set_message("Modifying");
+        pt.update_message("Modifying");
         let tools_changed = tool_releases
             .iter()
             .filter_map(|(alias, _, artifact)| {
@@ -169,41 +169,42 @@ impl UpdateSubcommand {
             .collect::<Vec<_>>();
         for (alias, _, spec_new) in &tools_changed {
             manifest.update_tool(alias, spec_new);
-            pb.inc(1);
+            pt.subtask_completed();
         }
         manifest.save(&manifest_path).await?;
 
         // 5. Finally, display a nice message to the user
         if tools_changed.is_empty() {
-            let msg = format!(
+            pt.finish_with_message(format!(
                 "All tools are already up-to-date! {}",
-                style(format!("(took {:.2?})", pb.elapsed())).dim()
-            );
-            finish_progress_bar(&pb, msg);
+                pt.formatted_elapsed(),
+            ));
         } else {
             let bullet = style("•").dim();
             let arrow = style("→").dim();
-            let msg = format!(
-                "Updated versions for {} tool{} {}\n\n{}\n\n\
+
+            let updated_tool_lines = tools_changed
+                .iter()
+                .map(|(alias, spec_old, spec_new)| {
+                    format!(
+                        "{bullet} {} {} {arrow} {}",
+                        style(alias.to_string()).bold().cyan(),
+                        style(spec_old.version()).yellow(),
+                        style(spec_new.version()).bold().yellow()
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join("\n");
+
+            pt.finish_with_message(format!(
+                "Updated versions for {} tool{} {}\
+                \n\n{updated_tool_lines}\n\n\
                 Run `{}` to install the updated tools.",
                 style(tools_changed.len()).bold().magenta(),
                 if tools_changed.len() == 1 { "" } else { "s" },
-                style(format!("(took {:.2?})", pb.elapsed())).dim(),
-                tools_changed
-                    .into_iter()
-                    .map(|(alias, spec_old, spec_new)| {
-                        format!(
-                            "{bullet} {} {} {arrow} {}",
-                            style(alias.to_string()).bold().cyan(),
-                            style(spec_old.version()).yellow(),
-                            style(spec_new.version()).bold().yellow()
-                        )
-                    })
-                    .collect::<Vec<_>>()
-                    .join("\n"),
+                pt.formatted_elapsed(),
                 style("rokit install").bold().green(),
-            );
-            finish_progress_bar(&pb, msg);
+            ));
         }
 
         // FUTURE: Install the newly updated tools automatically

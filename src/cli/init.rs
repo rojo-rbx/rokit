@@ -4,7 +4,7 @@ use console::style;
 
 use rokit::{manifests::RokitManifest, storage::Home, system::current_dir};
 
-use crate::util::{finish_progress_bar, new_progress_bar};
+use crate::util::CliProgressTracker;
 
 /// Initializes a new Rokit project in the current directory.
 #[derive(Debug, Parser)]
@@ -39,20 +39,19 @@ impl InitSubcommand {
 
         // NOTE: We use a progress bar only to show the final message to the
         // user below, to maintain consistent formatting with other commands.
-        let pb = new_progress_bar("Initializing", 1, 1);
+        let pt = CliProgressTracker::new_with_message("Initializing", 1);
 
         manifest
             .save(cwd)
             .await
             .context("Failed to save new Rokit manifest")?;
 
-        let msg = format!(
+        pt.finish_with_message(format!(
             "Initialized new Rokit project successfully! {}\n\
             \nYou can now run `{}` to add new tools to your project.",
-            style(format!("(took {:.2?})", pb.elapsed())).dim(),
+            pt.formatted_elapsed(),
             style("rokit add").bold().green()
-        );
-        finish_progress_bar(&pb, msg);
+        ));
 
         Ok(())
     }

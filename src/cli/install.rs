@@ -7,7 +7,7 @@ use console::style;
 use futures::{stream::FuturesUnordered, TryStreamExt};
 use rokit::{discovery::discover_all_manifests, sources::Artifact, storage::Home};
 
-use crate::util::{finish_progress_bar, new_progress_bar, prompt_for_trust_specs};
+use crate::util::{prompt_for_trust_specs, CliProgressTracker};
 
 /// Adds a new tool using Rokit and installs it.
 #[derive(Debug, Parser)]
@@ -69,42 +69,43 @@ impl InstallSubcommand {
 
         // 3. Find artifacts, download and install them
 
-        let pb = new_progress_bar("Installing", tool_specs.len(), 5);
+        let pt =
+            CliProgressTracker::new_with_message_and_subtasks("Installing", tool_specs.len(), 5);
         let installed_specs = tool_specs
             .into_iter()
             .map(|tool_spec| async {
                 if tool_cache.is_installed(&tool_spec) && !force {
-                    pb.inc(5);
+                    pt.task_completed();
                     // HACK: Force the async closure to take ownership
                     // of tool_spec by returning it from the closure
                     return anyhow::Ok(tool_spec);
                 }
 
                 let artifacts = source.get_specific_release(&tool_spec).await?;
-                pb.inc(1);
+                pt.subtask_completed();
 
                 let artifact = Artifact::sort_by_system_compatibility(&artifacts)
                     .first()
                     .cloned()
                     .with_context(|| format!("No compatible artifact found for {tool_spec}"))?;
-                pb.inc(1);
+                pt.subtask_completed();
 
                 let contents = source
                     .download_artifact_contents(&artifact)
                     .await
                     .with_context(|| format!("Failed to download contents for {tool_spec}"))?;
-                pb.inc(1);
+                pt.subtask_completed();
 
                 let extracted = artifact
                     .extract_contents(contents)
                     .await
                     .with_context(|| format!("Failed to extract contents for {tool_spec}"))?;
-                pb.inc(1);
+                pt.subtask_completed();
 
                 tool_storage
                     .replace_tool_contents(&tool_spec, extracted)
                     .await?;
-                pb.inc(1);
+                pt.subtask_completed();
 
                 let _ = tool_cache.add_installed(tool_spec.clone());
                 Ok(tool_spec)
@@ -117,7 +118,7 @@ impl InstallSubcommand {
         // tool is already installed in case the link(s) have been corrupted
         // and the user tries to re-install tools to fix it.
 
-        pb.set_message("Linking");
+        pt.update_message("Linking");
         tool_aliases
             .iter()
             .map(|alias| tool_storage.create_tool_link(alias))
@@ -126,14 +127,12 @@ impl InstallSubcommand {
             .await?;
 
         // 5. Finally, display a nice message to the user
-        let msg = format!(
-            "Installed and created link{} for {} tool{} {}",
-            if installed_specs.len() == 1 { "" } else { "s" },
+        let s = if installed_specs.len() == 1 { "" } else { "s" };
+        pt.finish_with_message(format!(
+            "Installed and created link{s} for {} tool{s} {}",
             style(installed_specs.len()).bold().magenta(),
-            if installed_specs.len() == 1 { "" } else { "s" },
-            style(format!("(took {:.2?})", pb.elapsed())).dim(),
-        );
-        finish_progress_bar(&pb, msg);
+            pt.formatted_elapsed(),
+        ));
 
         Ok(())
     }
