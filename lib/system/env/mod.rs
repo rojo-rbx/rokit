@@ -2,6 +2,7 @@ use std::{env::var, path::MAIN_SEPARATOR_STR};
 
 use crate::{result::RokitResult, storage::Home};
 
+#[cfg(unix)]
 mod shell;
 
 #[cfg(unix)]
