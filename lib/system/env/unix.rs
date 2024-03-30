@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use futures::{stream::FuturesUnordered, TryStreamExt};
+use futures::{stream::FuturesUnordered, StreamExt};
 use tokio::{
     fs::{read_to_string, write},
     io::ErrorKind,
@@ -33,7 +33,7 @@ pub async fn add_to_path(home: &Home) -> RokitResult<bool> {
 
     // Add the path to known shell profiles
     let added_any = if let Some(home_dir) = dirs::home_dir() {
-        let futs = Shell::ALL
+        Shell::ALL
             .iter()
             .map(|shell| {
                 let shell_env_path = home_dir.join(shell.env_file_path());
@@ -44,11 +44,11 @@ pub async fn add_to_path(home: &Home) -> RokitResult<bool> {
                     shell_should_create,
                 )
             })
-            .collect::<FuturesUnordered<_>>();
-        futs.try_collect::<Vec<_>>()
-            .await?
+            .collect::<FuturesUnordered<_>>()
+            .collect::<Vec<_>>()
+            .await
             .iter()
-            .any(|added| *added)
+            .any(Result::is_ok)
     } else {
         false
     };
