@@ -106,7 +106,20 @@ impl CliProgressTracker {
         This will clear the progress bar and display the final message given.
     */
     pub fn finish_with_message(&self, final_message: impl Into<String>) {
-        self.inner.println(format!("🚀 {}", final_message.into()));
+        self.finish_with_emoji_and_message("🚀", final_message);
+    }
+
+    /**
+        Finishes the progress tracker with a final message and a custom emoji prefix.
+
+        This will clear the progress bar and display the final message given.
+    */
+    pub fn finish_with_emoji_and_message(&self, emoji: &str, final_message: impl Into<String>) {
+        self.inner.println(format!(
+            "{} {}",
+            style(emoji).bold().green(),
+            final_message.into()
+        ));
         self.inner.finish_and_clear();
     }
 }

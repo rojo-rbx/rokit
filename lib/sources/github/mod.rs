@@ -5,7 +5,7 @@ use serde::de::DeserializeOwned;
 use tracing::{debug, instrument};
 
 use reqwest::{
-    header::{HeaderMap, HeaderValue, ACCEPT, USER_AGENT},
+    header::{HeaderMap, HeaderName, HeaderValue, ACCEPT, AUTHORIZATION, USER_AGENT},
     StatusCode,
 };
 
@@ -25,16 +25,22 @@ pub use self::result::{GithubError, GithubResult};
 #[derive(Debug, Clone)]
 pub struct GithubProvider {
     client: reqwest::Client,
+    has_auth: bool,
 }
 
 impl GithubProvider {
     fn new_inner(pat: Option<String>) -> GithubResult<Self> {
+        let has_auth = pat.is_some();
         let headers = {
             let mut headers = HeaderMap::new();
             headers.insert(USER_AGENT, HeaderValue::from_static("rokit"));
+            headers.insert(
+                HeaderName::from_static("x-github-api-version"),
+                HeaderValue::from_static("2022-11-28"),
+            );
             if let Some(pat) = pat {
                 let token = format!("Bearer {pat}");
-                headers.insert("Authorization", HeaderValue::from_str(&token)?);
+                headers.insert(AUTHORIZATION, HeaderValue::from_str(&token)?);
             }
             headers
         };
@@ -48,7 +54,7 @@ impl GithubProvider {
             .timeout(Duration::from_secs(60))
             .build()?;
 
-        Ok(Self { client })
+        Ok(Self { client, has_auth })
     }
 
     async fn get_json<T: DeserializeOwned>(&self, url: &str) -> GithubResult<T> {
@@ -101,6 +107,32 @@ impl GithubProvider {
             Self::new_inner(Some(pat))
         } else {
             Err(GithubError::UnrecognizedAccessToken)
+        }
+    }
+
+    /**
+        Verifies that the current authentication token is valid.
+
+        Returns `true` if the token is valid, `false` if it is not.
+
+        Always returns `false` if the source is not authenticated.
+
+        # Errors
+
+        - If the request to the GitHub API failed.
+    */
+    pub async fn verify_authentication(&self) -> GithubResult<bool> {
+        if !self.has_auth {
+            return Ok(false);
+        }
+
+        let url = format!("{BASE_URL}/rate_limit");
+        let res = self.get_json::<serde_json::Value>(&url).await;
+
+        match res {
+            Ok(_) => Ok(true),
+            Err(e) if is_unauthenticated(&e) => Ok(false),
+            Err(e) => Err(e),
         }
     }
 
@@ -199,6 +231,15 @@ fn is_404(err: &GithubError) -> bool {
     if let GithubError::Reqwest(reqwest_err) = err {
         if let Some(status) = reqwest_err.status() {
             return status == StatusCode::NOT_FOUND;
+        }
+    }
+    false
+}
+
+fn is_unauthenticated(err: &GithubError) -> bool {
+    if let GithubError::Reqwest(reqwest_err) = err {
+        if let Some(status) = reqwest_err.status() {
+            return matches!(status, StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN);
         }
     }
     false

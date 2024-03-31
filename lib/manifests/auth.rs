@@ -123,6 +123,7 @@ impl AuthManifest {
         Returns `true` if the token replaced an older
         one, `false` if an older token was not present.
     */
+    #[must_use]
     pub fn set_token(
         &mut self,
         artifact_provider: ArtifactProvider,
@@ -134,6 +135,17 @@ impl AuthManifest {
             Item::Value(Value::String(Formatted::new(token.into()))),
         );
         old.is_some()
+    }
+
+    /**
+        Unsets the authentication token for the given artifact provider.
+
+        Returns `true` if the token was removed, `false` if it was not present.
+    */
+    #[must_use]
+    pub fn unset_token(&mut self, artifact_provider: ArtifactProvider) -> bool {
+        let tab = self.document.as_table_mut();
+        tab.remove(artifact_provider.as_str()).is_some()
     }
 }
 

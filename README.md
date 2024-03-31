@@ -43,6 +43,7 @@ Running `rokit command-name --help` will give you full details about a _specific
 - `rokit list` - Lists all currently installed tools.
 - `rokit install` - Installs all project-specific tools.
 - `rokit update` - Updates a specific tool, or all project-specific tools, to the latest version.
+- `rokit authenticate` - Authenticates with GitHub or other artifact providers.
 - `rokit self-update` - Updates Rokit itself to the latest version.
 - `rokit self-install` - Installs Rokit itself and updates tool executable links.
 

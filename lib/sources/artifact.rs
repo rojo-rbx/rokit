@@ -28,9 +28,16 @@ pub enum ArtifactProvider {
 
 impl ArtifactProvider {
     #[must_use]
-    pub fn as_str(&self) -> &'static str {
+    pub fn as_str(self) -> &'static str {
         match self {
             Self::GitHub => "github",
+        }
+    }
+
+    #[must_use]
+    pub fn display_name(self) -> &'static str {
+        match self {
+            Self::GitHub => "GitHub",
         }
     }
 }
