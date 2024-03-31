@@ -4,7 +4,7 @@ use tracing::instrument;
 use url::Url;
 
 use crate::{
-    descriptor::Descriptor,
+    descriptor::{Descriptor, OS},
     result::{RokitError, RokitResult},
     tool::ToolSpec,
 };
@@ -162,6 +162,8 @@ impl Artifact {
             }
         };
 
+        // Make sure we got back the file we need ...
+
         let file_opt = file_res.map_err(|err| RokitError::ExtractError {
             source: err.into(),
             body: {
@@ -174,11 +176,27 @@ impl Artifact {
             },
         })?;
 
-        file_opt.ok_or(RokitError::ExtractFileMissing {
+        let file_bytes = file_opt.ok_or_else(|| RokitError::ExtractFileMissing {
             format,
             file_name: self.tool_spec.name().to_string(),
             archive_name: self.name.clone().unwrap_or_default(),
-        })
+        })?;
+
+        // ... and parse the OS from the executable binary, or error,
+        // to ensure that the user will actually be able to run it
+
+        let os_current = OS::current_system();
+        let os_file = OS::detect_from_executable(&file_bytes);
+        if os_file.is_some_and(|os| os != os_current) {
+            return Err(RokitError::ExtractOSMismatch {
+                current_os: os_current,
+                file_os: os_file.unwrap(),
+                file_name: self.tool_spec.name().to_string(),
+                archive_name: self.name.clone().unwrap_or_default(),
+            });
+        }
+
+        Ok(file_bytes)
     }
 
     /**

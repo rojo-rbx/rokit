@@ -2,7 +2,10 @@ use std::path::PathBuf;
 
 use thiserror::Error;
 
-use crate::sources::{github::GithubError, ArtifactFormat};
+use crate::{
+    descriptor::OS,
+    sources::{github::GithubError, ArtifactFormat},
+};
 
 #[derive(Debug, Error)]
 pub enum RokitError {
@@ -12,13 +15,33 @@ pub enum RokitError {
     FileNotFound(PathBuf),
     #[error("failed to extract artifact: unknown format")]
     ExtractUnknownFormat,
-    #[error("failed to extract artifact: missing binary '{file_name}' in {format} file '{archive_name}'")]
+    #[error(
+        "failed to extract artifact: \
+        missing binary '{file_name}' \
+        in {format} file '{archive_name}'"
+    )]
     ExtractFileMissing {
         format: ArtifactFormat,
         file_name: String,
         archive_name: String,
     },
-    #[error("failed to extract artifact:\n{source}\nresponse body first bytes:\n{body}")]
+    #[error(
+        "failed to extract artifact:\
+        \nmismatch in OS for binary '{file_name}' in archive '{archive_name}'\
+        \ncurrent OS is {current_os:?}, binary is {file_os:?}"
+    )]
+    ExtractOSMismatch {
+        current_os: OS,
+        file_os: OS,
+        file_name: String,
+        archive_name: String,
+    },
+    #[error(
+        "failed to extract artifact:\
+        \n{source}\
+        \nresponse body first bytes:\
+        \n{body}"
+    )]
     ExtractError {
         source: Box<dyn std::error::Error + Send + Sync>,
         body: String,
