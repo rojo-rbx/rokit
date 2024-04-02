@@ -69,9 +69,6 @@ jobs:
         with:
           targets: ${{ matrix.cargo-target }}
 
-      - name: Install Just
-        uses: extractions/setup-just@v1
-
       - name: Install build tooling (aarch64-unknown-linux-gnu)
         if: matrix.cargo-target == 'aarch64-unknown-linux-gnu'
         run: |
@@ -80,10 +77,10 @@ jobs:
           sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 
       - name: Build binary
-        run: just build --locked --release --target ${{ matrix.cargo-target }}
+        run: cargo build --locked --release --target ${{ matrix.cargo-target }}
 
       - name: Create release archive
-        run: just zip-release ${{ matrix.cargo-target }}
+        run: ./scripts/zip-release.sh ${{ matrix.cargo-target }}
 
       - name: Upload release artifact
         uses: actions/upload-artifact@v3
@@ -99,16 +96,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install Just
-        uses: extractions/setup-just@v1
-
       - name: Download releases
         uses: actions/download-artifact@v3
         with:
           path: ./releases
 
       - name: Unpack releases
-        run: just unpack-releases "./releases"
+        run: ./scripts/unpack-releases.sh "./releases"
 
       - name: Create release
         uses: softprops/action-gh-release@v1
