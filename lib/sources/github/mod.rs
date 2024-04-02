@@ -151,7 +151,7 @@ impl GithubProvider {
 
         let release: Release = match self.get_json(&url).await {
             Err(e) if is_404(&e) => {
-                return Err(GithubError::LatestReleaseNotFound(tool_id.clone()));
+                return Err(GithubError::LatestReleaseNotFound(tool_id.clone().into()));
             }
             Err(e) => return Err(e),
             Ok(r) => r,
@@ -190,7 +190,7 @@ impl GithubProvider {
         let release: Release = match self.get_json(&url_with_prefix).await {
             Err(e) if is_404(&e) => match self.get_json(&url_without_prefix).await {
                 Err(e) if is_404(&e) => {
-                    return Err(GithubError::ReleaseNotFound(tool_spec.clone()));
+                    return Err(GithubError::ReleaseNotFound(tool_spec.clone().into()));
                 }
                 Err(e) => return Err(e),
                 Ok(r) => r,

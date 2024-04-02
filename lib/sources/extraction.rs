@@ -7,10 +7,45 @@ use std::{
 };
 
 use tar::Archive as TarArchive;
+use thiserror::Error;
 use tokio::{task::spawn_blocking, time::Instant};
 use zip::ZipArchive;
 
-use crate::result::RokitResult;
+use crate::{descriptor::OS, result::RokitResult, sources::ArtifactFormat};
+
+#[derive(Debug, Error)]
+pub enum ExtractError {
+    #[error("unknown format")]
+    UnknownFormat,
+    #[error(
+        "missing binary '{file_name}' \
+        in {format} file '{archive_name}'"
+    )]
+    FileMissing {
+        format: ArtifactFormat,
+        file_name: String,
+        archive_name: String,
+    },
+    #[error(
+        "mismatch in OS for binary '{file_name}' in archive '{archive_name}'\
+        \ncurrent OS is {current_os:?}, binary is {file_os:?}"
+    )]
+    OSMismatch {
+        current_os: OS,
+        file_os: OS,
+        file_name: String,
+        archive_name: String,
+    },
+    #[error(
+        "{source}\
+        \nresponse body first bytes:\
+        \n{body}"
+    )]
+    Generic {
+        source: Box<dyn std::error::Error + Send + Sync>,
+        body: String,
+    },
+}
 
 /**
     A candidate for extraction from an archive.

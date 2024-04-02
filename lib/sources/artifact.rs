@@ -5,7 +5,7 @@ use url::Url;
 
 use crate::{
     descriptor::{Descriptor, OS},
-    result::{RokitError, RokitResult},
+    result::RokitResult,
     tool::ToolSpec,
 };
 
@@ -13,6 +13,7 @@ use super::{
     decompression::decompress_gzip,
     extraction::{extract_tar_file, extract_zip_file},
     github::models::Asset,
+    ExtractError,
 };
 
 /**
@@ -157,7 +158,7 @@ impl Artifact {
     */
     #[instrument(skip(self, contents), level = "debug")]
     pub async fn extract_contents(&self, contents: Vec<u8>) -> RokitResult<Vec<u8>> {
-        let format = self.format.ok_or(RokitError::ExtractUnknownFormat)?;
+        let format = self.format.ok_or(ExtractError::UnknownFormat)?;
 
         let file_name = self.tool_spec.name().to_string();
         let file_res = match format {
@@ -171,7 +172,7 @@ impl Artifact {
 
         // Make sure we got back the file we need ...
 
-        let file_opt = file_res.map_err(|err| RokitError::ExtractError {
+        let file_opt = file_res.map_err(|err| ExtractError::Generic {
             source: err.into(),
             body: {
                 if contents.len() > 128 + 6 {
@@ -183,7 +184,7 @@ impl Artifact {
             },
         })?;
 
-        let file_bytes = file_opt.ok_or_else(|| RokitError::ExtractFileMissing {
+        let file_bytes = file_opt.ok_or_else(|| ExtractError::FileMissing {
             format,
             file_name: self.tool_spec.name().to_string(),
             archive_name: self.name.clone().unwrap_or_default(),
@@ -195,12 +196,12 @@ impl Artifact {
         let os_current = OS::current_system();
         let os_file = OS::detect_from_executable(&file_bytes);
         if os_file.is_some_and(|os| os != os_current) {
-            return Err(RokitError::ExtractOSMismatch {
+            Err(ExtractError::OSMismatch {
                 current_os: os_current,
                 file_os: os_file.unwrap(),
                 file_name: self.tool_spec.name().to_string(),
                 archive_name: self.name.clone().unwrap_or_default(),
-            });
+            })?;
         }
 
         Ok(file_bytes)
