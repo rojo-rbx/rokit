@@ -5,7 +5,7 @@ use toml_edit::{DocumentMut, Formatted, Item, Value};
 use crate::{
     result::{RokitError, RokitResult},
     sources::ArtifactProvider,
-    util::{load_from_file, save_to_file},
+    util::fs::{load_from_file, save_to_file},
 };
 
 pub const MANIFEST_FILE_NAME: &str = "auth.toml";

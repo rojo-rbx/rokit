@@ -4,7 +4,7 @@ use semver::Version;
 use serde_with::{DeserializeFromStr, SerializeDisplay};
 use thiserror::Error;
 
-use crate::sources::ArtifactProvider;
+use crate::{sources::ArtifactProvider, util::str::CaseInsensitiveString};
 
 use super::{util::is_invalid_identifier, ToolAlias, ToolSpec};
 
@@ -28,23 +28,19 @@ pub enum ToolIdParseError {
 /**
     A tool identifier, which includes the author and name of a tool.
 
-    The author and name are case-insensitive, but are stored in both cased
-    and uncased forms, meaning [`ToolId::author`] and [`ToolId::name`] will
-    always return the original case of the author and name - however,
-    comparisons using [`Eq`], [`PartialEq`], [`Ord`], [`PartialOrd`],
-    and [`std::hash::Hash`] will always be case-insensitive.
+    Tool identifiers are not case sensitive for comparisons,
+    but keep their original casing for display purposes.
+    See [`CaseInsensitiveString`] for more information.
 
     Also includes the provider of the artifact, which by default is `GitHub`.
 
     Used to uniquely identify a tool, but not its version.
 */
-#[derive(Debug, Clone, DeserializeFromStr, SerializeDisplay)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, DeserializeFromStr, SerializeDisplay)]
 pub struct ToolId {
     provider: ArtifactProvider,
-    uncased_author: String,
-    uncased_name: String,
-    cased_author: String,
-    cased_name: String,
+    author: CaseInsensitiveString,
+    name: CaseInsensitiveString,
 }
 
 impl ToolId {
@@ -55,12 +51,12 @@ impl ToolId {
 
     #[must_use]
     pub fn author(&self) -> &str {
-        &self.cased_author
+        self.author.original_str()
     }
 
     #[must_use]
     pub fn name(&self) -> &str {
-        &self.cased_name
+        self.name.original_str()
     }
 
     #[must_use]
@@ -74,26 +70,11 @@ impl ToolId {
     }
 }
 
-impl Eq for ToolId {}
-
-impl PartialEq for ToolId {
-    fn eq(&self, other: &Self) -> bool {
-        self.uncased_author == other.uncased_author && self.uncased_name == other.uncased_name
-    }
-}
-
-impl std::hash::Hash for ToolId {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.uncased_author.hash(state);
-        self.uncased_name.hash(state);
-    }
-}
-
 impl Ord for ToolId {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.uncased_author
-            .cmp(&other.uncased_author)
-            .then_with(|| self.uncased_name.cmp(&other.uncased_name))
+        self.author
+            .cmp(&other.author)
+            .then_with(|| self.name.cmp(&other.name))
     }
 }
 
@@ -135,17 +116,20 @@ impl FromStr for ToolId {
 
         Ok(Self {
             provider,
-            uncased_author: before.to_ascii_lowercase(),
-            uncased_name: after.to_ascii_lowercase(),
-            cased_author: before.to_string(),
-            cased_name: after.to_string(),
+            author: CaseInsensitiveString::new(before),
+            name: CaseInsensitiveString::new(after),
         })
     }
 }
 
 impl fmt::Display for ToolId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}/{}", self.cased_author, self.cased_name)
+        write!(
+            f,
+            "{}/{}",
+            self.author.original_str(),
+            self.name.original_str()
+        )
     }
 }
 
@@ -156,10 +140,8 @@ mod tests {
     fn new_id_with_provider(provider: ArtifactProvider, author: &str, name: &str) -> ToolId {
         ToolId {
             provider,
-            uncased_author: author.to_ascii_lowercase(),
-            uncased_name: name.to_ascii_lowercase(),
-            cased_author: author.to_string(),
-            cased_name: name.to_string(),
+            author: CaseInsensitiveString::new(author),
+            name: CaseInsensitiveString::new(name),
         }
     }
 

@@ -3,6 +3,8 @@ use std::{fmt, str::FromStr};
 use serde_with::{DeserializeFromStr, SerializeDisplay};
 use thiserror::Error;
 
+use crate::util::str::CaseInsensitiveString;
+
 use super::{util::is_invalid_identifier, ToolId};
 
 /**
@@ -21,7 +23,9 @@ pub enum ToolAliasParseError {
 /**
     A tool alias, which is a simple string identifier for a tool.
 
-    Tool aliases are not case sensitive, and forced to lowercase when parsed.
+    Tool aliases are not case sensitive for comparisons,
+    but keep their original casing for display purposes.
+    See [`CaseInsensitiveString`] for more information.
 
     Used in:
 
@@ -32,13 +36,13 @@ pub enum ToolAliasParseError {
     Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, DeserializeFromStr, SerializeDisplay,
 )]
 pub struct ToolAlias {
-    pub(super) name: String,
+    name: CaseInsensitiveString,
 }
 
 impl ToolAlias {
     #[must_use]
     pub fn name(&self) -> &str {
-        &self.name
+        self.name.original_str()
     }
 }
 
@@ -58,7 +62,7 @@ impl FromStr for ToolAlias {
             return Err(ToolAliasParseError::Invalid(s.to_string()));
         }
         Ok(Self {
-            name: s.to_ascii_lowercase(),
+            name: CaseInsensitiveString::new(s),
         })
     }
 }
@@ -72,7 +76,7 @@ impl fmt::Display for ToolAlias {
 impl From<&ToolId> for ToolAlias {
     fn from(id: &ToolId) -> Self {
         Self {
-            name: id.name().to_ascii_lowercase(),
+            name: CaseInsensitiveString::new(id.name()),
         }
     }
 }
@@ -89,7 +93,7 @@ mod tests {
 
     fn new_alias(name: &str) -> ToolAlias {
         ToolAlias {
-            name: name.to_string(),
+            name: CaseInsensitiveString::new(name),
         }
     }
 

@@ -17,7 +17,7 @@ use crate::{
     result::RokitResult,
     system::current_exe_contents,
     tool::{ToolAlias, ToolSpec},
-    util::{path_exists, write_executable_file, write_executable_link},
+    util::fs::{path_exists, write_executable_file, write_executable_link},
 };
 
 /**
