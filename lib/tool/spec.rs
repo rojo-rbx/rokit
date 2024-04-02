@@ -121,11 +121,7 @@ mod tests {
 
     fn new_spec(author: &str, name: &str, version: &str) -> ToolSpec {
         ToolSpec {
-            id: ToolId {
-                provider: ArtifactProvider::default(),
-                author: author.to_string(),
-                name: name.to_string(),
-            },
+            id: ToolId::from_str(&format!("{author}/{name}")).unwrap(),
             version: version.parse().unwrap(),
         }
     }

@@ -28,15 +28,23 @@ pub enum ToolIdParseError {
 /**
     A tool identifier, which includes the author and name of a tool.
 
+    The author and name are case-insensitive, but are stored in both cased
+    and uncased forms, meaning [`ToolId::author`] and [`ToolId::name`] will
+    always return the original case of the author and name - however,
+    comparisons using [`Eq`], [`PartialEq`], [`Ord`], [`PartialOrd`],
+    and [`std::hash::Hash`] will always be case-insensitive.
+
     Also includes the provider of the artifact, which by default is `GitHub`.
 
     Used to uniquely identify a tool, but not its version.
 */
-#[derive(Debug, Clone, PartialEq, Eq, Hash, DeserializeFromStr, SerializeDisplay)]
+#[derive(Debug, Clone, DeserializeFromStr, SerializeDisplay)]
 pub struct ToolId {
-    pub(super) provider: ArtifactProvider,
-    pub(super) author: String,
-    pub(super) name: String,
+    provider: ArtifactProvider,
+    uncased_author: String,
+    uncased_name: String,
+    cased_author: String,
+    cased_name: String,
 }
 
 impl ToolId {
@@ -47,12 +55,12 @@ impl ToolId {
 
     #[must_use]
     pub fn author(&self) -> &str {
-        &self.author
+        &self.cased_author
     }
 
     #[must_use]
     pub fn name(&self) -> &str {
-        &self.name
+        &self.cased_name
     }
 
     #[must_use]
@@ -66,11 +74,26 @@ impl ToolId {
     }
 }
 
+impl Eq for ToolId {}
+
+impl PartialEq for ToolId {
+    fn eq(&self, other: &Self) -> bool {
+        self.uncased_author == other.uncased_author && self.uncased_name == other.uncased_name
+    }
+}
+
+impl std::hash::Hash for ToolId {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.uncased_author.hash(state);
+        self.uncased_name.hash(state);
+    }
+}
+
 impl Ord for ToolId {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.author
-            .cmp(&other.author)
-            .then_with(|| self.name.cmp(&other.name))
+        self.uncased_author
+            .cmp(&other.uncased_author)
+            .then_with(|| self.uncased_name.cmp(&other.uncased_name))
     }
 }
 
@@ -112,15 +135,17 @@ impl FromStr for ToolId {
 
         Ok(Self {
             provider,
-            author: before.to_string(),
-            name: after.to_string(),
+            uncased_author: before.to_ascii_lowercase(),
+            uncased_name: after.to_ascii_lowercase(),
+            cased_author: before.to_string(),
+            cased_name: after.to_string(),
         })
     }
 }
 
 impl fmt::Display for ToolId {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}/{}", self.author, self.name)
+        write!(f, "{}/{}", self.cased_author, self.cased_name)
     }
 }
 
@@ -128,20 +153,18 @@ impl fmt::Display for ToolId {
 mod tests {
     use super::*;
 
-    fn new_id(author: &str, name: &str) -> ToolId {
-        ToolId {
-            provider: ArtifactProvider::default(),
-            author: author.to_string(),
-            name: name.to_string(),
-        }
-    }
-
     fn new_id_with_provider(provider: ArtifactProvider, author: &str, name: &str) -> ToolId {
         ToolId {
             provider,
-            author: author.to_string(),
-            name: name.to_string(),
+            uncased_author: author.to_ascii_lowercase(),
+            uncased_name: name.to_ascii_lowercase(),
+            cased_author: author.to_string(),
+            cased_name: name.to_string(),
         }
+    }
+
+    fn new_id(author: &str, name: &str) -> ToolId {
+        new_id_with_provider(ArtifactProvider::default(), author, name)
     }
 
     #[test]
@@ -216,5 +239,53 @@ mod tests {
         assert!("unknown:a/b".parse::<ToolId>().is_err());
         assert!("hubgit:a/b".parse::<ToolId>().is_err());
         assert!("bitbab:a/b".parse::<ToolId>().is_err());
+    }
+
+    #[test]
+    fn case_preservation() {
+        // The author and name should be preserved in their original case
+        assert_eq!(new_id("author", "name").author(), "author");
+        assert_eq!(new_id("author", "name").name(), "name");
+        assert_eq!(new_id("Author", "Name").author(), "Author");
+        assert_eq!(new_id("Author", "Name").name(), "Name");
+        assert_eq!(new_id("123abc456", "78de90").author(), "123abc456");
+        assert_eq!(new_id("123abc456", "78de90").name(), "78de90");
+    }
+
+    #[test]
+    fn case_sensitivity_eq() {
+        // Case-insensitive comparisons should be equal
+        assert_eq!(new_id("a", "b"), new_id("A", "B"));
+        assert_eq!(new_id("author", "name"), new_id("Author", "Name"));
+        assert_eq!(new_id("123abc456", "78de90"), new_id("123ABC456", "78DE90"));
+    }
+
+    #[test]
+    fn case_sensitivity_ord() {
+        use std::cmp::Ordering;
+        // Case-insensitive comparisons should be equal
+        assert_eq!(new_id("a", "b").cmp(&new_id("A", "B")), Ordering::Equal);
+        assert_eq!(
+            new_id("author", "name").cmp(&new_id("Author", "Name")),
+            Ordering::Equal
+        );
+        assert_eq!(
+            new_id("123abc456", "78de90").cmp(&new_id("123ABC456", "78DE90")),
+            Ordering::Equal
+        );
+    }
+
+    #[test]
+    fn case_sensitivity_hash() {
+        use std::collections::HashMap;
+        // Case-insensitive comparisons should have the
+        // same hash and work in collections such as HashMap
+        let mut map = HashMap::new();
+        map.insert(new_id("a", "b"), 1);
+        map.insert(new_id("author", "name"), 2);
+        map.insert(new_id("123abc456", "78de90"), 3);
+        assert_eq!(map.get(&new_id("A", "B")), Some(&1));
+        assert_eq!(map.get(&new_id("Author", "Name")), Some(&2));
+        assert_eq!(map.get(&new_id("123ABC456", "78DE90")), Some(&3));
     }
 }
