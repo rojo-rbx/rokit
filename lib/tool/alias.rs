@@ -3,7 +3,7 @@ use std::{fmt, str::FromStr};
 use serde_with::{DeserializeFromStr, SerializeDisplay};
 use thiserror::Error;
 
-use super::util::is_invalid_identifier;
+use super::{util::is_invalid_identifier, ToolId};
 
 /**
     Error type representing the possible errors that can occur when parsing a `ToolAlias`.
@@ -20,6 +20,8 @@ pub enum ToolAliasParseError {
 
 /**
     A tool alias, which is a simple string identifier for a tool.
+
+    Tool aliases are not case sensitive, and forced to lowercase when parsed.
 
     Used in:
 
@@ -56,7 +58,7 @@ impl FromStr for ToolAlias {
             return Err(ToolAliasParseError::Invalid(s.to_string()));
         }
         Ok(Self {
-            name: s.to_string(),
+            name: s.to_ascii_lowercase(),
         })
     }
 }
@@ -64,6 +66,20 @@ impl FromStr for ToolAlias {
 impl fmt::Display for ToolAlias {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         self.name.fmt(f)
+    }
+}
+
+impl From<&ToolId> for ToolAlias {
+    fn from(id: &ToolId) -> Self {
+        Self {
+            name: id.name().to_ascii_lowercase(),
+        }
+    }
+}
+
+impl From<ToolId> for ToolAlias {
+    fn from(id: ToolId) -> Self {
+        (&id).into()
     }
 }
 
@@ -116,5 +132,22 @@ mod tests {
         assert!("\ttool".parse::<ToolAlias>().is_err());
         assert!("tool\t".parse::<ToolAlias>().is_err());
         assert!("to\tol".parse::<ToolAlias>().is_err());
+    }
+
+    #[test]
+    fn case_sensitivity() {
+        // ToolAliases should be case-insensitive
+        assert_eq!(
+            "tool".parse::<ToolAlias>().unwrap(),
+            "TOOL".parse().unwrap()
+        );
+        assert_eq!(
+            "tool".parse::<ToolAlias>().unwrap(),
+            "Tool".parse().unwrap()
+        );
+        assert_eq!(
+            "tool".parse::<ToolAlias>().unwrap(),
+            "tOoL".parse().unwrap()
+        );
     }
 }

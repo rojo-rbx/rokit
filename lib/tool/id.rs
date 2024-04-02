@@ -62,7 +62,7 @@ impl ToolId {
 
     #[must_use]
     pub fn into_alias(self) -> ToolAlias {
-        ToolAlias { name: self.name }
+        ToolAlias::from(self)
     }
 }
 
