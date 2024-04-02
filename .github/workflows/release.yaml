@@ -77,7 +77,10 @@ jobs:
           sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 
       - name: Build binary
-        run: cargo build --locked --release --target ${{ matrix.cargo-target }}
+        run: |
+          cargo build \
+          --locked --all-features \
+          --release --target ${{ matrix.cargo-target }}
 
       - name: Create release archive
         run: ./scripts/zip-release.sh ${{ matrix.cargo-target }}
