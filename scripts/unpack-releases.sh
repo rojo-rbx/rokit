@@ -50,4 +50,4 @@ echo "Releases dir:"
 ls -lhrt
 
 # Go back to cwd
-cd "{{CWD}}"
+cd "$CWD"

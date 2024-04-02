@@ -43,7 +43,7 @@ cp "$TARGET_DIR/$BIN_NAME$BIN_EXT" staging/
 cd staging
 
 # Zip the staging dir up
-if [ "{{os_family()}}" = "windows" ]; then
+if [ "$OS" = "windows" ]; then
 	7z a ../release.zip *
 else
 	chmod +x "$BIN_NAME"
@@ -51,5 +51,5 @@ else
 fi
 
 # Go back to cwd and clean up staging dir
-cd "{{CWD}}"
+cd "$CWD"
 rm -rf staging
