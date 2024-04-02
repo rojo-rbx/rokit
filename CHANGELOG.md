@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## `0.0.2` - April 2nd, 2024
 
+### Breaking Changes
+
+Tools are now stored in a case-insensitive manner to prevent unnecessary downloading and linking of duplicate tool specifications. This means that tools in manifests that are not all lowercase may no longer work on case-sensitive filesystems. To fix this, remove the `~/.rokit/tool-storage` directory, and Rokit will re-download and install tools next time you run `rokit install`.
+
 ### Fixed
 
 - Fixed tool aliases being case-sensitive

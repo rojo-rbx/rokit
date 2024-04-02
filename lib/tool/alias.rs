@@ -23,8 +23,8 @@ pub enum ToolAliasParseError {
 /**
     A tool alias, which is a simple string identifier for a tool.
 
-    Tool aliases are not case sensitive for comparisons,
-    but keep their original casing for display purposes.
+    Tool aliases are not case sensitive for comparisons, but keep
+    their original casing for display and serialization purposes.
     See [`CaseInsensitiveString`] for more information.
 
     Used in:
@@ -36,7 +36,7 @@ pub enum ToolAliasParseError {
     Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, DeserializeFromStr, SerializeDisplay,
 )]
 pub struct ToolAlias {
-    name: CaseInsensitiveString,
+    pub(crate) name: CaseInsensitiveString,
 }
 
 impl ToolAlias {

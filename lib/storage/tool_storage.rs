@@ -36,13 +36,22 @@ pub struct ToolStorage {
 
 impl ToolStorage {
     fn tool_paths(&self, spec: &ToolSpec) -> (PathBuf, PathBuf) {
+        // NOTE: We use uncased strings for the tool author and name
+        // to ensure that the tool paths are always case-insensitive
         let tool_dir = self
             .tools_dir
-            .join(spec.author())
-            .join(spec.name())
-            .join(spec.version().to_string());
-        let tool_file = tool_dir.join(format!("{}{EXE_SUFFIX}", spec.name()));
+            .join(spec.id.author.uncased_str())
+            .join(spec.id.name.uncased_str())
+            .join(spec.version.to_string());
+
+        let tool_file_name = format!("{}{EXE_SUFFIX}", spec.id.name.uncased_str());
+        let tool_file = tool_dir.join(tool_file_name);
+
         (tool_dir, tool_file)
+    }
+
+    fn alias_path(&self, alias: &ToolAlias) -> PathBuf {
+        self.aliases_dir.join(alias.name.uncased_str())
     }
 
     fn rokit_path(&self) -> PathBuf {
@@ -108,7 +117,7 @@ impl ToolStorage {
         - If the link could not be written.
     */
     pub async fn create_tool_link(&self, alias: &ToolAlias) -> RokitResult<()> {
-        let path = self.aliases_dir.join(alias.name());
+        let path = self.alias_path(alias);
         if cfg!(unix) && !self.no_symlinks {
             let rokit_path = self.rokit_path();
             write_executable_link(path, &rokit_path).await?;

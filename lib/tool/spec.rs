@@ -35,8 +35,8 @@ pub enum ToolSpecParseError {
     Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, DeserializeFromStr, SerializeDisplay,
 )]
 pub struct ToolSpec {
-    pub(super) id: ToolId,
-    pub(super) version: Version,
+    pub(crate) id: ToolId,
+    pub(crate) version: Version,
 }
 
 impl ToolSpec {

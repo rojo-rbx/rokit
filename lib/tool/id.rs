@@ -28,8 +28,8 @@ pub enum ToolIdParseError {
 /**
     A tool identifier, which includes the author and name of a tool.
 
-    Tool identifiers are not case sensitive for comparisons,
-    but keep their original casing for display purposes.
+    Tool identifiers are not case sensitive for comparisons, but keep
+    their original casing for display and serialization purposes.
     See [`CaseInsensitiveString`] for more information.
 
     Also includes the provider of the artifact, which by default is `GitHub`.
@@ -38,9 +38,9 @@ pub enum ToolIdParseError {
 */
 #[derive(Debug, Clone, PartialEq, Eq, Hash, DeserializeFromStr, SerializeDisplay)]
 pub struct ToolId {
-    provider: ArtifactProvider,
-    author: CaseInsensitiveString,
-    name: CaseInsensitiveString,
+    pub(crate) provider: ArtifactProvider,
+    pub(crate) author: CaseInsensitiveString,
+    pub(crate) name: CaseInsensitiveString,
 }
 
 impl ToolId {
