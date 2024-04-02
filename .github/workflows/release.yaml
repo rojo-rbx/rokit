@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Get version from manifest
-        uses: SebRollen/toml-action@9062fbef52816d61278d24ce53c8070440e1e8dd
+        uses: SebRollen/toml-action@v1.2.0
         id: get_version
         with:
           file: Cargo.toml
@@ -83,7 +83,7 @@ jobs:
         run: ./scripts/zip-release.sh ${{ matrix.cargo-target }}
 
       - name: Upload release artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact-name }}
           path: release.zip
@@ -97,7 +97,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Download releases
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: ./releases
 
@@ -105,7 +105,7 @@ jobs:
         run: ./scripts/unpack-releases.sh "./releases"
 
       - name: Create release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
