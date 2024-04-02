@@ -4,13 +4,13 @@ use serde_with::DeserializeFromStr;
 
 use rokit::tool::{ToolAlias, ToolId, ToolSpec};
 
-use super::constants::KNOWN_TOOLS;
+use super::constants::get_known_tool;
 
 /**
     A tool identifier *or* specification, which includes
     the author, name, and *maybe* a version of a tool.
 
-    Can also be parsed from common Roblox tool ids, meaning:
+    Can also be parsed from common Roblox tool aliases, meaning:
 
     - `rojo` will become `rojo-rbx/rojo`
     - `lune` will become `lune-org/lune`
@@ -31,7 +31,7 @@ impl FromStr for ToolIdOrSpec {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.contains('@') {
             Ok(Self::Spec(s.parse()?))
-        } else if let Some(id) = KNOWN_TOOLS.get(s) {
+        } else if let Some(id) = get_known_tool(s) {
             Ok(Self::Id(id.clone()))
         } else {
             Ok(Self::Id(s.parse()?))
