@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fixed tool aliases being case-sensitive
+- Fixed Rokit process being killed during self-update
 
 ## `0.0.1` - March 31st, 2024
 

@@ -4,19 +4,20 @@ use std::{
     sync::Arc,
 };
 
+use filepath::FilePath;
 use futures::{stream::FuturesUnordered, TryStreamExt};
 use tokio::{
-    fs::{create_dir_all, read, read_dir},
+    fs::{create_dir_all, read, read_dir, rename},
     sync::Mutex as AsyncMutex,
 };
-use tracing::debug;
+use tracing::{debug, trace};
 
 use crate::{
     manifests::{AuthManifest, RokitManifest},
     result::RokitResult,
     system::current_exe_contents,
     tool::{ToolAlias, ToolSpec},
-    util::{write_executable_file, write_executable_link},
+    util::{path_exists, write_executable_file, write_executable_link},
 };
 
 /**
@@ -175,10 +176,26 @@ impl ToolStorage {
             }
         }
 
-        // Always write the Rokit binary to ensure it's up-to-date
+        // Write the Rokit binary if necessary to ensure it's up-to-date
         let existing_rokit_binary = read(&rokit_path).await.unwrap_or_default();
-        let was_rokit_updated = existing_rokit_binary != contents;
-        write_executable_file(&rokit_path, &contents).await?;
+        let was_rokit_updated = if existing_rokit_binary == contents {
+            false
+        } else {
+            // NOTE: If the currently running Rokit binary is being updated,
+            // we need to move it to a temporary location first to avoid issues
+            // with the OS killing the current executable when its overwritten.
+            if path_exists(&rokit_path).await {
+                let temp_file = tempfile::tempfile()?;
+                let temp_path = temp_file.path()?;
+                trace!(
+                    ?temp_path,
+                    "moving existing Rokit binary to temporary location"
+                );
+                rename(&rokit_path, temp_path).await?;
+            }
+            write_executable_file(&rokit_path, &contents).await?;
+            true
+        };
 
         // Then we can write the rest of the links - on unix we can use
         // symlinks pointing to the Rokit binary to save on disk space.

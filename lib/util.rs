@@ -1,6 +1,6 @@
 use std::{path::Path, str::FromStr};
 
-use tokio::fs::{read_to_string, write};
+use tokio::fs::{metadata, read_to_string, write};
 use tracing::error;
 
 use crate::result::{RokitError, RokitResult};
@@ -40,6 +40,16 @@ where
     let path = path.as_ref();
     write(path, data.to_string()).await?;
     Ok(())
+}
+
+/**
+    Checks if the given path exists.
+
+    Note that this may return `false` if the caller
+    does not have permissions to access the given path.
+*/
+pub async fn path_exists(path: impl AsRef<Path>) -> bool {
+    metadata(path).await.is_ok()
 }
 
 /**
