@@ -5,7 +5,7 @@ use serde_json::Error as JsonError;
 use thiserror::Error;
 use tokio::task::JoinError;
 use toml_edit::TomlError;
-use zip::result::ZipError;
+use zip_next::result::ZipError;
 
 use crate::sources::{github::GithubError, ExtractError};
 
