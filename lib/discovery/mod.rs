@@ -43,7 +43,6 @@ where
 #[derive(Debug, Clone)]
 pub struct DiscoveredManifest {
     _kind: ManifestKind,
-    pub depth: usize,
     pub path: PathBuf,
     pub tools: HashMap<ToolAlias, ToolSpec>,
 }
@@ -104,7 +103,6 @@ fn search_paths(cwd: &Path, rokit_only: bool, skip_home: bool) -> Vec<(ManifestK
 */
 pub async fn discover_all_manifests(rokit_only: bool, skip_home: bool) -> Vec<DiscoveredManifest> {
     let cwd = current_dir().await;
-    let cwd_depth = cwd.components().count();
 
     let found_manifest_contents = search_paths(&cwd, rokit_only, skip_home)
         .into_iter()
@@ -127,11 +125,8 @@ pub async fn discover_all_manifests(rokit_only: bool, skip_home: bool) -> Vec<Di
                 ManifestKind::Aftman => AftmanManifest::parse_manifest(&contents)?.into_tools(),
                 ManifestKind::Foreman => ForemanManifest::parse_manifest(&contents)?.into_tools(),
             };
-            let path_depth = path.components().count();
-            let depth = cwd_depth - path_depth;
             Some(DiscoveredManifest {
                 _kind: kind,
-                depth,
                 path,
                 tools,
             })
