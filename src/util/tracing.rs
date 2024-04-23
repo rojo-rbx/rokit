@@ -1,3 +1,5 @@
+use std::io::stderr;
+
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::EnvFilter;
 
@@ -26,11 +28,13 @@ pub fn init() {
     if FMT_PRETTY {
         tracing_subscriber::fmt()
             .with_env_filter(tracing_env_filter)
+            .with_writer(stderr)
             .pretty()
             .init();
     } else {
         tracing_subscriber::fmt()
             .with_env_filter(tracing_env_filter)
+            .with_writer(stderr)
             .with_target(false)
             .without_time()
             .init();
