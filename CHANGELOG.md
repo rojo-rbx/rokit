@@ -8,6 +8,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## `0.0.3` - April 23rd, 2024
+
+### Fixed
+
+- Fixed tools installed by Rokit not being usable on Windows ([#10])
+
+[#10]: https://github.com/filiptibell/rokit/pull/10
+
 ## `0.0.2` - April 2nd, 2024
 
 ### Breaking Changes
