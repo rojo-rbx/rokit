@@ -1,5 +1,5 @@
 use std::{
-    env::{self, consts::EXE_EXTENSION},
+    env::{self, consts::EXE_SUFFIX},
     path::PathBuf,
 };
 
@@ -57,11 +57,11 @@ pub fn current_exe_name() -> String {
 
             // NOTE: Shells on Windows can be weird sometimes and pass arg0
             // using either a lowercase or uppercase extension, so we fix that
-            let exe_name = if EXE_EXTENSION.is_empty() {
+            let exe_name = if EXE_SUFFIX.is_empty() {
                 exe_name
             } else {
-                let suffix_lower = EXE_EXTENSION.to_ascii_lowercase();
-                let suffix_upper = EXE_EXTENSION.to_ascii_uppercase();
+                let suffix_lower = EXE_SUFFIX.to_ascii_lowercase();
+                let suffix_upper = EXE_SUFFIX.to_ascii_uppercase();
                 if let Some(stripped) = exe_name.strip_suffix(&suffix_lower) {
                     stripped
                 } else if let Some(stripped) = exe_name.strip_suffix(&suffix_upper) {
