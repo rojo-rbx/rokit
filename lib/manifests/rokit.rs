@@ -89,7 +89,7 @@ impl RokitManifest {
     */
     #[must_use]
     pub fn has_tool(&self, alias: &ToolAlias) -> bool {
-        let tools = self.document["tools"].as_table();
+        let tools = self.document.get("tools").and_then(|v| v.as_table());
         tools.is_some_and(|t| t.contains_key(alias.name()))
     }
 
@@ -98,7 +98,7 @@ impl RokitManifest {
     */
     #[must_use]
     pub fn get_tool(&self, alias: &ToolAlias) -> Option<ToolSpec> {
-        let tools = self.document["tools"].as_table()?;
+        let tools = self.document.get("tools")?.as_table()?;
         let tool_str = tools.get(alias.name())?.as_str()?;
         tool_str.parse::<ToolSpec>().ok()
     }
@@ -154,12 +154,12 @@ impl RokitManifest {
     */
     #[must_use]
     pub fn tool_specs(&self) -> Vec<(ToolAlias, ToolSpec)> {
-        self.document["tools"]
-            .as_table()
+        let tools = self.document.get("tools").and_then(|v| v.as_table());
+        let tool_kv_pairs = tools.map(|t| t.get_values()).unwrap_or_default();
+        tool_kv_pairs
             .into_iter()
-            .flat_map(|tools| tools.get_values())
-            .filter_map(|(key, value)| {
-                let alias = key.last()?.parse::<ToolAlias>().ok()?;
+            .filter_map(|(keys, value)| {
+                let alias = keys.last()?.parse::<ToolAlias>().ok()?;
                 let spec = value.as_str()?.parse::<ToolSpec>().ok()?;
                 Some((alias, spec))
             })
