@@ -10,7 +10,7 @@ use std::{
 use filepath::FilePath;
 use futures::{stream::FuturesUnordered, TryStreamExt};
 use tokio::{
-    fs::{create_dir_all, metadata, read, read_dir, rename},
+    fs::{create_dir_all, metadata, read, read_dir, remove_file, rename},
     sync::Mutex as AsyncMutex,
 };
 use tracing::{debug, trace};
@@ -122,6 +122,17 @@ impl ToolStorage {
     */
     pub async fn create_tool_link(&self, alias: &ToolAlias) -> RokitResult<()> {
         let path = self.alias_path(alias);
+
+        // NOTE: A previous version of Rokit was not adding exe extensions correctly,
+        // so look for and try to remove existing links that do not have the extension
+        if should_check_exe_extensions() {
+            let no_extension = strip_exe_extension(&path);
+            if no_extension != path && path_exists(&no_extension).await {
+                remove_file(&no_extension).await?;
+            }
+        }
+
+        // Create the new link
         if cfg!(unix) && !self.no_symlinks {
             let rokit_path = self.rokit_path();
             write_executable_link(path, &rokit_path).await?;
@@ -129,6 +140,7 @@ impl ToolStorage {
             let contents = self.rokit_contents().await?;
             write_executable_file(path, &contents).await?;
         }
+
         Ok(())
     }
 
@@ -186,23 +198,13 @@ impl ToolStorage {
 
         let mut link_paths = self.all_link_paths().await?;
 
-        // A previous version of Rokit was not adding exe extensions correctly, so
-        // look for and try to fix existing links that do not have the extension
-        if !EXE_EXTENSION.is_empty() {
+        // NOTE: A previous version of Rokit was not adding exe extensions correctly,
+        // so look for and try to remove existing links that do not have the extension
+        if should_check_exe_extensions() {
             for link_path in &mut link_paths {
-                if link_path
-                    .file_name()
-                    .and_then(|name| name.to_str())
-                    .is_some_and(|name| !name.ends_with(EXE_EXTENSION))
-                {
-                    let new_link_path = link_path.with_extension(EXE_EXTENSION);
-                    trace!(
-                        ?link_path,
-                        ?new_link_path,
-                        "fixing link with missing exe suffix"
-                    );
-                    rename(&link_path, &new_link_path).await?;
-                    *link_path = new_link_path;
+                if !has_exe_extension(&link_path) {
+                    remove_file(&link_path).await?;
+                    *link_path = append_exe_extension(&link_path);
                 }
             }
         }
@@ -277,4 +279,35 @@ impl ToolStorage {
         // to the disk, but this may change in the future
         false
     }
+}
+
+// Utility functions for migrating missing exe extensions from old Rokit versions
+
+fn should_check_exe_extensions() -> bool {
+    !EXE_EXTENSION.is_empty()
+}
+
+fn has_exe_extension(path: impl AsRef<Path>) -> bool {
+    !EXE_EXTENSION.is_empty()
+        && path
+            .as_ref()
+            .file_name()
+            .and_then(|name| name.to_str())
+            .is_some_and(|name| name.ends_with(EXE_EXTENSION))
+}
+
+fn strip_exe_extension(path: impl Into<PathBuf>) -> PathBuf {
+    let mut path: PathBuf = path.into();
+    if has_exe_extension(&path) {
+        path.set_extension("");
+    }
+    path
+}
+
+fn append_exe_extension(path: impl Into<PathBuf>) -> PathBuf {
+    let mut path: PathBuf = path.into();
+    if !has_exe_extension(&path) {
+        path.set_extension(EXE_EXTENSION);
+    }
+    path
 }
