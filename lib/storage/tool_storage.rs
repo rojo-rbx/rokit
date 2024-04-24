@@ -1,5 +1,8 @@
 use std::{
-    env::{consts::EXE_SUFFIX, var},
+    env::{
+        consts::{EXE_EXTENSION, EXE_SUFFIX},
+        var,
+    },
     path::{Path, PathBuf},
     sync::Arc,
 };
@@ -7,7 +10,7 @@ use std::{
 use filepath::FilePath;
 use futures::{stream::FuturesUnordered, TryStreamExt};
 use tokio::{
-    fs::{create_dir_all, read, read_dir, rename},
+    fs::{create_dir_all, read, read_dir, remove_file, rename},
     sync::Mutex as AsyncMutex,
 };
 use tracing::{debug, trace};
@@ -51,7 +54,8 @@ impl ToolStorage {
     }
 
     fn alias_path(&self, alias: &ToolAlias) -> PathBuf {
-        self.aliases_dir.join(alias.name.uncased_str())
+        let alias_file_name = format!("{}{EXE_SUFFIX}", alias.name.uncased_str());
+        self.aliases_dir.join(alias_file_name)
     }
 
     fn rokit_path(&self) -> PathBuf {
@@ -118,6 +122,17 @@ impl ToolStorage {
     */
     pub async fn create_tool_link(&self, alias: &ToolAlias) -> RokitResult<()> {
         let path = self.alias_path(alias);
+
+        // NOTE: A previous version of Rokit was not adding exe extensions correctly,
+        // so look for and try to remove existing links that do not have the extension
+        if should_check_exe_extensions() {
+            let no_extension = strip_exe_extension(&path);
+            if no_extension != path && path_exists(&no_extension).await {
+                remove_file(&no_extension).await?;
+            }
+        }
+
+        // Create the new link
         if cfg!(unix) && !self.no_symlinks {
             let rokit_path = self.rokit_path();
             write_executable_link(path, &rokit_path).await?;
@@ -125,6 +140,7 @@ impl ToolStorage {
             let contents = self.rokit_contents().await?;
             write_executable_file(path, &contents).await?;
         }
+
         Ok(())
     }
 
@@ -145,7 +161,10 @@ impl ToolStorage {
         let mut link_reader = read_dir(&self.aliases_dir).await?;
         while let Some(entry) = link_reader.next_entry().await? {
             let path = entry.path();
-            if path != rokit_path {
+            if path == rokit_path {
+                debug!(?path, "found Rokit link");
+            } else {
+                debug!(?path, "found tool link");
                 link_paths.push(path);
             }
         }
@@ -169,31 +188,32 @@ impl ToolStorage {
         - If any link could not be written.
     */
     pub async fn recreate_all_links(&self) -> RokitResult<(bool, bool)> {
-        let contents = self.rokit_contents().await?;
         let rokit_path = self.rokit_path();
-        let mut rokit_found = false;
+        let rokit_contents = self.rokit_contents().await?;
+        let rokit_link_existed = path_exists(&rokit_path).await;
 
-        let mut link_paths = Vec::new();
-        let mut link_reader = read_dir(&self.aliases_dir).await?;
-        while let Some(entry) = link_reader.next_entry().await? {
-            let path = entry.path();
-            if path == rokit_path {
-                rokit_found = true;
-            } else {
-                debug!(?path, "Found existing link");
-                link_paths.push(path);
+        let mut link_paths = self.all_link_paths().await?;
+
+        // NOTE: A previous version of Rokit was not adding exe extensions correctly,
+        // so look for and try to remove existing links that do not have the extension
+        if should_check_exe_extensions() {
+            for link_path in &mut link_paths {
+                if !has_exe_extension(&link_path) {
+                    remove_file(&link_path).await?;
+                    *link_path = append_exe_extension(&link_path);
+                }
             }
         }
 
         // Write the Rokit binary if necessary to ensure it's up-to-date
         let existing_rokit_binary = read(&rokit_path).await.unwrap_or_default();
-        let was_rokit_updated = if existing_rokit_binary == contents {
+        let was_rokit_updated = if existing_rokit_binary == rokit_contents {
             false
         } else {
             // NOTE: If the currently running Rokit binary is being updated,
             // we need to move it to a temporary location first to avoid issues
             // with the OS killing the current executable when its overwritten.
-            if path_exists(&rokit_path).await {
+            if rokit_link_existed {
                 let temp_file = tempfile::tempfile()?;
                 let temp_path = temp_file.path()?;
                 trace!(
@@ -202,7 +222,7 @@ impl ToolStorage {
                 );
                 rename(&rokit_path, temp_path).await?;
             }
-            write_executable_file(&rokit_path, &contents).await?;
+            write_executable_file(&rokit_path, &rokit_contents).await?;
             true
         };
 
@@ -214,14 +234,14 @@ impl ToolStorage {
                 if cfg!(unix) && !self.no_symlinks {
                     write_executable_link(link_path, &rokit_path).await
                 } else {
-                    write_executable_file(link_path, &contents).await
+                    write_executable_file(link_path, &rokit_contents).await
                 }
             })
             .collect::<FuturesUnordered<_>>()
             .try_collect::<Vec<_>>()
             .await?;
 
-        Ok((rokit_found, was_rokit_updated))
+        Ok((rokit_link_existed, was_rokit_updated))
     }
 
     pub(crate) async fn load(home_path: impl AsRef<Path>) -> RokitResult<Self> {
@@ -255,4 +275,34 @@ impl ToolStorage {
         // to the disk, but this may change in the future
         false
     }
+}
+
+// Utility functions for migrating missing exe extensions from old Rokit versions
+
+fn should_check_exe_extensions() -> bool {
+    !EXE_EXTENSION.is_empty()
+}
+
+fn has_exe_extension(path: impl AsRef<Path>) -> bool {
+    !EXE_EXTENSION.is_empty()
+        && path
+            .as_ref()
+            .extension()
+            .is_some_and(|ext| ext == EXE_EXTENSION)
+}
+
+fn strip_exe_extension(path: impl Into<PathBuf>) -> PathBuf {
+    let mut path: PathBuf = path.into();
+    if has_exe_extension(&path) {
+        path.set_extension("");
+    }
+    path
+}
+
+fn append_exe_extension(path: impl Into<PathBuf>) -> PathBuf {
+    let mut path: PathBuf = path.into();
+    if !has_exe_extension(&path) {
+        path.set_extension(EXE_EXTENSION);
+    }
+    path
 }
