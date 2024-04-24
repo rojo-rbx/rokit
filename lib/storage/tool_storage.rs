@@ -51,7 +51,8 @@ impl ToolStorage {
     }
 
     fn alias_path(&self, alias: &ToolAlias) -> PathBuf {
-        self.aliases_dir.join(alias.name.uncased_str())
+        let alias_file_name = format!("{}{EXE_SUFFIX}", alias.name.uncased_str());
+        self.aliases_dir.join(alias_file_name)
     }
 
     fn rokit_path(&self) -> PathBuf {
