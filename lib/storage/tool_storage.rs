@@ -1,5 +1,8 @@
 use std::{
-    env::{consts::EXE_SUFFIX, var},
+    env::{
+        consts::{EXE_EXTENSION, EXE_SUFFIX},
+        var,
+    },
     path::{Path, PathBuf},
     sync::Arc,
 };
@@ -183,6 +186,27 @@ impl ToolStorage {
             } else {
                 debug!(?path, "Found existing link");
                 link_paths.push(path);
+            }
+        }
+
+        // A previous version of Rokit was not adding exe extensions correctly, so
+        // look for and try to fix existing links that do not have the extension
+        if !EXE_EXTENSION.is_empty() {
+            for link_path in &mut link_paths {
+                if link_path
+                    .file_name()
+                    .and_then(|name| name.to_str())
+                    .is_some_and(|name| !name.ends_with(EXE_EXTENSION))
+                {
+                    let new_link_path = link_path.with_extension(EXE_EXTENSION);
+                    trace!(
+                        ?link_path,
+                        ?new_link_path,
+                        "fixing link with missing exe suffix"
+                    );
+                    rename(&link_path, &new_link_path).await?;
+                    *link_path = new_link_path;
+                }
             }
         }
 
