@@ -10,7 +10,7 @@ use std::{
 use filepath::FilePath;
 use futures::{stream::FuturesUnordered, TryStreamExt};
 use tokio::{
-    fs::{create_dir_all, metadata, read, read_dir, remove_file, rename},
+    fs::{create_dir_all, read, read_dir, remove_file, rename},
     sync::Mutex as AsyncMutex,
 };
 use tracing::{debug, trace};
@@ -190,11 +190,7 @@ impl ToolStorage {
     pub async fn recreate_all_links(&self) -> RokitResult<(bool, bool)> {
         let rokit_path = self.rokit_path();
         let rokit_contents = self.rokit_contents().await?;
-
-        let rokit_link_existed = match metadata(&rokit_path).await {
-            Ok(meta) => meta.is_file(),
-            Err(_) => false,
-        };
+        let rokit_link_existed = path_exists(&rokit_path).await;
 
         let mut link_paths = self.all_link_paths().await?;
 
@@ -217,7 +213,7 @@ impl ToolStorage {
             // NOTE: If the currently running Rokit binary is being updated,
             // we need to move it to a temporary location first to avoid issues
             // with the OS killing the current executable when its overwritten.
-            if path_exists(&rokit_path).await {
+            if rokit_link_existed {
                 let temp_file = tempfile::tempfile()?;
                 let temp_path = temp_file.path()?;
                 trace!(
