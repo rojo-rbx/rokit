@@ -10,7 +10,7 @@ use std::{
 use filepath::FilePath;
 use futures::{stream::FuturesUnordered, TryStreamExt};
 use tokio::{
-    fs::{create_dir_all, read, read_dir, rename},
+    fs::{create_dir_all, metadata, read, read_dir, rename},
     sync::Mutex as AsyncMutex,
 };
 use tracing::{debug, trace};
@@ -149,7 +149,10 @@ impl ToolStorage {
         let mut link_reader = read_dir(&self.aliases_dir).await?;
         while let Some(entry) = link_reader.next_entry().await? {
             let path = entry.path();
-            if path != rokit_path {
+            if path == rokit_path {
+                debug!(?path, "found Rokit link");
+            } else {
+                debug!(?path, "found tool link");
                 link_paths.push(path);
             }
         }
@@ -173,21 +176,15 @@ impl ToolStorage {
         - If any link could not be written.
     */
     pub async fn recreate_all_links(&self) -> RokitResult<(bool, bool)> {
-        let contents = self.rokit_contents().await?;
         let rokit_path = self.rokit_path();
-        let mut rokit_found = false;
+        let rokit_contents = self.rokit_contents().await?;
 
-        let mut link_paths = Vec::new();
-        let mut link_reader = read_dir(&self.aliases_dir).await?;
-        while let Some(entry) = link_reader.next_entry().await? {
-            let path = entry.path();
-            if path == rokit_path {
-                rokit_found = true;
-            } else {
-                debug!(?path, "Found existing link");
-                link_paths.push(path);
-            }
-        }
+        let rokit_link_existed = match metadata(&rokit_path).await {
+            Ok(meta) => meta.is_file(),
+            Err(_) => false,
+        };
+
+        let mut link_paths = self.all_link_paths().await?;
 
         // A previous version of Rokit was not adding exe extensions correctly, so
         // look for and try to fix existing links that do not have the extension
@@ -212,7 +209,7 @@ impl ToolStorage {
 
         // Write the Rokit binary if necessary to ensure it's up-to-date
         let existing_rokit_binary = read(&rokit_path).await.unwrap_or_default();
-        let was_rokit_updated = if existing_rokit_binary == contents {
+        let was_rokit_updated = if existing_rokit_binary == rokit_contents {
             false
         } else {
             // NOTE: If the currently running Rokit binary is being updated,
@@ -227,7 +224,7 @@ impl ToolStorage {
                 );
                 rename(&rokit_path, temp_path).await?;
             }
-            write_executable_file(&rokit_path, &contents).await?;
+            write_executable_file(&rokit_path, &rokit_contents).await?;
             true
         };
 
@@ -239,14 +236,14 @@ impl ToolStorage {
                 if cfg!(unix) && !self.no_symlinks {
                     write_executable_link(link_path, &rokit_path).await
                 } else {
-                    write_executable_file(link_path, &contents).await
+                    write_executable_file(link_path, &rokit_contents).await
                 }
             })
             .collect::<FuturesUnordered<_>>()
             .try_collect::<Vec<_>>()
             .await?;
 
-        Ok((rokit_found, was_rokit_updated))
+        Ok((rokit_link_existed, was_rokit_updated))
     }
 
     pub(crate) async fn load(home_path: impl AsRef<Path>) -> RokitResult<Self> {
