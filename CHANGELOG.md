@@ -8,6 +8,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## `0.0.4` - April 24th, 2024
+
+### Fixed
+
+- Fixed panics for manifests with a missing tools section ([#15])
+- Fixed panics when running `rokit install` or `rokit add` ([#16])
+- Fixed tool links missing executable extensions on Windows ([#18])
+
+[#15]: https://github.com/filiptibell/rokit/pull/15
+[#16]: https://github.com/filiptibell/rokit/pull/16
+[#18]: https://github.com/filiptibell/rokit/pull/18
+
 ## `0.0.3` - April 23rd, 2024
 
 ### Fixed
