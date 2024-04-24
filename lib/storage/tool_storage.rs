@@ -287,9 +287,8 @@ fn has_exe_extension(path: impl AsRef<Path>) -> bool {
     !EXE_EXTENSION.is_empty()
         && path
             .as_ref()
-            .file_name()
-            .and_then(|name| name.to_str())
-            .is_some_and(|name| name.ends_with(EXE_EXTENSION))
+            .extension()
+            .is_some_and(|ext| ext == EXE_EXTENSION)
 }
 
 fn strip_exe_extension(path: impl Into<PathBuf>) -> PathBuf {
