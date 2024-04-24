@@ -1,7 +1,7 @@
-use std::{path::Path, str::FromStr};
+use std::{env::consts::EXE_EXTENSION, path::Path, str::FromStr};
 
 use tokio::fs::{metadata, read_to_string, write};
-use tracing::error;
+use tracing::{error, warn};
 
 use crate::result::{RokitError, RokitResult};
 
@@ -61,6 +61,15 @@ pub async fn write_executable_file(
     contents: impl AsRef<[u8]>,
 ) -> RokitResult<()> {
     let path = path.as_ref();
+
+    if !EXE_EXTENSION.is_empty() && !path.ends_with(EXE_EXTENSION) {
+        warn!(
+            "An executable file was written without an executable extension!\
+            \nThe file at '{path:?}' may not be usable.\
+            \nThis is most likely a bug in Rokit, please report it at {}",
+            env!("CARGO_PKG_REPOSITORY").trim_end_matches(".git")
+        );
+    }
 
     if let Err(e) = write(path, contents).await {
         error!("Failed to write executable to {path:?}:\n{e}");
