@@ -67,8 +67,8 @@ pub async fn write_executable_file(
             Some(extension) if extension == EXE_EXTENSION => {}
             _ => warn!(
                 "An executable file was written without an executable extension!\
-            \nThe file at '{path:?}' may not be usable.\
-            \nThis is most likely a bug in Rokit, please report it at {}",
+                \nThe file at '{path:?}' may not be usable.\
+                \nThis is most likely a bug in Rokit, please report it at {}",
                 env!("CARGO_PKG_REPOSITORY").trim_end_matches(".git")
             ),
         }
