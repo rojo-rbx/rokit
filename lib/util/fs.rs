@@ -62,15 +62,17 @@ pub async fn write_executable_file(
 ) -> RokitResult<()> {
     let path = path.as_ref();
 
-    if !EXE_EXTENSION.is_empty() && !path.ends_with(EXE_EXTENSION) {
-        warn!(
-            "An executable file was written without an executable extension!\
+    if !EXE_EXTENSION.is_empty() {
+        match path.extension() {
+            Some(extension) if extension == EXE_EXTENSION => {}
+            _ => warn!(
+                "An executable file was written without an executable extension!\
             \nThe file at '{path:?}' may not be usable.\
             \nThis is most likely a bug in Rokit, please report it at {}",
-            env!("CARGO_PKG_REPOSITORY").trim_end_matches(".git")
-        );
+                env!("CARGO_PKG_REPOSITORY").trim_end_matches(".git")
+            ),
+        }
     }
-
     if let Err(e) = write(path, contents).await {
         error!("Failed to write executable to {path:?}:\n{e}");
         return Err(e.into());
