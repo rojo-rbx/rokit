@@ -31,6 +31,21 @@ Follow the instructions for your platform below - when installed, Rokit will gui
 1. Download and unzip `rokit.exe` from the [latest release][latest-release] page.
 2. Open a terminal, change directory to where you downloaded Rokit, and run `./rokit.exe self-install`.
 
+### Other
+
+<details> <summary> <b>Installing from source</b> </summary>
+
+Rokit can be compiled and installed from source using [`cargo`][rustup]:
+
+```sh
+cargo install rokit --locked
+```
+
+This _may_ work on systems that Rokit is not officially compatible with, but note that no support is provided for non-official targets. <br/>
+Check the [latest GitHub release][latest-release] to see which targets Rokit is compatible with.
+
+</details>
+
 ## Usage
 
 Running `rokit --help` in your terminal will give you a full overview of all available commands. <br/>
@@ -85,6 +100,7 @@ Rokit also acknowledges that developers will not migrate from any of the existin
 
 </details>
 
+[rustup]: https://rustup.rs
 [foreman]: https://github.com/Roblox/foreman
 [aftman]: https://github.com/LGPhatguy/aftman
 [latest-release]: https://github.com/filiptibell/rokit/releases/latest
