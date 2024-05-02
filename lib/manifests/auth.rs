@@ -1,3 +1,8 @@
+#![allow(clippy::to_string_trait_impl)]
+// NOTE: We don't want to implement Display here since it may
+// make library consumers think that auth manifests are meant
+// to be displayed - they are only meant to be stringified.
+
 use std::{collections::HashMap, path::Path, str::FromStr};
 
 use toml_edit::{DocumentMut, Formatted, Item, Value};
