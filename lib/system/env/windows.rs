@@ -6,6 +6,7 @@ use winreg::{enums::HKEY_CURRENT_USER, RegKey};
 use crate::{
     result::{RokitError, RokitResult},
     storage::Home,
+    util::path::simplify_path,
 };
 
 pub async fn add_to_path(home: &Home) -> RokitResult<bool> {
@@ -29,7 +30,7 @@ pub async fn add_to_path(home: &Home) -> RokitResult<bool> {
         if path_already_exists {
             Ok::<_, RokitError>(false)
         } else {
-            let new_path = format!("{path};{}", dir.display());
+            let new_path = format!("{path};{}", simplify_path(dir).display());
             env.set_value("PATH", &new_path)?;
             Ok::<_, RokitError>(true)
         }

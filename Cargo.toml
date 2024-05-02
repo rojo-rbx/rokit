@@ -36,6 +36,7 @@ lto = true
 [dependencies]
 dashmap = { version = "5.5", features = ["serde"] }
 dirs = "5.0"
+dunce = "1.0"
 filepath = "0.1"
 flate2 = "1.0"
 goblin = "0.8"

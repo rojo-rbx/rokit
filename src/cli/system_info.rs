@@ -175,8 +175,8 @@ fn display_path(path: impl AsRef<Path>) -> String {
     let path = path.as_ref();
     if let Some(user_home) = dirs::home_dir() {
         if let Ok(path) = path.strip_prefix(user_home) {
-            return format!("~/{}", path.display());
+            return format!("~/{}", dunce::simplified(path).display());
         }
     }
-    path.display().to_string()
+    dunce::simplified(path).display().to_string()
 }
