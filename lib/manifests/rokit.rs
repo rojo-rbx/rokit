@@ -6,6 +6,7 @@
 use std::{path::Path, str::FromStr};
 
 use toml_edit::{DocumentMut, Formatted, Item, Value};
+use tracing::warn;
 
 use crate::{
     result::{RokitError, RokitResult},
@@ -175,7 +176,71 @@ impl RokitManifest {
 impl FromStr for RokitManifest {
     type Err = toml_edit::TomlError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let document = s.parse::<DocumentMut>()?;
+        let mut document = s.parse::<DocumentMut>()?;
+
+        /*
+            Check for invalid tool aliases and specs and warn the user about them
+            as a preprocessing step. We do this here instead of when accessed in
+            manifest methods to avoid duplicate warnings being emitted.
+
+            Note that we do not check if the 'tools' table is missing here,
+            since that should be handled gracefully and created if necessary.
+            We do still check that it is of the correct type, and fix it if it isn't.
+        */
+        let tools = match document.get("tools") {
+            None => None,
+            Some(t) => {
+                if let Some(t) = t.as_table() {
+                    Some(t)
+                } else {
+                    warn!(
+                        "Encountered an invalid 'tools' value in a Rokit manifest!\
+                        The value will be replaced with an empty table.\
+                        Any existing value has been overwritten."
+                    );
+                    document.insert("tools", toml_edit::table());
+                    Some(
+                        document
+                            .get("tools")
+                            .expect("table was inserted")
+                            .as_table()
+                            .expect("inserted table is a table"),
+                    )
+                }
+            }
+        };
+
+        // Check all of the tools.
+        let tool_kv_pairs = tools.map(|t| t.get_values()).unwrap_or_default();
+        for (keys, value) in tool_kv_pairs {
+            if let Err(e) = keys.last().unwrap().parse::<ToolAlias>() {
+                warn!(
+                    "A tool alias could not be parsed!\
+                    \nThe tool will be ignored and may not be available.\
+                    \nError: {e}",
+                );
+            };
+            let Some(spec_str) = value.as_str() else {
+                warn!(
+                    "A tool spec with alias '{}' could not be parsed!\
+                    \nThe tool will be ignored and may not be available.\
+                    \nExpected: String\
+                    \nActual: {}",
+                    keys.into_iter().last().unwrap(),
+                    value.type_name()
+                );
+                continue;
+            };
+            if let Err(e) = spec_str.parse::<ToolSpec>() {
+                warn!(
+                    "A tool spec with alias '{}' could not be parsed!\
+                    \nThe tool will be ignored and may not be available.\
+                    \nError: {e}",
+                    keys.into_iter().last().unwrap(),
+                );
+            };
+        }
+
         Ok(Self { document })
     }
 }

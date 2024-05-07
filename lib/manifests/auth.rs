@@ -6,6 +6,7 @@
 use std::{collections::HashMap, path::Path, str::FromStr};
 
 use toml_edit::{DocumentMut, Formatted, Item, Value};
+use tracing::warn;
 
 use crate::{
     result::{RokitError, RokitResult},
@@ -158,6 +159,31 @@ impl FromStr for AuthManifest {
     type Err = toml_edit::TomlError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let document = s.parse::<DocumentMut>()?;
+
+        /*
+            Check for invalid auth entries and warn the user about them
+            as a preprocessing step. We do this here instead of when accessed
+            in manifest methods to avoid duplicate warnings being emitted.
+        */
+        for (key, value) in document.iter() {
+            if let Err(e) = ArtifactProvider::from_str(key) {
+                warn!(
+                    "Encountered unknown artifact provider '{}' in auth manifest!\
+                    \nError: {e}",
+                    key
+                );
+            }
+            if !value.is_str() {
+                warn!(
+                    "Encountered invalid value for artifact provider '{}' in auth manifest!\
+                    \nExpected: String\
+                    \nActual: {}",
+                    key,
+                    value.type_name()
+                );
+            }
+        }
+
         Ok(Self { document })
     }
 }
