@@ -1,6 +1,6 @@
 use std::{fmt, str::FromStr};
 
-use semver::Version;
+use semver::{Version, VersionReq};
 use serde_with::{DeserializeFromStr, SerializeDisplay};
 use thiserror::Error;
 
@@ -23,6 +23,12 @@ pub enum ToolSpecParseError {
     InvalidVersion(String),
     #[error(transparent)]
     VersionParseError(#[from] semver::Error),
+    #[error(
+        "{0}\nNote: It seems like you may be trying to use a version \
+        requirement, which is not supported in Rokit. To use this tool, \
+        specify an exact version instead."
+    )]
+    VersionParseErrorSuspectedVersionReq(String),
 }
 
 /**
@@ -91,7 +97,17 @@ impl FromStr for ToolSpec {
             return Err(ToolSpecParseError::InvalidVersion(after.to_string()));
         }
 
-        let version = after.parse::<Version>()?;
+        let version = match after.parse::<Version>() {
+            Ok(version) => version,
+            Err(e) => {
+                return match after.parse::<VersionReq>() {
+                    Ok(_) => Err(ToolSpecParseError::VersionParseErrorSuspectedVersionReq(
+                        e.to_string(),
+                    )),
+                    Err(_) => Err(ToolSpecParseError::VersionParseError(e)),
+                }
+            }
+        };
 
         Ok(ToolSpec { id, version })
     }
