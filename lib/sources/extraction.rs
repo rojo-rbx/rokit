@@ -9,7 +9,7 @@ use std::{
 use tar::Archive as TarArchive;
 use thiserror::Error;
 use tokio::{task::spawn_blocking, time::Instant};
-use zip_next::ZipArchive;
+use zip::ZipArchive;
 
 use crate::{descriptor::OS, result::RokitResult, sources::ArtifactFormat};
 

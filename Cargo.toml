@@ -46,7 +46,7 @@ tar = "0.4"
 tempfile = "3.3"
 thiserror = "1.0"
 url = { version = "2.5", features = ["serde"] }
-zip_next = "1.0"
+zip = "2.1"
 
 # Async / runtime dependencies
 
