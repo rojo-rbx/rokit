@@ -13,6 +13,8 @@ pub enum GithubError {
     ReleaseNotFound(Box<ToolSpec>),
     #[error("failed to build client - invalid header value: {0}")]
     ReqwestHeader(Box<InvalidHeaderValue>),
+    #[error("reqwest middleware error: {0}")]
+    ReqwestMiddleware(Box<reqwest_middleware::Error>),
     #[error("reqwest error: {0}")]
     Reqwest(Box<reqwest::Error>),
     #[error("other error: {0}")]
@@ -26,6 +28,12 @@ pub type GithubResult<T> = Result<T, GithubError>;
 impl From<InvalidHeaderValue> for GithubError {
     fn from(err: InvalidHeaderValue) -> Self {
         GithubError::ReqwestHeader(err.into())
+    }
+}
+
+impl From<reqwest_middleware::Error> for GithubError {
+    fn from(err: reqwest_middleware::Error) -> Self {
+        GithubError::ReqwestMiddleware(err.into())
     }
 }
 
