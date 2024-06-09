@@ -1,5 +1,4 @@
-use std::time::Duration;
-
+use reqwest_middleware::ClientWithMiddleware;
 use semver::Version;
 use serde::de::DeserializeOwned;
 use tracing::{debug, instrument};
@@ -11,7 +10,7 @@ use reqwest::{
 
 use crate::tool::{ToolId, ToolSpec};
 
-use super::{Artifact, ArtifactProvider};
+use super::{client::create_client, Artifact, ArtifactProvider};
 
 const BASE_URL: &str = "https://api.github.com";
 
@@ -24,7 +23,7 @@ pub use self::result::{GithubError, GithubResult};
 
 #[derive(Debug, Clone)]
 pub struct GithubProvider {
-    client: reqwest::Client,
+    client: ClientWithMiddleware,
     has_auth: bool,
 }
 
@@ -45,14 +44,7 @@ impl GithubProvider {
             headers
         };
 
-        let client = reqwest::Client::builder()
-            .default_headers(headers)
-            .gzip(true)
-            .brotli(true)
-            .deflate(true)
-            .connect_timeout(Duration::from_secs(15))
-            .timeout(Duration::from_secs(60))
-            .build()?;
+        let client = create_client(headers)?;
 
         Ok(Self { client, has_auth })
     }
