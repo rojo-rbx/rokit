@@ -1,5 +1,6 @@
 use std::{
     collections::HashMap,
+    env::var_os,
     path::{Path, PathBuf},
 };
 
@@ -8,6 +9,7 @@ use tokio::fs::read_to_string;
 
 use crate::{
     manifests::RokitManifest,
+    storage::Home,
     system::current_dir,
     tool::{ToolAlias, ToolSpec},
 };
@@ -163,4 +165,28 @@ pub async fn discover_tool_spec(
     }
 
     None
+}
+
+/**
+    Discovers a tool explicitly **not** managed by Rokit,
+    by traversing the system PATH environment variable.
+
+    This means that if Rokit manages a tool with the given alias,
+    and an executable for it is in the PATH, this function will
+    ignore that and prefer other tools on the system instead.
+*/
+pub async fn discover_non_rokit_tool(home: &Home, alias: &ToolAlias) -> Option<PathBuf> {
+    let cwd = current_dir().await;
+
+    let binary_name = alias.name().to_string();
+    let home_path = home.path().to_owned();
+    let search_paths = var_os("PATH")?;
+
+    let mut found_tool_paths = which::which_in_all(binary_name, Some(search_paths), &cwd)
+        .ok()
+        .into_iter()
+        .flatten()
+        .filter(|path| !path.starts_with(&home_path));
+
+    found_tool_paths.next()
 }
