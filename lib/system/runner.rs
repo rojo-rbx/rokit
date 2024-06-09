@@ -80,11 +80,6 @@ where
     let mut wrapper = TokioCommandWrap::from(command);
     wrapper.wrap(KillOnDrop);
 
-    #[cfg(unix)]
-    {
-        wrapper.wrap(ProcessGroup::leader());
-    }
-
     #[cfg(windows)]
     {
         wrapper.wrap(JobObject);
