@@ -8,6 +8,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Added
+
+- Added an automatic retry mechanism for network requests, making installation more robust ([#24])
+
+### Changed
+
+- Rokit now falls through to system-wide installations of tools when a tool is not managed using a Rokit manifest ([#25])
+
+### Fixed
+
+- Fixed zombie processes being left around on Windows ([#23])
+
+[#23]: https://github.com/filiptibell/rokit/pull/23
+[#24]: https://github.com/filiptibell/rokit/pull/24
+[#25]: https://github.com/filiptibell/rokit/pull/25
+
 ## `0.0.7` - May 8th, 2024
 
 ### Added
