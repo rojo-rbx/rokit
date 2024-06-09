@@ -87,7 +87,7 @@ where
 
     #[cfg(windows)]
     {
-        wrapper.wrap(JobObject::new());
+        wrapper.wrap(JobObject);
     }
 
     let mut child_handle = wrapper.spawn()?;
