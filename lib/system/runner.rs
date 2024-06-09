@@ -1,8 +1,11 @@
+#![allow(clippy::wildcard_imports)]
+
 use std::ffi::OsStr;
 use std::io::Result as IoResult;
 
 use async_signal::{Signal, Signals};
 use futures::StreamExt;
+use process_wrap::tokio::*;
 use tokio::{
     process::Command,
     task::{spawn, JoinHandle},
@@ -17,7 +20,7 @@ use tokio::{
 */
 const EXIT_CODE_GOT_SIGNAL: i32 = 128;
 
-fn spawn_signal_task() -> IoResult<JoinHandle<i32>> {
+fn spawn_signal_listener_task() -> IoResult<JoinHandle<i32>> {
     let mut signals = if cfg!(target_os = "windows") {
         Signals::new([Signal::Int])?
     } else {
@@ -51,7 +54,8 @@ fn spawn_signal_task() -> IoResult<JoinHandle<i32>> {
     - SIGTERM
     - SIGQUIT
 
-    Note that on Windows, only SIGINT (Ctrl+C) is supported.
+    Note that on Windows, only SIGINT (Ctrl+C) is supported, but
+    the process may also be reaped as part of the current job group.
 
     # Errors
 
@@ -64,20 +68,34 @@ where
     A: IntoIterator<Item = S>,
     S: AsRef<OsStr>,
 {
-    let signal_handle = spawn_signal_task()?;
+    let signal_handle = spawn_signal_listener_task()?;
     let signal_aborter = signal_handle.abort_handle();
 
-    let mut child_handle = Command::new(command)
-        // Important - we do not want to leave any zombie
-        // processes behind if this async function is cancelled
-        .kill_on_drop(true)
-        .args(args)
-        .spawn()?;
+    // Important - we do not want to leave any zombie
+    // processes behind if this async function is cancelled.
+    // We'll use Tokio's kill on drop functionality, as well
+    // as wrappers for process / job groups for each platform.
+    let mut command = Command::new(command);
+    command.args(args);
+    let mut wrapper = TokioCommandWrap::from(command);
+    wrapper.wrap(KillOnDrop);
+
+    #[cfg(unix)]
+    {
+        wrapper.wrap(ProcessGroup::leader());
+    }
+
+    #[cfg(windows)]
+    {
+        wrapper.wrap(JobObject);
+    }
+
+    let mut child_handle = wrapper.spawn()?;
 
     let code = tokio::select! {
         // If the spawned process exits cleanly, we'll return its exit code,
         // which may or may not exist. Interpret a non-existent code as 1.
-        command_result = child_handle.wait() => {
+        command_result = Box::into_pin(child_handle.wait()) => {
             let code = command_result.ok().and_then(|s| s.code()).unwrap_or(1);
             signal_aborter.abort();
             code
@@ -85,7 +103,7 @@ where
         // If the command was manually interrupted by a signal, we will
         // return a special exit code for the signal. More details above.
         task_result = signal_handle => {
-            child_handle.kill().await.ok();
+            Box::into_pin(child_handle.kill()).await.ok();
             task_result.unwrap_or(EXIT_CODE_GOT_SIGNAL)
         }
     };
