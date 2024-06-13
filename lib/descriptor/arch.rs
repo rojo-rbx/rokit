@@ -2,7 +2,8 @@ use std::env::consts::ARCH as CURRENT_ARCH;
 
 use super::{executable_parsing::parse_executable, OS};
 
-// Matching substrings - these can be partial matches, eg. "wordwin64" will match as "win64"
+// Matching substrings - these can be partial matches, eg. "wordwin64" will match as x64 arch
+// These will take priority over full word matches, and should be as precise as possible
 #[rustfmt::skip]
 const ARCH_SUBSTRINGS: [(Arch, &[&str]); 4] = [
     (Arch::Arm64, &["aarch64", "arm64", "armv9"]),
@@ -11,10 +12,10 @@ const ARCH_SUBSTRINGS: [(Arch, &[&str]); 4] = [
     (Arch::X86,   &["i686", "i386", "win32", "win-x86"]),
 ];
 
-// Matching words - these must be exact word matches, eg. "tarmac" will not match as "arm"
+// Matching words - these must be full word matches, eg. "tarmac" will not match as arm arch
 // Note that these can not contain word separators like "-" or "_", since they're stripped
 #[rustfmt::skip]
-const ARCH_WORDS: [(Arch, &[&str]); 4] = [
+const ARCH_FULL_WORDS: [(Arch, &[&str]); 4] = [
     (Arch::Arm64, &[]),
     (Arch::X64,   &["x64", "win"]),
     (Arch::Arm32, &["arm"]),
@@ -72,7 +73,7 @@ impl Arch {
 
         // Try to find a strict keyword given as a standalone word in our search string
         if let Some(arch) = lowercased.split(char_is_word_separator).find_map(|part| {
-            ARCH_WORDS.iter().find_map(|(arch, keywords)| {
+            ARCH_FULL_WORDS.iter().find_map(|(arch, keywords)| {
                 if keywords.contains(&part) {
                     Some(*arch)
                 } else {
@@ -138,7 +139,10 @@ mod tests {
 
     #[test]
     fn substrings_and_words_are_lowercase() {
-        for (arch, keywords) in ARCH_SUBSTRINGS.into_iter().chain(ARCH_WORDS.into_iter()) {
+        for (arch, keywords) in ARCH_SUBSTRINGS
+            .into_iter()
+            .chain(ARCH_FULL_WORDS.into_iter())
+        {
             for keyword in keywords {
                 assert_eq!(
                     keyword.to_string(),
@@ -153,7 +157,7 @@ mod tests {
 
     #[test]
     fn words_do_not_contain_word_separators() {
-        for (toolchain, keywords) in ARCH_WORDS {
+        for (toolchain, keywords) in ARCH_FULL_WORDS {
             for keyword in keywords {
                 assert!(
                     !keyword.contains(char_is_word_separator),
