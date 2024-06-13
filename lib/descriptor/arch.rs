@@ -2,12 +2,24 @@ use std::env::consts::ARCH as CURRENT_ARCH;
 
 use super::{executable_parsing::parse_executable, OS};
 
+// Matching substrings - these can be partial matches, eg. "wordwin64" will match as x64 arch
+// These will take priority over full word matches, and should be as precise as possible
 #[rustfmt::skip]
-const ARCH_KEYWORDS: [(Arch, &[&str]); 4] = [
+const ARCH_SUBSTRINGS: [(Arch, &[&str]); 4] = [
     (Arch::Arm64, &["aarch64", "arm64", "armv9"]),
-    (Arch::X64,   &["x86-64", "x86_64", "x64", "amd64", "win64", "win-x64"]),
-    (Arch::Arm32, &["arm", "arm32", "armv7"]),
-    (Arch::X86,   &["x86", "i686", "i386", "win32", "win-x86"]),
+    (Arch::X64,   &["x86-64", "x86_64", "amd64", "win64", "win-x64"]),
+    (Arch::Arm32, &["arm32", "armv7"]),
+    (Arch::X86,   &["i686", "i386", "win32", "win-x86"]),
+];
+
+// Matching words - these must be full word matches, eg. "tarmac" will not match as arm arch
+// Note that these can not contain word separators like "-" or "_", since they're stripped
+#[rustfmt::skip]
+const ARCH_FULL_WORDS: [(Arch, &[&str]); 4] = [
+    (Arch::Arm64, &[]),
+    (Arch::X64,   &["x64", "win"]),
+    (Arch::Arm32, &["arm"]),
+    (Arch::X86,   &["x86"]),
 ];
 
 /**
@@ -49,13 +61,28 @@ impl Arch {
     pub fn detect(search_string: impl AsRef<str>) -> Option<Self> {
         let lowercased = search_string.as_ref().to_lowercase();
 
-        for (arch, keywords) in ARCH_KEYWORDS {
+        // Try to find a substring match first, these are generally longer and
+        // contain more symbol-like characters, less likely to be a false positive
+        for (arch, keywords) in ARCH_SUBSTRINGS {
             for keyword in keywords {
                 if lowercased.contains(keyword) {
                     return Some(arch);
                 }
             }
         }
+
+        // Try to find a strict keyword given as a standalone word in our search string
+        if let Some(arch) = lowercased.split(char_is_word_separator).find_map(|part| {
+            ARCH_FULL_WORDS.iter().find_map(|(arch, keywords)| {
+                if keywords.contains(&part) {
+                    Some(*arch)
+                } else {
+                    None
+                }
+            })
+        }) {
+            return Some(arch);
+        };
 
         /*
             HACK: If nothing else matched, but the search string contains "universal",
@@ -99,6 +126,10 @@ impl Arch {
     }
 }
 
+fn char_is_word_separator(c: char) -> bool {
+    c == '-' || c == '_' || c.is_ascii_whitespace()
+}
+
 #[cfg(test)]
 mod tests {
     #![allow(clippy::uninlined_format_args)]
@@ -107,13 +138,30 @@ mod tests {
     use super::*;
 
     #[test]
-    fn keywords_are_lowercase() {
-        for (toolchain, keywords) in ARCH_KEYWORDS {
+    fn substrings_and_words_are_lowercase() {
+        for (arch, keywords) in ARCH_SUBSTRINGS
+            .into_iter()
+            .chain(ARCH_FULL_WORDS.into_iter())
+        {
             for keyword in keywords {
                 assert_eq!(
                     keyword.to_string(),
                     keyword.to_lowercase(),
-                    "Arch keyword for {:?} is not lowercase: {}",
+                    "Arch substring / word for {:?} is not lowercase: {}",
+                    arch,
+                    keyword
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn words_do_not_contain_word_separators() {
+        for (toolchain, keywords) in ARCH_FULL_WORDS {
+            for keyword in keywords {
+                assert!(
+                    !keyword.contains(char_is_word_separator),
+                    "Arch keyword for {:?} contains word separator: {}",
                     toolchain,
                     keyword
                 );
@@ -171,5 +219,30 @@ mod tests {
     #[test]
     fn detect_arch_universal() {
         assert_eq!(Arch::detect("APP-macos-universal-VER"), Some(Arch::X64));
+    }
+
+    #[test]
+    fn real_tool_specs() {
+        const REAL_TOOLS: [(&str, Option<Arch>); 10] = [
+            ("stylua-linux-x86_64-musl", Some(Arch::X64)),
+            ("remodel-0.11.0-linux-x86_64", Some(Arch::X64)),
+            ("rojo-0.6.0-alpha.1-win64", Some(Arch::X64)),
+            ("lune-0.6.7-windows-aarch64", Some(Arch::Arm64)),
+            ("darklua-linux-aarch64", Some(Arch::Arm64)),
+            ("tarmac-0.7.5-macos", None),
+            ("sentry-cli-Darwin-universal", Some(Arch::X64)),
+            ("sentry-cli-linux-i686-2.32.1", Some(Arch::X86)),
+            (
+                "just-1.28.0-armv7-unknown-linux-musleabihf",
+                Some(Arch::Arm32),
+            ),
+            (
+                "just-1.28.0-arm-unknown-linux-musleabihf",
+                Some(Arch::Arm32),
+            ),
+        ];
+        for (tool, expected) in REAL_TOOLS {
+            assert_eq!(Arch::detect(tool), expected, "Tool: {tool}");
+        }
     }
 }
