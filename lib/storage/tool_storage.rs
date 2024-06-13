@@ -1,8 +1,5 @@
 use std::{
-    env::{
-        consts::{EXE_EXTENSION, EXE_SUFFIX},
-        var,
-    },
+    env::consts::{EXE_EXTENSION, EXE_SUFFIX},
     path::{Path, PathBuf},
     sync::Arc,
 };
@@ -21,7 +18,7 @@ use crate::{
     storage::metadata::RokitLinkMetadata,
     system::current_exe_contents,
     tool::{ToolAlias, ToolSpec},
-    util::fs::{path_exists, write_executable_file, write_executable_link},
+    util::fs::{path_exists, write_executable_file},
 };
 
 /**
@@ -35,7 +32,6 @@ pub struct ToolStorage {
     pub(super) tools_dir: Arc<Path>,
     pub(super) aliases_dir: Arc<Path>,
     current_rokit_contents: Arc<AsyncMutex<Option<Vec<u8>>>>,
-    no_symlinks: bool,
 }
 
 impl ToolStorage {
@@ -134,14 +130,9 @@ impl ToolStorage {
         }
 
         // Create the new link
-        if cfg!(unix) && !self.no_symlinks {
-            let rokit_path = self.rokit_path();
-            write_executable_link(path, &rokit_path).await?;
-        } else {
-            let rokit_contents = self.rokit_contents().await?;
-            let rokit_metadata = RokitLinkMetadata::current();
-            skip_or_write_link_with_meta(path, &rokit_contents, &rokit_metadata).await?;
-        }
+        let rokit_contents = self.rokit_contents().await?;
+        let rokit_metadata = RokitLinkMetadata::current();
+        skip_or_write_link_with_meta(path, &rokit_contents, &rokit_metadata).await?;
 
         Ok(())
     }
@@ -228,21 +219,13 @@ impl ToolStorage {
             true
         };
 
-        // Then we can write the rest of the links - on unix we can use
-        // symlinks pointing to the Rokit binary to save on disk space.
-        // If the link already has the correct Rokit contents, we can
-        // also skip creating it, to avoid OS permission errors while
-        // the link is being used to run some Rokit-managed program.
+        // If any link already has the correct Rokit contents, we
+        // can skip creating it, to avoid OS permission errors if the
+        // link is currently being used to run some Rokit-managed program.
         let rokit_metadata = RokitLinkMetadata::current();
         link_paths
             .into_iter()
-            .map(|path| async {
-                if cfg!(unix) && !self.no_symlinks {
-                    write_executable_link(path, &rokit_path).await
-                } else {
-                    skip_or_write_link_with_meta(path, &rokit_contents, &rokit_metadata).await
-                }
-            })
+            .map(|path| skip_or_write_link_with_meta(path, &rokit_contents, &rokit_metadata))
             .collect::<FuturesUnordered<_>>()
             .try_collect::<Vec<_>>()
             .await?;
@@ -264,14 +247,11 @@ impl ToolStorage {
         )?;
 
         let current_rokit_contents = Arc::new(AsyncMutex::new(None));
-        let no_symlinks = var("ROKIT_NO_SYMLINKS")
-            .is_ok_and(|val| matches!(val.to_ascii_lowercase().as_str(), "1" | "true"));
 
         Ok(Self {
             tools_dir,
             aliases_dir,
             current_rokit_contents,
-            no_symlinks,
         })
     }
 

@@ -83,60 +83,6 @@ pub async fn write_executable_file(
     Ok(())
 }
 
-/**
-    Writes a symlink at the given link path to the given
-    target path, and sets the symlink to be executable.
-
-    # Panics
-
-    This function will panic if called on a non-unix system.
-*/
-#[cfg(unix)]
-pub async fn write_executable_link(
-    link_path: impl AsRef<Path>,
-    target_path: impl AsRef<Path>,
-) -> RokitResult<()> {
-    use tokio::fs::{remove_file, symlink};
-
-    let link_path = link_path.as_ref();
-    let target_path = target_path.as_ref();
-
-    // NOTE: If a symlink already exists, we may need to remove it
-    // for the new symlink to be created successfully - the only error we
-    // should be able to get here is if the file doesn't exist, which is fine.
-    remove_file(link_path).await.ok();
-
-    if let Err(e) = symlink(target_path, link_path).await {
-        error!("Failed to create symlink at {link_path:?}:\n{e}");
-        return Err(e.into());
-    }
-
-    // NOTE: We set the permissions of the symlink itself only on macOS
-    // since that is the only supported OS where symlink permissions matter
-    #[cfg(target_os = "macos")]
-    {
-        add_executable_permissions(link_path).await?;
-    }
-
-    Ok(())
-}
-
-/**
-    Writes a symlink at the given link path to the given
-    target path, and sets the symlink to be executable.
-
-    # Panics
-
-    This function will panic if called on a non-unix system.
-*/
-#[cfg(not(unix))]
-pub async fn write_executable_link(
-    _link_path: impl AsRef<Path>,
-    _target_path: impl AsRef<Path>,
-) -> RokitResult<()> {
-    panic!("write_executable_link should only be called on unix systems");
-}
-
 #[cfg(unix)]
 async fn add_executable_permissions(path: impl AsRef<Path>) -> RokitResult<()> {
     use std::fs::Permissions;
