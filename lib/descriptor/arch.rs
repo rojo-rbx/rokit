@@ -1,6 +1,6 @@
 use std::env::consts::ARCH as CURRENT_ARCH;
 
-use super::{executable_parsing::parse_executable, OS};
+use super::{char_is_word_separator, executable_parsing::parse_executable, OS};
 
 // Matching substrings - these can be partial matches, eg. "wordwin64" will match as x64 arch
 // These will take priority over full word matches, and should be as precise as possible
@@ -124,10 +124,6 @@ impl Arch {
             Self::X86 => "x86",
         }
     }
-}
-
-fn char_is_word_separator(c: char) -> bool {
-    c == '-' || c == '_' || c.is_ascii_whitespace()
 }
 
 #[cfg(test)]
