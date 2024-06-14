@@ -19,6 +19,7 @@ pub fn init() {
         .add_directive("reqwest=info".parse().unwrap())
         .add_directive("rustls=info".parse().unwrap())
         .add_directive("tokio_util=info".parse().unwrap())
+        .add_directive("goblin=info".parse().unwrap())
         .add_directive("tower=info".parse().unwrap())
         .add_directive("hyper=info".parse().unwrap())
         .add_directive("h2=info".parse().unwrap());
