@@ -1,6 +1,7 @@
 use std::io::Error as IoError;
 use std::path::PathBuf;
 
+use postcard::Error as PostcardError;
 use serde_json::Error as JsonError;
 use thiserror::Error;
 use tokio::task::JoinError;
@@ -27,6 +28,8 @@ pub enum RokitError {
     Io(Box<IoError>),
     #[error("JSON error: {0}")]
     Json(Box<JsonError>),
+    #[error("Postcard error: {0}")]
+    Postcard(Box<PostcardError>),
     #[error("Zip file error: {0}")]
     Zip(Box<ZipError>),
     #[error("GitHub error: {0}")]
@@ -64,6 +67,12 @@ impl From<IoError> for RokitError {
 impl From<JsonError> for RokitError {
     fn from(err: JsonError) -> Self {
         RokitError::Json(Box::new(err))
+    }
+}
+
+impl From<PostcardError> for RokitError {
+    fn from(err: PostcardError) -> Self {
+        RokitError::Postcard(err.into())
     }
 }
 

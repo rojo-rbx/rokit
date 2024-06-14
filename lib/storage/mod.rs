@@ -1,4 +1,5 @@
 mod home;
+mod metadata;
 mod tool_cache;
 mod tool_storage;
 
