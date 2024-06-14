@@ -14,9 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed `tarmac` not installing correctly on non-arm systems due to its name containing `arm` ([#26])
 - Fixed OS permission errors during `rokit install` for tools that are currently running ([#27])
+- Fixed `tarmac` not installing correctly on non-mac systems due to its name containing `mac` ([#28])
 
 [#26]: https://github.com/filiptibell/rokit/pull/26
 [#27]: https://github.com/filiptibell/rokit/pull/27
+[#28]: https://github.com/filiptibell/rokit/pull/28
 
 ## `0.1.1` - June 9th, 2024
 
