@@ -33,7 +33,7 @@ pub async fn add_to_path(home: &Home) -> RokitResult<bool> {
 
     // Add the path to known shell profiles
     let added_any = if let Some(home_dir) = dirs::home_dir() {
-        Shell::ALL
+        let futs = Shell::ALL
             .iter()
             .map(|shell| {
                 let shell_env_path = home_dir.join(shell.env_file_path());
@@ -44,11 +44,14 @@ pub async fn add_to_path(home: &Home) -> RokitResult<bool> {
                     shell_should_create,
                 )
             })
-            .collect::<FuturesUnordered<_>>()
-            .collect::<Vec<_>>()
+            .collect::<FuturesUnordered<_>>();
+        // NOTE: append_to_shell_file returns `true` if the line was added,
+        // we need to preserve this information, but also not fail if
+        // any of the file operations do, so we unwrap_or_default
+        futs.collect::<Vec<_>>()
             .await
-            .iter()
-            .any(Result::is_ok)
+            .into_iter()
+            .any(Result::unwrap_or_default)
     } else {
         false
     };
