@@ -181,6 +181,10 @@ impl FromStr for Descriptor {
     }
 }
 
+fn char_is_word_separator(c: char) -> bool {
+    c == '-' || c == '_' || c.is_ascii_whitespace()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

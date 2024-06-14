@@ -1,12 +1,23 @@
 use std::env::consts::OS as CURRENT_OS;
 
-use super::executable_parsing::parse_executable;
+use super::{char_is_word_separator, executable_parsing::parse_executable};
 
+// Matching substrings - these can be partial matches, eg. "wordwin64" will match as windows OS
+// These will take priority over full word matches, and should be as precise as possible
 #[rustfmt::skip]
-const OS_KEYWORDS: [(OS, &[&str]); 3] = [
-    (OS::Windows, &["windows", "win32", "win64", "win-x86", "win-x64"]),
-    (OS::MacOS,   &["macos", "osx", "darwin", "apple"]),
-    (OS::Linux,   &["linux", "ubuntu", "debian"]),
+const OS_SUBSTRINGS: [(OS, &[&str]); 3] = [
+    (OS::Windows, &["windows"]),
+    (OS::MacOS,   &["macos", "darwin", "apple"]),
+    (OS::Linux,   &["linux", "ubuntu", "debian", "fedora"]),
+];
+
+// Matching words - these must be full word matches, eg. "tarmac" will not match as mac OS
+// Note that these can not contain word separators like "-" or "_", since they're stripped
+#[rustfmt::skip]
+const OS_FULL_WORDS: [(OS, &[&str]); 3] = [
+    (OS::Windows, &["win", "win32", "win64"]),
+    (OS::MacOS,   &["mac", "osx"]),
+    (OS::Linux,   &[]),
 ];
 
 /**
@@ -39,13 +50,30 @@ impl OS {
     */
     pub fn detect(search_string: impl AsRef<str>) -> Option<Self> {
         let lowercased = search_string.as_ref().to_lowercase();
-        for (os, keywords) in OS_KEYWORDS {
+
+        // Try to find a substring match first, these are generally longer and
+        // contain more symbol-like characters, less likely to be a false positive
+        for (os, keywords) in OS_SUBSTRINGS {
             for keyword in keywords {
                 if lowercased.contains(keyword) {
                     return Some(os);
                 }
             }
         }
+
+        // Try to find a strict keyword given as a standalone word in our search string
+        if let Some(os) = lowercased.split(char_is_word_separator).find_map(|part| {
+            OS_FULL_WORDS.iter().find_map(|(os, keywords)| {
+                if keywords.contains(&part) {
+                    Some(*os)
+                } else {
+                    None
+                }
+            })
+        }) {
+            return Some(os);
+        };
+
         None
     }
 
@@ -80,14 +108,28 @@ mod tests {
     use super::*;
 
     #[test]
-    fn keywords_are_lowercase() {
-        for (toolchain, keywords) in OS_KEYWORDS {
+    fn substrings_and_words_are_lowercase() {
+        for (os, keywords) in OS_SUBSTRINGS.into_iter().chain(OS_FULL_WORDS.into_iter()) {
             for keyword in keywords {
                 assert_eq!(
                     keyword.to_string(),
                     keyword.to_lowercase(),
-                    "OS keyword for {:?} is not lowercase: {}",
-                    toolchain,
+                    "OS substring / word for {:?} is not lowercase: {}",
+                    os,
+                    keyword
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn words_do_not_contain_word_separators() {
+        for (os, keywords) in OS_FULL_WORDS {
+            for keyword in keywords {
+                assert!(
+                    !keyword.contains(char_is_word_separator),
+                    "OS keyword for {:?} contains word separator: {}",
+                    os,
                     keyword
                 );
             }
@@ -120,14 +162,37 @@ mod tests {
         assert_eq!(OS::detect("APP-linux-ARCH-VER"), Some(OS::Linux));
         assert_eq!(OS::detect("APP-ubuntu-ARCH-VER"), Some(OS::Linux));
         assert_eq!(OS::detect("APP-debian-ARCH-VER"), Some(OS::Linux));
+        assert_eq!(OS::detect("APP-fedora-ARCH-VER"), Some(OS::Linux));
     }
 
     #[test]
     fn detect_os_invalid() {
         assert_eq!(OS::detect("APP-widows-ARCH-VER"), None);
-        assert_eq!(OS::detect("APP-mac_in_tosh-ARCH-VER"), None);
+        assert_eq!(OS::detect("APP-macc_in_tosh-ARCH-VER"), None);
         assert_eq!(OS::detect("APP-myOS-ARCH-VER"), None);
         assert_eq!(OS::detect("APP-fedoooruhh-ARCH-VER"), None);
         assert_eq!(OS::detect("APP-linucks-ARCH-VER"), None);
+    }
+
+    #[test]
+    fn real_tool_specs() {
+        const REAL_TOOLS: [(&str, Option<OS>); 10] = [
+            ("stylua-linux-x86_64-musl", Some(OS::Linux)),
+            ("remodel-0.11.0-linux-x86_64", Some(OS::Linux)),
+            ("rojo-0.6.0-alpha.1-win64", Some(OS::Windows)),
+            ("lune-0.6.7-windows-aarch64", Some(OS::Windows)),
+            ("darklua-linux-aarch64", Some(OS::Linux)),
+            ("tarmac-0.7.5-macos", Some(OS::MacOS)),
+            ("sentry-cli-Darwin-universal", Some(OS::MacOS)),
+            ("sentry-cli-linux-i686-2.32.1", Some(OS::Linux)),
+            (
+                "just-1.28.0-armv7-unknown-linux-musleabihf",
+                Some(OS::Linux),
+            ),
+            ("just-1.28.0-arm-unknown-linux-musleabihf", Some(OS::Linux)),
+        ];
+        for (tool, expected) in REAL_TOOLS {
+            assert_eq!(OS::detect(tool), expected, "Tool: {tool}");
+        }
     }
 }
