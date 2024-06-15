@@ -46,6 +46,7 @@ semver = { version = "1.0", features = ["serde"] }
 tar = "0.4"
 tempfile = "3.3"
 thiserror = "1.0"
+unindent = "0.2"
 url = { version = "2.5", features = ["serde"] }
 which = "6.0"
 zip = "2.1"
