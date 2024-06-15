@@ -8,19 +8,13 @@ use rokit::{discovery::discover_all_manifests, storage::Home, system::current_di
 #[derive(Debug, Parser)]
 pub struct ListSubcommand {
     /// A specific tool identifier to list installed versions for.
-    #[clap(long, short, conflicts_with = "all")]
     pub id: Option<ToolId>,
-    /// Lists all installed tools instead of tools in manifests.
-    #[clap(long, short, conflicts_with = "id")]
-    pub all: bool,
 }
 
 impl ListSubcommand {
     pub async fn run(self, home: &Home) -> Result<()> {
         let (header, lines) = if let Some(id) = self.id {
             list_versions_for_id(home, &id)
-        } else if self.all {
-            list_versions_for_all(home)
         } else {
             list_versions(home).await
         };
@@ -48,37 +42,6 @@ fn list_versions_for_id(home: &Home, id: &ToolId) -> (String, Vec<String>) {
             .into_iter()
             .map(|version| format!("  {bullet} {version}"))
             .collect();
-        (header, lines)
-    }
-}
-
-// Lists all versions for all installed tools
-fn list_versions_for_all(home: &Home) -> (String, Vec<String>) {
-    let cache = home.tool_cache();
-    let tools = cache
-        .all_installed_ids()
-        .into_iter()
-        .map(|id| (id.clone(), cache.all_installed_versions_for_id(&id)))
-        .collect::<Vec<_>>();
-
-    let bullet = style("•").dim();
-    let lines = tools
-        .into_iter()
-        .flat_map(|(id, mut versions)| {
-            versions.reverse(); // List newest versions first
-            let mut lines = vec![id.to_string()];
-            for version in versions {
-                lines.push(format!("  {bullet} {version}"));
-            }
-            lines
-        })
-        .collect::<Vec<_>>();
-
-    if lines.is_empty() {
-        let header = String::from("🛠️  No tools are installed.");
-        (header, Vec::new())
-    } else {
-        let header = String::from("🛠️  Installed tools:\n");
         (header, lines)
     }
 }
