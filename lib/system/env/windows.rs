@@ -20,12 +20,9 @@ pub async fn add_to_path(home: &Home) -> RokitResult<bool> {
         let env = key.create_subkey("Environment")?.0;
         let path = env.get_value::<String, _>("PATH")?;
 
-        let path_already_exists = path.split(';').any(|entry| {
-            Path::new(entry)
-                .canonicalize()
-                .map(|p| p == dir)
-                .unwrap_or_default()
-        });
+        let path_already_exists = path
+            .split(';')
+            .any(|entry| Path::new(entry).canonicalize().is_ok_and(|p| p == dir));
 
         if path_already_exists {
             Ok::<_, RokitError>(false)
