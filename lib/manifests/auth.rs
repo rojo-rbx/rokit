@@ -15,7 +15,7 @@ use crate::{
 };
 
 pub const MANIFEST_FILE_NAME: &str = "auth.toml";
-const MANIFEST_DEFAULT_CONTENTS: &str = "\
+pub(super) const MANIFEST_DEFAULT_CONTENTS: &str = "
 # This file lists authentication tokens managed by Rokit, a toolchain manager for Roblox projects.
 # For more information, see <|REPOSITORY_URL|>
 
@@ -196,10 +196,9 @@ impl ToString for AuthManifest {
 
 impl Default for AuthManifest {
     fn default() -> Self {
-        let document = MANIFEST_DEFAULT_CONTENTS
-            .replace("<|REPOSITORY_URL|>", env!("CARGO_PKG_REPOSITORY"))
+        let document = super::make_manifest_template(MANIFEST_DEFAULT_CONTENTS)
             .parse::<DocumentMut>()
-            .unwrap();
+            .expect("default manifest template should be valid");
         Self { document }
     }
 }
