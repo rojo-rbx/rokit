@@ -8,6 +8,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Changed
+
+- Overhauled the `rokit list` subcommand to be more useful and distinct from `rokit system-info`
+- Improved the formatting of Rokit manifests created using `rokit init`
+
+### Fixed
+
+- Fixed the "restart terminal" hint being shown after a `rokit self-install`, even if restarting isn't necessary for Rokit to function
+
 ## `0.1.2` - June 14th, 2024
 
 ### Fixed
