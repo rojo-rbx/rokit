@@ -1,7 +1,7 @@
 #!/bin/sh
 
 PROGRAM_NAME="rokit"
-REPOSITORY="filiptibell/rokit"
+REPOSITORY="rojo-rbx/rokit"
 
 # Make sure we have prerequisites installed: curl + unzip
 if ! command -v curl >/dev/null 2>&1; then

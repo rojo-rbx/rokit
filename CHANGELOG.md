@@ -27,9 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed OS permission errors during `rokit install` for tools that are currently running ([#27])
 - Fixed `tarmac` not installing correctly on non-mac systems due to its name containing `mac` ([#28])
 
-[#26]: https://github.com/filiptibell/rokit/pull/26
-[#27]: https://github.com/filiptibell/rokit/pull/27
-[#28]: https://github.com/filiptibell/rokit/pull/28
+[#26]: https://github.com/rojo-rbx/rokit/pull/26
+[#27]: https://github.com/rojo-rbx/rokit/pull/27
+[#28]: https://github.com/rojo-rbx/rokit/pull/28
 
 ## `0.1.1` - June 9th, 2024
 
@@ -51,9 +51,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed zombie processes being left around on Windows ([#23])
 
-[#23]: https://github.com/filiptibell/rokit/pull/23
-[#24]: https://github.com/filiptibell/rokit/pull/24
-[#25]: https://github.com/filiptibell/rokit/pull/25
+[#23]: https://github.com/rojo-rbx/rokit/pull/23
+[#24]: https://github.com/rojo-rbx/rokit/pull/24
+[#25]: https://github.com/rojo-rbx/rokit/pull/25
 
 ## `0.0.7` - May 8th, 2024
 
@@ -73,7 +73,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed error messages being written to stdout instead of stderr ([#14])
 
-[#14]: https://github.com/filiptibell/rokit/pull/14
+[#14]: https://github.com/rojo-rbx/rokit/pull/14
 
 ## `0.0.4` - April 24th, 2024
 
@@ -83,9 +83,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed panics when running `rokit install` or `rokit add` ([#16])
 - Fixed tool links missing executable extensions on Windows ([#18])
 
-[#15]: https://github.com/filiptibell/rokit/pull/15
-[#16]: https://github.com/filiptibell/rokit/pull/16
-[#18]: https://github.com/filiptibell/rokit/pull/18
+[#15]: https://github.com/rojo-rbx/rokit/pull/15
+[#16]: https://github.com/rojo-rbx/rokit/pull/16
+[#18]: https://github.com/rojo-rbx/rokit/pull/18
 
 ## `0.0.3` - April 23rd, 2024
 
@@ -93,7 +93,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fixed tools installed by Rokit not being usable on Windows ([#10])
 
-[#10]: https://github.com/filiptibell/rokit/pull/10
+[#10]: https://github.com/rojo-rbx/rokit/pull/10
 
 ## `0.0.2` - April 2nd, 2024
 
@@ -118,7 +118,7 @@ Tools are now stored in a case-insensitive manner to prevent unnecessary downloa
 
 - Fixed `self-install` failing to add Rokit to `$PATH` if some shell configuration files don't exist. ([#2])
 
-[#2]: https://github.com/filiptibell/rokit/pull/2
+[#2]: https://github.com/rojo-rbx/rokit/pull/2
 
 ## `0.0.0` - March 29th, 2024
 

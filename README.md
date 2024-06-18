@@ -23,7 +23,7 @@ Follow the instructions for your platform below - when installed, Rokit will gui
 - Run the automated installer script in your terminal:
 
   ```sh
-  curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/filiptibell/rokit/main/scripts/install.sh | sh
+  curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/rojo-rbx/rokit/main/scripts/install.sh | sh
   ```
 
 ### Windows
@@ -103,4 +103,4 @@ Rokit also acknowledges that developers will not migrate from any of the existin
 [rustup]: https://rustup.rs
 [foreman]: https://github.com/Roblox/foreman
 [aftman]: https://github.com/LGPhatguy/aftman
-[latest-release]: https://github.com/filiptibell/rokit/releases/latest
+[latest-release]: https://github.com/rojo-rbx/rokit/releases/latest
