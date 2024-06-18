@@ -1838,7 +1838,7 @@ dependencies = [
 
 [[package]]
 name = "rokit"
-version = "0.1.2"
+version = "0.1.3"
 dependencies = [
  "anyhow",
  "async-once-cell",
