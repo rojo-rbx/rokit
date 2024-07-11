@@ -208,7 +208,14 @@ impl ToolStorage {
             // with the OS killing the current executable when its overwritten.
             if rokit_link_existed {
                 let temp_file = tempfile::tempfile()?;
-                let temp_path = temp_file.path()?;
+                let mut temp_path = temp_file.path()?;
+                #[cfg(windows)]
+                {
+                    // Windows raises an OS error if the current binary is
+                    // renamed to a file name without a .exe extension. So to
+                    // avoid that, we add the extension.
+                    temp_path.set_extension("exe");
+                }
                 trace!(
                     ?temp_path,
                     "moving existing Rokit binary to temporary location"
