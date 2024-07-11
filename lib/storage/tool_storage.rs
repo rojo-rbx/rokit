@@ -208,6 +208,7 @@ impl ToolStorage {
             // with the OS killing the current executable when its overwritten.
             if rokit_link_existed {
                 let temp_file = tempfile::tempfile()?;
+                #[allow(unused_mut)]
                 let mut temp_path = temp_file.path()?;
                 #[cfg(windows)]
                 {
