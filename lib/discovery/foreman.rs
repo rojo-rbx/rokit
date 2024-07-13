@@ -1,11 +1,16 @@
 use std::{collections::HashMap, str::FromStr};
 
 use semver::Version;
-use toml_edit::DocumentMut;
+use toml_edit::{DocumentMut, InlineTable, Table};
 
 use crate::tool::{ToolAlias, ToolId, ToolSpec};
 
 use super::Manifest;
+
+enum SpecType {
+    InlineTable(InlineTable),
+    Table(Table),
+}
 
 #[derive(Debug, Clone)]
 pub(crate) struct ForemanManifest {
@@ -35,7 +40,19 @@ impl Manifest for ForemanManifest {
         if let Some(map) = self.document.get("tools").and_then(|t| t.as_table()) {
             for (alias, tool_def) in map {
                 let tool_alias = alias.parse::<ToolAlias>().ok();
-                let tool_spec = tool_def.as_table().and_then(parse_foreman_tool_definition);
+
+                let tool_spec = if tool_def.is_inline_table() {
+                    tool_def
+                        .as_inline_table()
+                        .cloned()
+                        .and_then(|map| parse_foreman_tool_definition(SpecType::InlineTable(map)))
+                } else {
+                    tool_def
+                        .as_table()
+                        .cloned()
+                        .and_then(|map| parse_foreman_tool_definition(SpecType::Table(map)))
+                };
+
                 if let (Some(alias), Some(spec)) = (tool_alias, tool_spec) {
                     tools.insert(alias, spec);
                 }
@@ -45,7 +62,12 @@ impl Manifest for ForemanManifest {
     }
 }
 
-fn parse_foreman_tool_definition(map: &toml_edit::Table) -> Option<ToolSpec> {
+fn parse_foreman_tool_definition(map: SpecType) -> Option<ToolSpec> {
+    let map = match map {
+        SpecType::InlineTable(table) => table,
+        SpecType::Table(table) => table.into_inline_table(),
+    };
+
     let version = map.get("version").and_then(|t| t.as_str()).and_then(|v| {
         // TODO: Support real version requirements instead of just exact/min versions
         let without_prefix = v.trim_start_matches('=').trim_start_matches('^');
