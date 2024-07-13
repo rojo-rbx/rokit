@@ -35,7 +35,9 @@ impl Manifest for ForemanManifest {
         if let Some(map) = self.document.get("tools").and_then(|t| t.as_table()) {
             for (alias, tool_def) in map {
                 let tool_alias = alias.parse::<ToolAlias>().ok();
-                let tool_spec = tool_def.as_table().and_then(parse_foreman_tool_definition);
+                let tool_spec = tool_def
+                    .as_inline_table()
+                    .and_then(parse_foreman_tool_definition);
                 if let (Some(alias), Some(spec)) = (tool_alias, tool_spec) {
                     tools.insert(alias, spec);
                 }
@@ -45,7 +47,7 @@ impl Manifest for ForemanManifest {
     }
 }
 
-fn parse_foreman_tool_definition(map: &toml_edit::Table) -> Option<ToolSpec> {
+fn parse_foreman_tool_definition(map: &toml_edit::InlineTable) -> Option<ToolSpec> {
     let version = map.get("version").and_then(|t| t.as_str()).and_then(|v| {
         // TODO: Support real version requirements instead of just exact/min versions
         let without_prefix = v.trim_start_matches('=').trim_start_matches('^');
