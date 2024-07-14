@@ -5,12 +5,13 @@ use console::style;
 use rokit::{
     discovery::discover_all_manifests,
     manifests::RokitManifest,
-    sources::Artifact,
     storage::Home,
     tool::{ToolAlias, ToolId},
 };
 
-use crate::util::{prompt_for_trust, CliProgressTracker, ToolIdOrSpec};
+use crate::util::{
+    find_most_compatible_artifact, prompt_for_trust, CliProgressTracker, ToolIdOrSpec,
+};
 
 /// Adds a new tool to Rokit and installs it.
 #[derive(Debug, Parser)]
@@ -85,18 +86,12 @@ impl AddSubcommand {
         let (spec, artifact) = match self.tool.clone() {
             ToolIdOrSpec::Spec(spec) => {
                 let artifacts = source.get_specific_release(&spec).await?;
-                let artifact = Artifact::sort_by_system_compatibility(&artifacts)
-                    .first()
-                    .cloned()
-                    .with_context(|| format!("No compatible artifact found for {id}"))?;
+                let artifact = find_most_compatible_artifact(&artifacts, &id)?;
                 (spec, artifact)
             }
             ToolIdOrSpec::Id(id) => {
                 let artifacts = source.get_latest_release(&id).await?;
-                let artifact = Artifact::sort_by_system_compatibility(&artifacts)
-                    .first()
-                    .cloned()
-                    .with_context(|| format!("No compatible artifact found for {id}"))?;
+                let artifact = find_most_compatible_artifact(&artifacts, &id)?;
                 (artifact.tool_spec.clone(), artifact)
             }
         };

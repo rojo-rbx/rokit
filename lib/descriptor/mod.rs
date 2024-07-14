@@ -29,7 +29,7 @@ pub enum DescriptionParseError {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Descriptor {
     os: OS,
-    arch: Arch,
+    arch: Option<Arch>,
     toolchain: Option<Toolchain>,
 }
 
@@ -41,7 +41,7 @@ impl Descriptor {
     pub fn current_system() -> Self {
         Self {
             os: OS::current_system(),
-            arch: Arch::current_system(),
+            arch: Some(Arch::current_system()),
             toolchain: Toolchain::current_system(),
         }
     }
@@ -55,7 +55,7 @@ impl Descriptor {
         let search_string = search_string.as_ref();
 
         let os = OS::detect(search_string)?;
-        let arch = Arch::detect(search_string).unwrap_or_default();
+        let arch = Arch::detect(search_string);
         let toolchain = Toolchain::detect(search_string);
 
         Some(Self {
@@ -76,7 +76,7 @@ impl Descriptor {
         let (os, arch) = parse_executable(binary_contents)?;
         Some(Self {
             os,
-            arch,
+            arch: Some(arch),
             toolchain: None,
         })
     }
@@ -93,7 +93,7 @@ impl Descriptor {
         Get the architecture of this description.
     */
     #[must_use]
-    pub fn arch(&self) -> Arch {
+    pub fn arch(&self) -> Option<Arch> {
         self.arch
     }
 
@@ -125,9 +125,9 @@ impl Descriptor {
                 // ... or special cases for architecture compatibility
                 || matches!(
                     (self.os, self.arch, other.arch),
-                    (OS::Windows, Arch::X64, Arch::X86)
-                    | (OS::Linux, Arch::X64, Arch::X86)
-                    | (OS::MacOS, Arch::Arm64, Arch::X64)
+                    (OS::Windows, Some(Arch::X64), Some(Arch::X86))
+                    | (OS::Linux, Some(Arch::X64), Some(Arch::X86))
+                    | (OS::MacOS, Some(Arch::Arm64), Some(Arch::X64))
                 )
             )
     }
@@ -170,7 +170,7 @@ impl FromStr for Descriptor {
     type Err = DescriptionParseError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let os = OS::detect(s).ok_or(DescriptionParseError::OS)?;
-        let arch = Arch::detect(s).unwrap_or_default();
+        let arch = Arch::detect(s);
         let toolchain = Toolchain::detect(s);
 
         Ok(Self {
@@ -201,7 +201,7 @@ mod tests {
     fn current_description() {
         let current = Descriptor::current_system();
         assert_eq!(current.os, OS::current_system());
-        assert_eq!(current.arch, Arch::current_system());
+        assert_eq!(current.arch, Some(Arch::current_system()));
         assert_eq!(current.toolchain, Toolchain::current_system());
     }
 
@@ -212,7 +212,7 @@ mod tests {
             "windows-x64-msvc",
             Descriptor {
                 os: OS::Windows,
-                arch: Arch::X64,
+                arch: Some(Arch::X64),
                 toolchain: Some(Toolchain::Msvc),
             },
         );
@@ -220,7 +220,7 @@ mod tests {
             "win64",
             Descriptor {
                 os: OS::Windows,
-                arch: Arch::X64,
+                arch: Some(Arch::X64),
                 toolchain: None,
             },
         );
@@ -228,7 +228,7 @@ mod tests {
             "windows-x86-gnu",
             Descriptor {
                 os: OS::Windows,
-                arch: Arch::X86,
+                arch: Some(Arch::X86),
                 toolchain: Some(Toolchain::Gnu),
             },
         );
@@ -236,7 +236,7 @@ mod tests {
             "windows-x86",
             Descriptor {
                 os: OS::Windows,
-                arch: Arch::X86,
+                arch: Some(Arch::X86),
                 toolchain: None,
             },
         );
@@ -244,7 +244,7 @@ mod tests {
             "win32",
             Descriptor {
                 os: OS::Windows,
-                arch: Arch::X86,
+                arch: Some(Arch::X86),
                 toolchain: None,
             },
         );
@@ -253,7 +253,7 @@ mod tests {
             "aarch64-macos",
             Descriptor {
                 os: OS::MacOS,
-                arch: Arch::Arm64,
+                arch: Some(Arch::Arm64),
                 toolchain: None,
             },
         );
@@ -261,7 +261,7 @@ mod tests {
             "macos-x64-gnu",
             Descriptor {
                 os: OS::MacOS,
-                arch: Arch::X64,
+                arch: Some(Arch::X64),
                 toolchain: Some(Toolchain::Gnu),
             },
         );
@@ -269,7 +269,7 @@ mod tests {
             "macos-x64",
             Descriptor {
                 os: OS::MacOS,
-                arch: Arch::X64,
+                arch: Some(Arch::X64),
                 toolchain: None,
             },
         );
@@ -278,7 +278,7 @@ mod tests {
             "linux-x86_64-gnu",
             Descriptor {
                 os: OS::Linux,
-                arch: Arch::X64,
+                arch: Some(Arch::X64),
                 toolchain: Some(Toolchain::Gnu),
             },
         );
@@ -286,7 +286,7 @@ mod tests {
             "linux-gnu-x86",
             Descriptor {
                 os: OS::Linux,
-                arch: Arch::X86,
+                arch: Some(Arch::X86),
                 toolchain: Some(Toolchain::Gnu),
             },
         );
@@ -294,7 +294,7 @@ mod tests {
             "armv7-linux-musl",
             Descriptor {
                 os: OS::Linux,
-                arch: Arch::Arm32,
+                arch: Some(Arch::Arm32),
                 toolchain: Some(Toolchain::Musl),
             },
         );
@@ -307,7 +307,7 @@ mod tests {
             "macos-universal",
             Descriptor {
                 os: OS::MacOS,
-                arch: Arch::X64,
+                arch: Some(Arch::X64),
                 toolchain: None,
             },
         );
@@ -315,7 +315,7 @@ mod tests {
             "darwin-universal",
             Descriptor {
                 os: OS::MacOS,
-                arch: Arch::X64,
+                arch: Some(Arch::X64),
                 toolchain: None,
             },
         );

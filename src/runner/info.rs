@@ -20,7 +20,7 @@ fn is_likely_rosetta2_error(e: &Error) -> bool {
 
     let is_running_macos_aarch64 = {
         let current = Descriptor::current_system();
-        matches!(current.os(), OS::MacOS) && matches!(current.arch(), Arch::Arm64)
+        matches!(current.os(), OS::MacOS) && matches!(current.arch(), Some(Arch::Arm64))
     };
 
     is_bad_cpu_type && is_running_macos_aarch64
