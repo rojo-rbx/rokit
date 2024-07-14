@@ -245,4 +245,38 @@ impl Artifact {
             .map(|(_, artifact)| artifact.clone())
             .collect()
     }
+
+    /**
+        Tries to find a partially compatible artifact, to be used as a fallback
+        during artifact selection if [`Artifact::sort_by_system_compatibility`]
+        finds no system-compatible artifacts to use.
+
+        Returns `None` if more than one artifact is partially compatible.
+    */
+    pub fn find_partially_compatible_fallback(artifacts: impl AsRef<[Self]>) -> Option<Self> {
+        let current_desc = Descriptor::current_system();
+
+        let os_compatible_artifacts = artifacts
+            .as_ref()
+            .iter()
+            .filter_map(|artifact| {
+                let name = artifact.name.as_deref()?;
+                if let Some(asset_desc) = Descriptor::detect(name) {
+                    if current_desc.os() == asset_desc.os() {
+                        Some(artifact)
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<_>>();
+
+        if os_compatible_artifacts.len() == 1 {
+            Some(os_compatible_artifacts[0].clone())
+        } else {
+            None
+        }
+    }
 }
