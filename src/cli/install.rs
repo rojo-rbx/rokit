@@ -5,9 +5,9 @@ use clap::Parser;
 
 use console::style;
 use futures::{stream::FuturesUnordered, TryStreamExt};
-use rokit::{discovery::discover_all_manifests, sources::Artifact, storage::Home};
+use rokit::{discovery::discover_all_manifests, storage::Home};
 
-use crate::util::{prompt_for_trust_specs, CliProgressTracker};
+use crate::util::{find_most_compatible_artifact, prompt_for_trust_specs, CliProgressTracker};
 
 /// Adds a new tool using Rokit and installs it.
 #[derive(Debug, Parser)]
@@ -84,10 +84,7 @@ impl InstallSubcommand {
                 let artifacts = source.get_specific_release(&tool_spec).await?;
                 pt.subtask_completed();
 
-                let artifact = Artifact::sort_by_system_compatibility(&artifacts)
-                    .first()
-                    .cloned()
-                    .with_context(|| format!("No compatible artifact found for {tool_spec}"))?;
+                let artifact = find_most_compatible_artifact(&artifacts, tool_spec.id())?;
                 pt.subtask_completed();
 
                 let contents = source

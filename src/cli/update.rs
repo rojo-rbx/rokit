@@ -3,11 +3,11 @@ use clap::Parser;
 use console::style;
 use futures::{stream::FuturesUnordered, TryStreamExt};
 
-use rokit::{
-    discovery::discover_all_manifests, manifests::RokitManifest, sources::Artifact, storage::Home,
-};
+use rokit::{discovery::discover_all_manifests, manifests::RokitManifest, storage::Home};
 
-use crate::util::{CliProgressTracker, ToolAliasOrIdOrSpec, ToolIdOrSpec};
+use crate::util::{
+    find_most_compatible_artifact, CliProgressTracker, ToolAliasOrIdOrSpec, ToolIdOrSpec,
+};
 
 /// Updates all tools, or specific tools, to the latest version.
 #[derive(Debug, Parser)]
@@ -141,12 +141,9 @@ impl UpdateSubcommand {
                     }
                 };
 
-                let artifact = Artifact::sort_by_system_compatibility(&artifacts)
-                    .first()
-                    .cloned()
-                    .with_context(|| format!("No compatible artifact found for {id}"))?;
-
+                let artifact = find_most_compatible_artifact(&artifacts, &id)?;
                 pt.subtask_completed();
+
                 Ok::<_, anyhow::Error>((alias, id, artifact))
             })
             .collect::<FuturesUnordered<_>>()

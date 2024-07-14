@@ -3,9 +3,9 @@ use clap::Parser;
 use console::style;
 use semver::Version;
 
-use rokit::{sources::Artifact, storage::Home, tool::ToolId};
+use rokit::{storage::Home, tool::ToolId};
 
-use crate::util::CliProgressTracker;
+use crate::util::{find_most_compatible_artifact, CliProgressTracker};
 
 /// Updates Rokit to the latest version.
 #[derive(Debug, Parser)]
@@ -55,9 +55,7 @@ impl SelfUpdateSubcommand {
         pt.task_completed();
         pt.update_message("Downloading");
 
-        let artifact = Artifact::sort_by_system_compatibility(&artifacts)
-            .first()
-            .cloned()
+        let artifact = find_most_compatible_artifact(&artifacts, &tool_id)
             .context("No compatible Rokit artifact was found (WAT???)")?;
         let artifact_contents = source
             .download_artifact_contents(&artifact)
