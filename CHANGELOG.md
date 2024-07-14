@@ -12,9 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Failed to parse tool specifications in foreman.toml if they were an inline table ([#36])
+- Fixed tool specifications failing to parse in `foreman.toml` when using inline tables ([#36])
+- Fixed tools not specifying architectures (such as `wally-macos.zip`) failing to install ([#38])
 
 [#36]: https://github.com/rojo-rbx/rokit/pull/36
+[#38]: https://github.com/rojo-rbx/rokit/pull/38
 
 ## `0.1.4` - July 11th, 2024
 
