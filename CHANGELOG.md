@@ -12,6 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fixed artifacts with names such as `toolname-win64.zip` not being detected as compatible on Windows ([#39])
+
+[#39]: https://github.com/rojo-rbx/rokit/pull/39
+
+## `0.1.5` - July 14th, 2024
+
+### Fixed
+
 - Fixed tool specifications failing to parse in `foreman.toml` when using inline tables ([#36])
 - Fixed tools not specifying architectures (such as `wally-macos.zip`) failing to install ([#38])
 
