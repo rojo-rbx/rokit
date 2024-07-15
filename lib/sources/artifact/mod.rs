@@ -7,7 +7,6 @@ use crate::{
     descriptor::{Descriptor, OS},
     result::RokitResult,
     tool::ToolSpec,
-    util::path::split_filename_and_extensions,
 };
 
 use super::{
@@ -16,6 +15,10 @@ use super::{
     github::models::Asset,
     ExtractError,
 };
+
+mod util;
+
+use self::util::split_filename_and_extensions;
 
 /**
     An artifact provider supported by Rokit.
@@ -111,7 +114,7 @@ impl FromStr for ArtifactFormat {
         match l.as_str() {
             "zip" => Ok(Self::Zip),
             "tar" => Ok(Self::Tar),
-            "tar.gz" => Ok(Self::TarGz),
+            "tar.gz" | "tgz" => Ok(Self::TarGz),
             _ => Err(format!("unknown artifact format '{l}'")),
         }
     }
