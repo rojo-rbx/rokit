@@ -12,7 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fixed Rokit erroring on first startup due to some directories not yet being created
+- Fixed Rokit erroring on first startup due to some directories not yet being created ([#42])
+
+[#42]: https://github.com/rojo-rbx/rokit/pull/42
 
 ## `0.1.7` - July 15th, 2024
 
