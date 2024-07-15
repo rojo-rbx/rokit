@@ -8,11 +8,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## `0.1.6` - July 15th, 2024
 
 ### Fixed
 
-- Fixed artifacts with names such as `toolname-win64.zip` not being detected as compatible on Windows ([#39])
+- Fixed artifacts with names ending in `win64.zip` or similar not being detected as compatible on Windows ([#39])
 
 [#39]: https://github.com/rojo-rbx/rokit/pull/39
 
