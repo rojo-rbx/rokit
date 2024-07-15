@@ -248,10 +248,10 @@ impl ToolStorage {
         let aliases_dir = home_path.join("bin").into();
 
         tokio::try_join!(
-            RokitManifest::load_or_create(&home_path),
-            AuthManifest::load_or_create(&home_path),
             async { Ok(create_dir_all(&tools_dir).await?) },
             async { Ok(create_dir_all(&aliases_dir).await?) },
+            RokitManifest::load_or_create(&home_path),
+            AuthManifest::load_or_create(&home_path),
         )?;
 
         let current_rokit_contents = Arc::new(AsyncMutex::new(None));
