@@ -2,6 +2,8 @@ use std::env::var;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
+use tokio::fs::create_dir_all;
+
 use crate::manifests::AuthManifest;
 use crate::result::{RokitError, RokitResult};
 use crate::sources::ArtifactSource;
@@ -60,6 +62,7 @@ impl Home {
             let path = dirs::home_dir()
                 .ok_or(RokitError::HomeNotFound)?
                 .join(".rokit");
+            create_dir_all(&path).await?;
             Self::load_from_path(path).await
         }
     }

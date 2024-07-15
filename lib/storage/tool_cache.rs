@@ -13,7 +13,7 @@ use std::{
 use dashmap::DashSet;
 use semver::Version;
 use serde::Deserialize;
-use tokio::{task::spawn_blocking, time::Instant};
+use tokio::{fs::create_dir_all, task::spawn_blocking, time::Instant};
 use tracing::{instrument, trace};
 
 use crate::{
@@ -191,19 +191,37 @@ impl ToolCache {
 }
 
 async fn load_impl(path: PathBuf) -> RokitResult<ToolCache> {
+    // Make sure we have created the directory for the cache file, since
+    // OpenOptions::create will only create the file and not the directory.
+    let dir = path
+        .parent()
+        .expect("should not be given empty or root path");
+    create_dir_all(dir).await?;
+
     // NOTE: Using std::fs here and passing a reader to serde_json lets us
     // deserialize the cache faster and without storing the file in memory.
     let result = spawn_blocking(move || {
         use std::{
-            fs::File,
+            fs::OpenOptions,
             io::{BufReader, Error},
         };
-        let reader = BufReader::new(File::open(path)?);
+
+        let file = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .truncate(false)
+            .open(path)?;
+        let reader = BufReader::new(file);
         let this: ToolCache = serde_json::from_reader(reader)?;
+
         Ok::<_, Error>(this)
     });
 
-    Ok(result.await?.unwrap_or_default())
+    let read_result = result
+        .await
+        .expect("blocking reader task panicked unexpectedly");
+    Ok(read_result.unwrap_or_default())
 }
 
 async fn save_impl(path: PathBuf, cache: &ToolCache) -> RokitResult<()> {
