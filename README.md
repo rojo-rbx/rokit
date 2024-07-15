@@ -102,5 +102,5 @@ Rokit also acknowledges that developers will not migrate from any of the existin
 
 [rustup]: https://rustup.rs
 [foreman]: https://github.com/Roblox/foreman
-[aftman]: https://github.com/LGPhatguy/aftman
+[aftman]: https://github.com/LPGhatguy/aftman
 [latest-release]: https://github.com/rojo-rbx/rokit/releases/latest
