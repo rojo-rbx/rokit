@@ -1,6 +1,7 @@
 use std::{env::args, process::exit, str::FromStr};
 
 use anyhow::{bail, Error, Result};
+use tracing::level_filters::LevelFilter;
 
 use rokit::{
     discovery::{discover_non_rokit_tool, discover_tool_spec},
@@ -9,7 +10,10 @@ use rokit::{
     tool::ToolAlias,
 };
 
+use crate::util::init_tracing;
+
 mod info;
+
 use self::info::inform_user_about_potential_fixes;
 
 #[derive(Debug, Clone)]
@@ -29,6 +33,11 @@ impl Runner {
     }
 
     pub async fn run(&self) -> Result<()> {
+        // Always log at INFO level when running a managed program
+        // unless the user has explicitly set a different level
+        // using the RUST_LOG environment variable.
+        init_tracing(LevelFilter::INFO);
+
         let alias = ToolAlias::from_str(&self.exe_name)?;
 
         let home = Home::load_from_env().await?;

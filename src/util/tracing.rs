@@ -9,9 +9,9 @@ const FMT_PRETTY: bool = true;
 #[cfg(not(debug_assertions))]
 const FMT_PRETTY: bool = false;
 
-pub fn init() {
+pub fn init(default_level_filter: LevelFilter) {
     let tracing_env_filter = EnvFilter::builder()
-        .with_default_directive(LevelFilter::INFO.into())
+        .with_default_directive(default_level_filter.into())
         .from_env_lossy()
         // Adding the below extra directives will let us debug
         // Rokit easier using RUST_LOG=debug or RUST_LOG=trace
