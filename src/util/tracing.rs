@@ -23,20 +23,12 @@ pub fn init() {
         .add_directive("hyper=info".parse().unwrap())
         .add_directive("h2=info".parse().unwrap());
 
-    // Use the excessively verbose and pretty tracing-subscriber during
-    // development, and a more concise and less pretty output in production.
-    if FMT_PRETTY {
-        tracing_subscriber::fmt()
-            .with_env_filter(tracing_env_filter)
-            .with_writer(stderr)
-            .pretty()
-            .init();
-    } else {
-        tracing_subscriber::fmt()
-            .with_env_filter(tracing_env_filter)
-            .with_writer(stderr)
-            .with_target(false)
-            .without_time()
-            .init();
-    }
+    // Show the target module in the tracing output during development
+    // so that we can track down issues and trace origins faster.
+    tracing_subscriber::fmt()
+        .with_env_filter(tracing_env_filter)
+        .with_writer(stderr)
+        .with_target(FMT_PRETTY)
+        .without_time()
+        .init();
 }
