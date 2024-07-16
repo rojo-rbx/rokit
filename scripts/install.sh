@@ -3,6 +3,8 @@
 PROGRAM_NAME="rokit"
 REPOSITORY="rojo-rbx/rokit"
 
+set -eo pipefail
+
 # Make sure we have prerequisites installed: curl + unzip
 if ! command -v curl >/dev/null 2>&1; then
     echo "ERROR: 'curl' is not installed." >&2
@@ -82,12 +84,12 @@ fi
 read RELEASE_ASSET_ID RELEASE_ASSET_NAME <<EOF
 $(echo "$RELEASE_JSON_DATA" | awk -v repo="$REPOSITORY" -v pattern="$FILE_PATTERN" '
   /"url":/ && $0 ~ "https://api.github.com/repos/" repo "/releases/assets/" {
-    gsub(/.*\/releases\/assets\/|\"|,/, "", $0)
+    gsub(/.*\/releases\/assets\/|"|,/, "", $0)
     asset_number=$0
   }
   /"name":/ && asset_number && $0 ~ pattern {
     # Remove quotes and trailing comma for clean output
-    gsub(/\"|,/, "", $2)
+    gsub(/"|,/, "", $2)
     print asset_number, $2
     exit
   }
@@ -127,7 +129,7 @@ if [ ! -f "$BINARY_NAME" ]; then
 fi
 
 # Execute the file and remove it when done
-echo "[3 / 3] Running $PROGRAM_NAME installation\n"
+printf "[3 / 3] Running $PROGRAM_NAME installation\n\n"
 if [ "$OS" != "windows" ]; then
     chmod +x "$BINARY_NAME"
 fi
