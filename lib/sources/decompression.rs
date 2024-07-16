@@ -17,7 +17,7 @@ pub async fn decompress_gzip(gz_contents: impl AsRef<[u8]>) -> RokitResult<Vec<u
         let mut contents = Vec::new();
         decoder.read_to_end(&mut contents)?;
 
-        tracing::debug!(
+        tracing::trace!(
             num_kilobytes,
             elapsed = ?start.elapsed(),
             "decompressed gzip"
