@@ -3,6 +3,8 @@
 PROGRAM_NAME="rokit"
 REPOSITORY="rojo-rbx/rokit"
 
+set -eo pipefail
+
 # Make sure we have prerequisites installed: curl + unzip
 if ! command -v curl >/dev/null 2>&1; then
     echo "ERROR: 'curl' is not installed." >&2
