@@ -1,8 +1,11 @@
 use anyhow::{Context, Result};
-use clap::Parser;
+use clap::{ArgAction, Parser};
 use tokio::time::Instant;
+use tracing::level_filters::LevelFilter;
 
 use rokit::storage::Home;
+
+use crate::util::init_tracing;
 
 mod add;
 mod authenticate;
@@ -31,11 +34,16 @@ use self::update::UpdateSubcommand;
 pub struct Cli {
     #[clap(subcommand)]
     pub subcommand: Subcommand,
+    #[clap(flatten)]
+    pub options: GlobalOptions,
 }
 
 impl Cli {
     pub async fn run(self) -> Result<()> {
-        // 1. Load Rokit data structures
+        // 1. Enable the appropriate level of tracing / logging
+        init_tracing(self.options.tracing_level_filter());
+
+        // 2. Load Rokit data structures
         let start_home = Instant::now();
         let home = Home::load_from_env().await.context(
             "Failed to load Rokit home!\
@@ -46,7 +54,7 @@ impl Cli {
             "Rokit loaded"
         );
 
-        // 2. Run the subcommand and capture the result - note that we
+        // 3. Run the subcommand and capture the result - note that we
         // do not (!!!) use the question mark operator here, because we
         // want to save our data below even if the subcommand fails.
         let start_command = Instant::now();
@@ -57,7 +65,7 @@ impl Cli {
             "Rokit ran",
         );
 
-        // 3. Save Rokit data structures to disk
+        // 4. Save Rokit data structures to disk
         let start_save = Instant::now();
         home.save().await.context(
             "Failed to save Rokit data!\
@@ -68,7 +76,7 @@ impl Cli {
             "Rokit saved"
         );
 
-        // 4. Return the result of the subcommand
+        // 5. Return the result of the subcommand
         result
     }
 }
@@ -100,6 +108,22 @@ impl Subcommand {
             Self::SystemInfo(cmd) => cmd.run(home).await,
             Self::Trust(cmd) => cmd.run(home).await,
             Self::Update(cmd) => cmd.run(home).await,
+        }
+    }
+}
+
+#[derive(Debug, Parser)]
+pub struct GlobalOptions {
+    #[clap(short, long, action = ArgAction::Count)]
+    pub verbose: u8,
+}
+
+impl GlobalOptions {
+    pub fn tracing_level_filter(&self) -> LevelFilter {
+        match self.verbose {
+            0 => LevelFilter::INFO,
+            1 => LevelFilter::DEBUG,
+            _ => LevelFilter::TRACE,
         }
     }
 }

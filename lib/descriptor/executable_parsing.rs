@@ -9,7 +9,7 @@ use super::{Arch, OS};
 
     Currently supports ELF, Mach-O and PE formats.
 */
-#[tracing::instrument(skip(binary_contents), level = "debug")]
+#[tracing::instrument(skip(binary_contents), level = "trace")]
 pub fn parse_executable(binary_contents: impl AsRef<[u8]>) -> Option<(OS, Arch)> {
     let binary_contents = binary_contents.as_ref();
 
@@ -38,7 +38,7 @@ pub fn parse_executable(binary_contents: impl AsRef<[u8]>) -> Option<(OS, Arch)>
             .or_else(|| parse_mach(binary_contents))
     };
 
-    tracing::debug!(
+    tracing::trace!(
         elapsed = ?start.elapsed(),
         "parsed executable format"
     );

@@ -9,13 +9,12 @@ const FMT_PRETTY: bool = true;
 #[cfg(not(debug_assertions))]
 const FMT_PRETTY: bool = false;
 
-pub fn init() {
+pub fn init(default_level_filter: LevelFilter) {
     let tracing_env_filter = EnvFilter::builder()
-        .with_default_directive(LevelFilter::INFO.into())
+        .with_default_directive(default_level_filter.into())
         .from_env_lossy()
         // Adding the below extra directives will let us debug
         // Rokit easier using RUST_LOG=debug or RUST_LOG=trace
-        .add_directive("octocrab=info".parse().unwrap())
         .add_directive("reqwest=info".parse().unwrap())
         .add_directive("rustls=info".parse().unwrap())
         .add_directive("tokio_util=info".parse().unwrap())
@@ -24,20 +23,12 @@ pub fn init() {
         .add_directive("hyper=info".parse().unwrap())
         .add_directive("h2=info".parse().unwrap());
 
-    // Use the excessively verbose and pretty tracing-subscriber during
-    // development, and a more concise and less pretty output in production.
-    if FMT_PRETTY {
-        tracing_subscriber::fmt()
-            .with_env_filter(tracing_env_filter)
-            .with_writer(stderr)
-            .pretty()
-            .init();
-    } else {
-        tracing_subscriber::fmt()
-            .with_env_filter(tracing_env_filter)
-            .with_writer(stderr)
-            .with_target(false)
-            .without_time()
-            .init();
-    }
+    // Show the target module in the tracing output during development
+    // so that we can track down issues and trace origins faster.
+    tracing_subscriber::fmt()
+        .with_env_filter(tracing_env_filter)
+        .with_writer(stderr)
+        .with_target(FMT_PRETTY)
+        .without_time()
+        .init();
 }

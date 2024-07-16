@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- Added a new `--verbose` flag to CLI commands in Rokit for easier debugging when something goes wrong ([#46])
+
+### Changed
+
+- Removed warnings with additional information when searching for tool fallbacks, in favor of using the new `--verbose` flag ([#46])
+
 ### Fixed
 
 - Fixed Rokit erroring on first startup due to some directories not yet being created ([#42])
@@ -17,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [#42]: https://github.com/rojo-rbx/rokit/pull/42
 [#45]: https://github.com/rojo-rbx/rokit/pull/45
+[#46]: https://github.com/rojo-rbx/rokit/pull/46
 
 ## `0.1.7` - July 15th, 2024
 
