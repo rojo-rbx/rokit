@@ -16,8 +16,10 @@ use super::{
 
 mod format;
 mod provider;
+mod sorting;
 mod util;
 
+use self::sorting::sort_preferred_artifact;
 use self::util::split_filename_and_extensions;
 
 pub use self::format::ArtifactFormat;
@@ -112,7 +114,7 @@ impl Artifact {
     }
 
     /**
-        Sorts the given artifacts by system compatibility.
+        Sorts the given artifacts by their compatibility with the current system.
 
         See also:
 
@@ -121,6 +123,27 @@ impl Artifact {
         - [`Descriptor::sort_by_preferred_compat`]
     */
     pub fn sort_by_system_compatibility(artifacts: impl AsRef<[Self]>) -> Vec<Self> {
+        Self::sort_by_system_compatibility_inner(artifacts, false)
+    }
+
+    /**
+        Tries to find a partially compatible artifact, to be used as a fallback
+        during artifact selection if [`Artifact::sort_by_system_compatibility`]
+        finds no system-compatible artifacts to use.
+
+        Note that this not is guaranteed to be compatible with the current
+        system, the contents of the artifact should be checked before use.
+    */
+    pub fn find_partially_compatible_fallback(artifacts: impl AsRef<[Self]>) -> Option<Self> {
+        Self::sort_by_system_compatibility_inner(artifacts, true)
+            .into_iter()
+            .next()
+    }
+
+    fn sort_by_system_compatibility_inner(
+        artifacts: impl AsRef<[Self]>,
+        allow_partial_compatibility: bool,
+    ) -> Vec<Self> {
         let current_desc = Descriptor::current_system();
 
         let mut compatible_artifacts = artifacts
@@ -129,7 +152,9 @@ impl Artifact {
             .filter_map(|artifact| {
                 let name = artifact.name.as_deref()?;
                 if let Some(asset_desc) = Descriptor::detect(name) {
-                    if current_desc.is_compatible_with(&asset_desc) {
+                    let is_fully_compatible = current_desc.is_compatible_with(&asset_desc);
+                    let is_os_compatible = current_desc.os() == asset_desc.os();
+                    if is_fully_compatible || (allow_partial_compatibility && is_os_compatible) {
                         Some((asset_desc, artifact))
                     } else {
                         None
@@ -140,47 +165,15 @@ impl Artifact {
             })
             .collect::<Vec<_>>();
 
-        compatible_artifacts.sort_by(|(desc_a, _), (desc_b, _)| {
-            current_desc.sort_by_preferred_compat(desc_a, desc_b)
+        compatible_artifacts.sort_by(|(desc_a, artifact_a), (desc_b, artifact_b)| {
+            current_desc
+                .sort_by_preferred_compat(desc_a, desc_b)
+                .then_with(|| sort_preferred_artifact(artifact_a, artifact_b))
         });
 
         compatible_artifacts
             .into_iter()
             .map(|(_, artifact)| artifact.clone())
             .collect()
-    }
-
-    /**
-        Tries to find a partially compatible artifact, to be used as a fallback
-        during artifact selection if [`Artifact::sort_by_system_compatibility`]
-        finds no system-compatible artifacts to use.
-
-        Returns `None` if more than one artifact is partially compatible.
-    */
-    pub fn find_partially_compatible_fallback(artifacts: impl AsRef<[Self]>) -> Option<Self> {
-        let current_desc = Descriptor::current_system();
-
-        let os_compatible_artifacts = artifacts
-            .as_ref()
-            .iter()
-            .filter_map(|artifact| {
-                let name = artifact.name.as_deref()?;
-                if let Some(asset_desc) = Descriptor::detect(name) {
-                    if current_desc.os() == asset_desc.os() {
-                        Some(artifact)
-                    } else {
-                        None
-                    }
-                } else {
-                    None
-                }
-            })
-            .collect::<Vec<_>>();
-
-        if os_compatible_artifacts.len() == 1 {
-            Some(os_compatible_artifacts[0].clone())
-        } else {
-            None
-        }
     }
 }

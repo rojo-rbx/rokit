@@ -1,6 +1,15 @@
 use std::fmt;
 
 /**
+    Checks if the given character is a "word" separator.
+
+    For internal use only.
+*/
+pub(crate) const fn char_is_word_separator(c: char) -> bool {
+    c.is_ascii_whitespace() || matches!(c, '-' | '_')
+}
+
+/**
     A case-insensitive string wrapper.
 
     The wrapped string is case-insensitive, but is stored in both cased
