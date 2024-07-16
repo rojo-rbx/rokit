@@ -1,6 +1,8 @@
 use std::env::consts::OS as CURRENT_OS;
 
-use super::{char_is_word_separator, executable_parsing::parse_executable};
+use crate::util::str::char_is_word_separator;
+
+use super::executable_parsing::parse_executable;
 
 // Matching substrings - these can be partial matches, eg. "wordwin64" will match as windows OS
 // These will take priority over full word matches, and should be as precise as possible
