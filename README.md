@@ -28,8 +28,7 @@ Follow the instructions for your platform below - when installed, Rokit will gui
 
 ### Windows
 
-1. Download and unzip `rokit.exe` from the [latest release][latest-release] page.
-2. Open a terminal, change directory to where you downloaded Rokit, and run `./rokit.exe self-install`.
+- Download and run `rokit.exe` from the [latest release][latest-release] page - this will automatically install Rokit.
 
 ### Other
 
