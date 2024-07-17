@@ -1,4 +1,7 @@
-use std::{env::var, path::MAIN_SEPARATOR_STR};
+use std::{
+    env::{split_paths, var_os},
+    path::MAIN_SEPARATOR_STR,
+};
 
 use crate::{result::RokitResult, storage::Home};
 
@@ -39,7 +42,7 @@ pub async fn add_to_path(home: &Home) -> RokitResult<bool> {
 #[must_use]
 pub fn exists_in_path(_home: &Home) -> bool {
     let pattern = format!("rokit{MAIN_SEPARATOR_STR}bin");
-    var("PATH")
-        .map(|path| path.split(':').any(|item| item.ends_with(&pattern)))
-        .unwrap_or(false)
+    var_os("PATH").map_or(false, |path| {
+        split_paths(&path).any(|item| item.ends_with(&pattern))
+    })
 }
