@@ -1,9 +1,10 @@
 use anyhow::{Context, Result};
-use clap::{ArgAction, Parser};
+use clap::{ArgAction, CommandFactory, Parser};
 use tokio::time::Instant;
 use tracing::level_filters::LevelFilter;
 
 use rokit::storage::Home;
+use rokit::system::ProcessParent;
 
 use crate::util::init_tracing;
 
@@ -33,17 +34,32 @@ use self::update::UpdateSubcommand;
 #[clap(author, version, about)]
 pub struct Cli {
     #[clap(subcommand)]
-    pub subcommand: Subcommand,
+    pub subcommand: Option<Subcommand>,
     #[clap(flatten)]
     pub options: GlobalOptions,
 }
 
 impl Cli {
     pub async fn run(self) -> Result<()> {
-        // 1. Enable the appropriate level of tracing / logging
+        // Enable the appropriate level of tracing / logging
         init_tracing(self.options.tracing_level_filter());
 
-        // 2. Load Rokit data structures
+        // If we didn't get a subcommand, we should either print the help,
+        // or automatically run self-install if launched from the explorer
+        let (auto_self_install, command) = if let Some(subcommand) = self.subcommand {
+            (false, subcommand)
+        } else if ProcessParent::get()
+            .await
+            .is_some_and(ProcessParent::is_launcher)
+        {
+            let subcommand = Subcommand::SelfInstall(SelfInstallSubcommand {});
+            (true, subcommand)
+        } else {
+            Cli::command().print_help()?;
+            std::process::exit(0);
+        };
+
+        // Load Rokit data structures
         let start_home = Instant::now();
         let home = Home::load_from_env().await.context(
             "Failed to load Rokit home!\
@@ -54,18 +70,18 @@ impl Cli {
             "Rokit loaded"
         );
 
-        // 3. Run the subcommand and capture the result - note that we
-        // do not (!!!) use the question mark operator here, because we
-        // want to save our data below even if the subcommand fails.
+        // Run the subcommand and capture the result - note that we
+        // do not (!!!) use the question mark operator here, because
+        // we want to save our data below even if the subcommand fails.
         let start_command = Instant::now();
-        let result = self.subcommand.run(&home).await;
+        let result = command.run(&home).await;
         tracing::trace!(
             elapsed = ?start_command.elapsed(),
             success = result.is_ok(),
             "Rokit ran",
         );
 
-        // 4. Save Rokit data structures to disk
+        // Save Rokit data structures to disk
         let start_save = Instant::now();
         home.save().await.context(
             "Failed to save Rokit data!\
@@ -76,7 +92,21 @@ impl Cli {
             "Rokit saved"
         );
 
-        // 5. Return the result of the subcommand
+        // Wait for user input if we automatically ran the
+        // self-install from clicking Rokit in the explorer,
+        // so that the window doesn't immediately close.
+        if auto_self_install {
+            dialoguer::Input::new()
+                .with_prompt("Press Enter to continue")
+                .show_default(false)
+                .allow_empty(true)
+                .report(false)
+                .default(true)
+                .interact()
+                .ok();
+        }
+
+        // Return the result of the subcommand
         result
     }
 }
