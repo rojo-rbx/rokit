@@ -1929,6 +1929,7 @@ dependencies = [
  "unindent",
  "url",
  "which",
+ "winapi",
  "winreg",
  "zip",
 ]

@@ -91,6 +91,7 @@ tracing-subscriber = { optional = true, version = "0.3", features = [
 ] }
 
 [target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = ["wincon"] }
 winreg = "0.52"
 
 [lints.clippy]
