@@ -20,16 +20,17 @@ Follow the instructions for your platform below - when installed, Rokit will gui
 
 ### macOS & Linux
 
-- Run the automated installer script in your terminal:
+Run the automated installer script in your terminal:
 
-  ```sh
-  curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/rojo-rbx/rokit/main/scripts/install.sh | sh
-  ```
+```sh
+curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/rojo-rbx/rokit/main/scripts/install.sh | sh
+```
 
 ### Windows
 
-1. Download and unzip `rokit.exe` from the [latest release][latest-release] page.
-2. Open a terminal, change directory to where you downloaded Rokit, and run `./rokit.exe self-install`.
+Download and run<sup>\*</sup> `rokit.exe` from the [latest release][latest-release] page - this will automatically install Rokit.
+
+<sup>\* Make sure to run `rokit.exe` **directly**, not from a shell such as PowerShell or CMD, for automatic installation to work.</sup>
 
 ### Other
 
@@ -38,7 +39,8 @@ Follow the instructions for your platform below - when installed, Rokit will gui
 Rokit can be compiled and installed from source using [`cargo`][rustup]:
 
 ```sh
-cargo install rokit --locked
+cargo install rokit --locked # Installs the Rokit binary
+rokit self-install # Initializes necessary directories and data files for Rokit to work
 ```
 
 This _may_ work on systems that Rokit is not officially compatible with, but note that no support is provided for non-official targets. <br/>
