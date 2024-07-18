@@ -30,7 +30,8 @@ curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/rojo-rbx/
 
 Download and run<sup>\*</sup> `rokit.exe` from the [latest release][latest-release] page - this will automatically install Rokit.
 
-<sup>\* Make sure to run `rokit.exe` **directly**, not from a shell such as PowerShell or CMD, for automatic installation to work.</sup>
+<sup>\* Make sure to run `rokit.exe` **directly**, by double-clicking it in the File Explorer, for automatic installation to be triggered. <br/> If you would like to install Rokit from a terminal or shell such as PowerShell / CMD, run `rokit.exe self-install` instead.
+</sup>
 
 ### Other
 
