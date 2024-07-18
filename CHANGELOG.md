@@ -8,6 +8,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## `0.2.1` - July 17th, 2024
+
+### Added
+
+- Added a new self-install mechanism to automatically install Rokit on Windows, if Rokit is launched by clicking it in the File Explorer or similar locations ([#52])
+
+### Fixed
+
+- Fixed `rokit system-info` displaying Rokit as not in PATH even when it was ([#50])
+- Foxed process group behavior on Windows that was preventing programs spawned by Rokit from exiting properly ([#51])
+
+[#50]: https://github.com/rojo-rbx/rokit/pull/50
+[#51]: https://github.com/rojo-rbx/rokit/pull/51
+[#52]: https://github.com/rojo-rbx/rokit/pull/52
+
 ## `0.2.0` - July 16th, 2024
 
 ### Added
