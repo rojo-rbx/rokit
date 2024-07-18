@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fixed `rokit system-info` displaying Rokit as not in PATH even when it was ([#50])
-- Foxed process group behavior on Windows that was preventing programs spawned by Rokit from exiting properly ([#51])
+- Fixed process group behavior on Windows that was preventing programs spawned by Rokit from exiting properly ([#51])
 
 [#50]: https://github.com/rojo-rbx/rokit/pull/50
 [#51]: https://github.com/rojo-rbx/rokit/pull/51
