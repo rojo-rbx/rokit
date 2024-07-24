@@ -10,7 +10,7 @@ use reqwest::{
 
 use crate::tool::{ToolId, ToolSpec};
 
-use super::{client::create_client, Artifact, ArtifactProvider};
+use super::{client::create_client, source::ReleaseArtifact, Artifact, ArtifactProvider};
 
 const BASE_URL: &str = "https://api.github.com";
 
@@ -132,7 +132,7 @@ impl GithubProvider {
         Fetches the latest release for a given tool.
     */
     #[instrument(skip(self), fields(%tool_id), level = "debug")]
-    pub async fn get_latest_release(&self, tool_id: &ToolId) -> GithubResult<Vec<Artifact>> {
+    pub async fn get_latest_release(&self, tool_id: &ToolId) -> GithubResult<ReleaseArtifact> {
         debug!(id = %tool_id, "fetching latest release for tool");
 
         let url = format!(
@@ -156,14 +156,20 @@ impl GithubProvider {
             .map_err(|e| GithubError::Other(e.to_string()))?;
 
         let tool_spec: ToolSpec = (tool_id.clone(), version).into();
-        Ok(artifacts_from_release(&release, &tool_spec))
+        Ok(ReleaseArtifact {
+            artifacts: artifacts_from_release(&release.clone(), &tool_spec),
+            changelog: release.changelog,
+        })
     }
 
     /**
         Fetches a specific release for a given tool.
     */
     #[instrument(skip(self), fields(%tool_spec), level = "debug")]
-    pub async fn get_specific_release(&self, tool_spec: &ToolSpec) -> GithubResult<Vec<Artifact>> {
+    pub async fn get_specific_release(
+        &self,
+        tool_spec: &ToolSpec,
+    ) -> GithubResult<ReleaseArtifact> {
         debug!(spec = %tool_spec, "fetching release for tool");
 
         let url_with_prefix = format!(
@@ -191,7 +197,10 @@ impl GithubProvider {
             Ok(r) => r,
         };
 
-        Ok(artifacts_from_release(&release, tool_spec))
+        Ok(ReleaseArtifact {
+            artifacts: artifacts_from_release(&release.clone(), tool_spec),
+            changelog: release.changelog,
+        })
     }
 
     /**

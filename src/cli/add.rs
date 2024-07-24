@@ -85,13 +85,13 @@ impl AddSubcommand {
         let pt = CliProgressTracker::new_with_message("Fetching", 3);
         let (spec, artifact) = match self.tool.clone() {
             ToolIdOrSpec::Spec(spec) => {
-                let artifacts = source.get_specific_release(&spec).await?;
-                let artifact = find_most_compatible_artifact(&artifacts, &id)?;
+                let release_artifact = source.get_specific_release(&spec).await?;
+                let artifact = find_most_compatible_artifact(&release_artifact.artifacts, &id)?;
                 (spec, artifact)
             }
             ToolIdOrSpec::Id(id) => {
-                let artifacts = source.get_latest_release(&id).await?;
-                let artifact = find_most_compatible_artifact(&artifacts, &id)?;
+                let release_artifact = source.get_latest_release(&id).await?;
+                let artifact = find_most_compatible_artifact(&release_artifact.artifacts, &id)?;
                 (artifact.tool_spec.clone(), artifact)
             }
         };

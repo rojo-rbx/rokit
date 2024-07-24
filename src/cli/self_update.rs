@@ -1,9 +1,19 @@
+use std::io::{stdout, Write};
+
 use anyhow::{bail, Context, Result};
 use clap::Parser;
-use console::style;
+use console::{style, Style};
+use dialoguer::{theme::ColorfulTheme, Confirm};
+use mdcat::{output::Output, DEFAULT_RESOURCE_READ_LIMIT};
+use pulldown_cmark_mdcat::{
+    resources::FileResourceHandler, Settings, TerminalProgram, TerminalSize, Theme,
+};
+use syntect::parsing::SyntaxSet;
+
 use semver::Version;
 
 use rokit::{storage::Home, tool::ToolId};
+use tempfile::NamedTempFile;
 
 use crate::util::{find_most_compatible_artifact, CliProgressTracker};
 
@@ -34,11 +44,17 @@ impl SelfUpdateSubcommand {
         pt.task_completed();
         pt.update_message("Fetching");
 
-        let artifacts = source.get_latest_release(&tool_id).await?;
+        let release_artifact = source.get_latest_release(&tool_id).await?;
 
         // Skip updating if we are already on the latest version
         let version_current = env!("CARGO_PKG_VERSION").parse::<Version>().unwrap();
-        let version_latest = artifacts.first().unwrap().tool_spec.version().clone();
+        let version_latest = release_artifact
+            .artifacts
+            .first()
+            .unwrap()
+            .tool_spec
+            .version()
+            .clone();
         if version_current >= version_latest && !self.force {
             let msg = format!(
                 "Rokit is already up-to-date! {}\n\n\
@@ -55,7 +71,7 @@ impl SelfUpdateSubcommand {
         pt.task_completed();
         pt.update_message("Downloading");
 
-        let artifact = find_most_compatible_artifact(&artifacts, &tool_id)
+        let artifact = find_most_compatible_artifact(&release_artifact.artifacts, &tool_id)
             .context("No compatible Rokit artifact was found (WAT???)")?;
         let artifact_contents = source
             .download_artifact_contents(&artifact)
@@ -90,6 +106,44 @@ impl SelfUpdateSubcommand {
             style(&version_current).bold().magenta(),
         );
         pt.finish_with_message(msg);
+
+        // If there is a changelog, and the user wants to see it, show it
+        if let Some(changelog) = release_artifact.changelog {
+            let to_show_changelog = Confirm::with_theme(&ColorfulTheme {
+                active_item_prefix: style("📋 ".to_string()),
+                prompt_style: Style::new(),
+                ..Default::default()
+            })
+            .with_prompt("View changelogs for this update?")
+            .interact_opt()?
+            .unwrap_or_default();
+
+            if to_show_changelog {
+                let mut changelog_file = NamedTempFile::new()?;
+                write!(
+                    changelog_file,
+                    "# Changelog - {} v{}\n{}",
+                    tool_id.name(),
+                    version_current,
+                    changelog
+                )
+                .context("Failed to write changelog to temp file")?;
+
+                println!();
+                mdcat::process_file(
+                    changelog_file.path().to_str().unwrap(),
+                    &Settings {
+                        terminal_capabilities: TerminalProgram::detect().capabilities(),
+                        terminal_size: TerminalSize::detect()
+                            .context("Failed to detect terminal size")?,
+                        syntax_set: &SyntaxSet::load_defaults_newlines(),
+                        theme: Theme::default(),
+                    },
+                    &FileResourceHandler::new(DEFAULT_RESOURCE_READ_LIMIT), // TODO: Maybe make this be a DispatchingResourceHandler?
+                    &mut Output::Stdout(stdout()),
+                )?;
+            }
+        }
 
         Ok(())
     }

@@ -25,6 +25,9 @@ cli = [
     "dep:console",
     "dep:dialoguer",
     "dep:indicatif",
+    "dep:pulldown-cmark-mdcat",
+    "dep:mdcat",
+    "dep:syntect",
     "dep:tracing-subscriber",
 ]
 
@@ -86,6 +89,11 @@ clap = { optional = true, version = "4.5", features = ["derive"] }
 console = { optional = true, version = "0.15" }
 dialoguer = { optional = true, version = "0.11" }
 indicatif = { optional = true, version = "0.17" }
+
+mdcat = { optional = true, version = "2.2.0" }
+pulldown-cmark-mdcat = { optional = true, version = "2.2.0" }
+syntect = { optional = true, version = "5.2.0" }
+
 tracing-subscriber = { optional = true, version = "0.3", features = [
     "env-filter",
 ] }
