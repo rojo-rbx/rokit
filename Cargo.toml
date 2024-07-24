@@ -90,7 +90,7 @@ console = { optional = true, version = "0.15" }
 dialoguer = { optional = true, version = "0.11" }
 indicatif = { optional = true, version = "0.17" }
 
-mdcat = { optional = true, version = "2.2.0" }
+mdcat = { optional = true, version = "2.2.0", default-features = false }
 pulldown-cmark-mdcat = { optional = true, version = "2.2.0" }
 syntect = { optional = true, version = "5.2.0" }
 
