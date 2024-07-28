@@ -5,7 +5,7 @@ use crate::tool::{ToolId, ToolSpec};
 
 #[derive(Debug, Error)]
 pub enum GithubError {
-    #[error("unrecognized access token format - must begin with `ghp_` or `gho_`.")]
+    #[error("unrecognized access token format - must begin with `ghp_`, `gho_`, or `ghu_`.")]
     UnrecognizedAccessToken,
     #[error("no latest release was found for tool '{0}'")]
     LatestReleaseNotFound(Box<ToolId>),
