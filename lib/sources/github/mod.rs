@@ -95,7 +95,9 @@ impl GithubProvider {
     pub fn new_authenticated(pat: impl AsRef<str>) -> GithubResult<Self> {
         let pat: String = pat.as_ref().trim().to_string();
         // https://github.blog/2021-04-05-behind-githubs-new-authentication-token-formats/
-        if pat.starts_with("ghp_") || pat.starts_with("gho_") {
+        // github codespaces uses ghu: ^ghu_[a-zA-z1-9]{36}$ (match ghu_N where N is 36 alphanumeric characters)
+        // https://discord.com/channels/385151591524597761/385151591998816257/1267180689825202256
+        if pat.starts_with("ghp_") || pat.starts_with("gho_") || pat.starts_with("ghu_") {
             Self::new_inner(Some(pat))
         } else {
             Err(GithubError::UnrecognizedAccessToken)
