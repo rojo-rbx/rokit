@@ -1,6 +1,5 @@
 use anyhow::{bail, Context, Result};
 use clap::Parser;
-use regex::Regex;
 
 use console::style;
 use rokit::{
@@ -111,6 +110,54 @@ impl AuthenticateSubcommand {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rokit::sources::ArtifactProvider;
+
+    #[tokio::test]
+    async fn test_verify_token_format() {
+        // Valid tokens
+        assert!(
+            verify_token_format(ArtifactProvider::GitHub, "ghp_validtoken", true)
+                .await
+                .is_ok()
+        );
+        assert!(
+            verify_token_format(ArtifactProvider::GitHub, "gho_validtoken", true)
+                .await
+                .is_ok()
+        );
+        assert!(
+            verify_token_format(ArtifactProvider::GitHub, "ghu_validtoken", true)
+                .await
+                .is_ok()
+        );
+        assert!(
+            verify_token_format(ArtifactProvider::GitHub, "ghr_validtoken", true)
+                .await
+                .is_ok()
+        );
+
+        // Invalid tokens
+        assert!(
+            verify_token_format(ArtifactProvider::GitHub, "invalidtoken", true)
+                .await
+                .is_err()
+        );
+        assert!(
+            verify_token_format(ArtifactProvider::GitHub, "gh_invalidtoken", true)
+                .await
+                .is_err()
+        );
+        assert!(
+            verify_token_format(ArtifactProvider::GitHub, "ghP_invalidtoken", true)
+                .await
+                .is_err()
+        );
+    }
+}
+
 async fn verify_token_format(
     provider: ArtifactProvider,
     token: &str,
@@ -119,8 +166,11 @@ async fn verify_token_format(
     // Verify the basic format of the token.
     match provider {
         ArtifactProvider::GitHub => {
-            let re = Regex::new(r"^gh[a-z]_").unwrap();
-            if !re.is_match(token) {
+            if token.len() < 4
+                || &token[0..2] != "gh"
+                || !token.chars().nth(2).unwrap().is_ascii_lowercase()
+                || token.chars().nth(3).unwrap() != '_'
+            {
                 bail!(
                     "Invalid GitHub token format.\
                     \nGitHub tokens must start with 'gh' followed by a lowercase letter and an underscore."

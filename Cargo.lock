@@ -1901,7 +1901,6 @@ dependencies = [
  "indicatif",
  "once_cell",
  "postcard",
- "regex",
  "reqwest",
  "reqwest-middleware",
  "reqwest-retry",
