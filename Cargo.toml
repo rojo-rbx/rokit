@@ -89,6 +89,7 @@ indicatif = { optional = true, version = "0.17" }
 tracing-subscriber = { optional = true, version = "0.3", features = [
     "env-filter",
 ] }
+regex = "1.10.5"
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3", features = ["processthreadsapi", "wincon"] }
