@@ -191,8 +191,8 @@ impl ToolStorage {
         // so look for and try to remove existing links that do not have the extension
         if should_check_exe_extensions() {
             for link_path in &mut link_paths {
-                if !has_exe_extension(&link_path) {
-                    remove_file(&link_path).await?;
+                if !has_exe_extension(link_path.clone()) {
+                    remove_file(link_path.clone()).await?;
                     *link_path = append_exe_extension(&link_path);
                 }
             }
