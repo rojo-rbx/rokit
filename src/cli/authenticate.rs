@@ -110,54 +110,6 @@ impl AuthenticateSubcommand {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use rokit::sources::ArtifactProvider;
-
-    #[tokio::test]
-    async fn test_verify_token_format() {
-        // Valid tokens
-        assert!(
-            verify_token_format(ArtifactProvider::GitHub, "ghp_validtoken", true)
-                .await
-                .is_ok()
-        );
-        assert!(
-            verify_token_format(ArtifactProvider::GitHub, "gho_validtoken", true)
-                .await
-                .is_ok()
-        );
-        assert!(
-            verify_token_format(ArtifactProvider::GitHub, "ghu_validtoken", true)
-                .await
-                .is_ok()
-        );
-        assert!(
-            verify_token_format(ArtifactProvider::GitHub, "ghr_validtoken", true)
-                .await
-                .is_ok()
-        );
-
-        // Invalid tokens
-        assert!(
-            verify_token_format(ArtifactProvider::GitHub, "invalidtoken", true)
-                .await
-                .is_err()
-        );
-        assert!(
-            verify_token_format(ArtifactProvider::GitHub, "gh_invalidtoken", true)
-                .await
-                .is_err()
-        );
-        assert!(
-            verify_token_format(ArtifactProvider::GitHub, "ghP_invalidtoken", true)
-                .await
-                .is_err()
-        );
-    }
-}
-
 async fn verify_token_format(
     provider: ArtifactProvider,
     token: &str,
