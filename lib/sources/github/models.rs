@@ -6,6 +6,8 @@ pub struct Release {
     pub assets: Vec<Asset>,
     pub tag_name: String,
     pub prerelease: bool,
+    #[serde(rename = "body")]
+    pub changelog: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

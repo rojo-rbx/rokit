@@ -81,10 +81,11 @@ impl InstallSubcommand {
                     return anyhow::Ok(tool_spec);
                 }
 
-                let artifacts = source.get_specific_release(&tool_spec).await?;
+                let release_artifact = source.get_specific_release(&tool_spec).await?;
                 pt.subtask_completed();
 
-                let artifact = find_most_compatible_artifact(&artifacts, tool_spec.id())?;
+                let artifact =
+                    find_most_compatible_artifact(&release_artifact.artifacts, tool_spec.id())?;
                 pt.subtask_completed();
 
                 let contents = source
