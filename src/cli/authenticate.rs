@@ -118,11 +118,14 @@ async fn verify_token_format(
     // Verify the basic format of the token.
     match provider {
         ArtifactProvider::GitHub => {
-            // https://github.blog/2021-04-05-behind-githubs-new-authentication-token-formats/
-            if !token.starts_with("ghp_") && !token.starts_with("gho_") {
+            if token.len() < 4
+                || &token[0..2] != "gh"
+                || !token.chars().nth(2).unwrap().is_ascii_lowercase()
+                || token.chars().nth(3).unwrap() != '_'
+            {
                 bail!(
                     "Invalid GitHub token format.\
-                    \nGitHub tokens must start with 'ghp_' or 'gho_'."
+                    \nGitHub tokens must start with 'gh' followed by a lowercase letter and an underscore."
                 )
             }
         }
