@@ -146,6 +146,7 @@ async fn verify_token(
             bail!(
                 "Failed to verify the provided {0} token format.\
                 \nPlease ensure the validity of the token, or generate a new token.\
+                \n\
                 \nValid formats for {0} are:\
                 \n{1}\
                 \n\
