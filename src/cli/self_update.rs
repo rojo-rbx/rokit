@@ -1,19 +1,18 @@
-use std::io::{stdout, Write};
+use std::io::{stdout, BufWriter};
 
 use anyhow::{bail, Context, Result};
 use clap::Parser;
 use console::{style, Style};
 use dialoguer::{theme::ColorfulTheme, Confirm};
-use mdcat::{output::Output, DEFAULT_RESOURCE_READ_LIMIT};
+use pulldown_cmark::{Options, Parser as MarkdownParser};
 use pulldown_cmark_mdcat::{
-    resources::FileResourceHandler, Settings, TerminalProgram, TerminalSize, Theme,
+    resources::FileResourceHandler, Environment, Settings, TerminalProgram, TerminalSize, Theme,
 };
 use syntect::parsing::SyntaxSet;
 
 use semver::Version;
 
 use rokit::{storage::Home, tool::ToolId};
-use tempfile::NamedTempFile;
 
 use crate::util::{find_most_compatible_artifact, CliProgressTracker};
 
@@ -92,10 +91,10 @@ impl SelfUpdateSubcommand {
 
         let storage = home.tool_storage();
         storage.replace_rokit_contents(binary_contents).await;
-        storage
-            .recreate_all_links()
-            .await
-            .context("Failed to create new tool links")?;
+        // storage
+        //     .recreate_all_links()
+        //     .await
+        //     .context("Failed to create new tool links")?;
 
         // Everything went well, yay!
         let msg = format!(
@@ -119,19 +118,8 @@ impl SelfUpdateSubcommand {
             .unwrap_or_default();
 
             if to_show_changelog {
-                let mut changelog_file = NamedTempFile::new()?;
-                write!(
-                    changelog_file,
-                    "# Changelog - {} v{}\n{}",
-                    tool_id.name(),
-                    version_current,
-                    changelog
-                )
-                .context("Failed to write changelog to temp file")?;
-
                 println!();
-                mdcat::process_file(
-                    changelog_file.path().to_str().unwrap(),
+                pulldown_cmark_mdcat::push_tty(
                     &Settings {
                         terminal_capabilities: TerminalProgram::detect().capabilities(),
                         terminal_size: TerminalSize::detect()
@@ -139,8 +127,21 @@ impl SelfUpdateSubcommand {
                         syntax_set: &SyntaxSet::load_defaults_newlines(),
                         theme: Theme::default(),
                     },
-                    &FileResourceHandler::new(DEFAULT_RESOURCE_READ_LIMIT), // TODO: Maybe make this be a DispatchingResourceHandler?
-                    &mut Output::Stdout(stdout()),
+                    &Environment::for_local_directory(&tempfile::tempdir()?.path())?,
+                    &FileResourceHandler::new(104_857_600), // TODO: Maybe make this be a DispatchingResourceHandler?
+                    &mut BufWriter::new(stdout()),
+                    MarkdownParser::new_ext(
+                        format!(
+                            "# Changelog - {} v{}\n{}",
+                            tool_id.name(),
+                            version_current,
+                            changelog
+                        )
+                        .as_str(),
+                        Options::ENABLE_FOOTNOTES
+                            | Options::ENABLE_TABLES
+                            | Options::ENABLE_STRIKETHROUGH,
+                    ),
                 )?;
             }
         }
