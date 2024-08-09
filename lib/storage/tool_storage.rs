@@ -203,7 +203,7 @@ impl ToolStorage {
         let was_rokit_updated = if existing_rokit_binary == rokit_contents {
             false
         } else {
-            if cfg!(unix) && rokit_link_existed {
+            if cfg!(target_os = "linux") && rokit_link_existed {
                 // On Linux, it's safe to remove the running binary.
                 // Moving to a temporary file can cause an error on some Linux systems
                 // due to /tmp being located on a different partition.
