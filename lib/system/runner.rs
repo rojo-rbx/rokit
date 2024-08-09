@@ -1,8 +1,10 @@
 use std::ffi::OsStr;
 use std::io::Result as IoResult;
 
-use async_signal::{Signal, Signals};
+#[cfg(windows)]
 use command_group::AsyncCommandGroup;
+
+use async_signal::{Signal, Signals};
 use futures::StreamExt;
 use tokio::{
     process::Command,
@@ -80,16 +82,22 @@ where
         The newer `process-wrap` crate claims to also support this behavior
         for inheriting process group but it doesn't seem to work as expected.
     */
-    let mut child_handle = Command::new(command)
-        .args(args)
-        .group()
-        .kill_on_drop(true)
-        .spawn()?;
+    let mut command = Command::new(command);
+    let mut child = {
+        #[cfg(unix)]
+        {
+            command.args(args).kill_on_drop(true).spawn()?
+        }
+        #[cfg(windows)]
+        {
+            command.args(args).group().kill_on_drop(true).spawn()?
+        }
+    };
 
     let code = tokio::select! {
         // If the spawned process exits cleanly, we'll return its exit code,
         // which may or may not exist. Interpret a non-existent code as 1.
-        command_result = child_handle.wait() => {
+        command_result = child.wait() => {
             let code = command_result.ok().and_then(|s| s.code()).unwrap_or(1);
             signal_aborter.abort();
             code
@@ -97,7 +105,7 @@ where
         // If the command was manually interrupted by a signal, we will
         // return a special exit code for the signal. More details above.
         task_result = signal_handle => {
-            child_handle.kill().await.ok();
+            child.kill().await.ok();
             task_result.unwrap_or(EXIT_CODE_GOT_SIGNAL)
         }
     };
