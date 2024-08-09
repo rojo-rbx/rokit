@@ -10,6 +10,8 @@ pub enum ArtifactFormat {
     Zip,
     Tar,
     TarGz,
+    Pe,
+    Elf,
 }
 
 impl ArtifactFormat {
@@ -19,6 +21,8 @@ impl ArtifactFormat {
             Self::Zip => "zip",
             Self::Tar => "tar",
             Self::TarGz => "tar.gz",
+            Self::Pe => "exe",
+            Self::Elf => "",
         }
     }
 
@@ -33,6 +37,8 @@ impl ArtifactFormat {
             {
                 Some(Self::TarGz)
             }
+            [.., ext] if ext.eq_ignore_ascii_case("exe") => Some(Self::Pe),
+            [] => Some(Self::Elf),
             _ => None,
         }
     }
@@ -53,6 +59,8 @@ impl FromStr for ArtifactFormat {
             "zip" => Ok(Self::Zip),
             "tar" => Ok(Self::Tar),
             "tar.gz" | "tgz" => Ok(Self::TarGz),
+            "exe" => Ok(Self::Pe),
+            "bin" => Ok(Self::Elf),
             _ => Err(format!("unknown artifact format '{l}'")),
         }
     }

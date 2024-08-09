@@ -1,6 +1,6 @@
 use std::path::Path;
 
-const ALLOWED_EXTENSION_NAMES: [&str; 4] = ["zip", "tar", "gz", "tgz"];
+const ALLOWED_EXTENSION_NAMES: [&str; 6] = ["zip", "tar", "gz", "tgz", "exe", ""];
 const ALLOWED_EXTENSION_COUNT: usize = 2;
 
 pub(super) fn split_filename_and_extensions(name: &str) -> (&str, Vec<&str>) {
