@@ -1,7 +1,7 @@
 #![allow(clippy::struct_excessive_bools)]
 
 use std::{
-    env::consts::EXE_SUFFIX,
+    env::consts::{EXE_EXTENSION, EXE_SUFFIX},
     io::{self, Read},
     path::{Path, PathBuf, MAIN_SEPARATOR_STR},
 };
@@ -96,7 +96,7 @@ impl Candidate {
                     file_name.is_some_and(|name| name.eq_ignore_ascii_case(desired_file_name));
 
                 let has_exec_perms = perms.map_or(false, |perms| (perms & 0o111) != 0);
-                let has_exec_suffix = path.extension().map_or(false, |ext| ext == EXE_SUFFIX);
+                let has_exec_suffix = path.extension().map_or(false, |ext| ext == EXE_EXTENSION);
 
                 Some(Self {
                     path: path.clone(),
