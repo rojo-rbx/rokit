@@ -18,6 +18,9 @@ pub struct UpdateSubcommand {
     /// Update tools globally instead of using the nearest manifest file.
     #[clap(long)]
     pub global: bool,
+    /// Check for updates without actually updating the tools.
+    #[clap(long)]
+    pub check: bool,
 }
 
 impl UpdateSubcommand {
@@ -150,8 +153,7 @@ impl UpdateSubcommand {
             .try_collect::<Vec<_>>()
             .await?;
 
-        // 4. Modify the manifest with the desired new tools, save
-        pt.update_message("Modifying");
+        // 4. Check if the --check flag was used, and if so, check for updates
         let tools_changed = tool_releases
             .iter()
             .filter_map(|(alias, _, artifact)| {
@@ -164,19 +166,7 @@ impl UpdateSubcommand {
                 }
             })
             .collect::<Vec<_>>();
-        for (alias, _, spec_new) in &tools_changed {
-            manifest.update_tool(alias, spec_new);
-            pt.subtask_completed();
-        }
-        manifest.save(&manifest_path).await?;
-
-        // 5. Finally, display a nice message to the user
-        if tools_changed.is_empty() {
-            pt.finish_with_message(format!(
-                "All tools are already up-to-date! {}",
-                pt.formatted_elapsed(),
-            ));
-        } else {
+        if self.check {
             let bullet = style("•").dim();
             let arrow = style("→").dim();
 
@@ -193,6 +183,72 @@ impl UpdateSubcommand {
                 .collect::<Vec<_>>()
                 .join("\n");
 
+            pt.update_message("Checking for updates");
+
+            if tools_changed.is_empty() {
+                pt.finish_with_message(format!(
+                    "All tools are already up-to-date! {}",
+                    pt.formatted_elapsed(),
+                ));
+            } else {
+                pt.finish_with_message(format!(
+                    "New versions are available for {} tool{} {}\
+                     \n\n{updated_tool_lines}\n\n\
+                    Run `{}` to update the tools.",
+                    style(tools_changed.len()).bold().magenta(),
+                    if tools_changed.len() == 1 { "" } else { "s" },
+                    pt.formatted_elapsed(),
+                    style("rokit update").bold().green(),
+                ));
+            }
+            pt.subtask_completed();
+            return Ok(());
+        }
+
+        // 5. Modify the manifest with the desired new tools, save
+        pt.update_message("Modifying");
+
+        for (alias, _, spec_new) in &tools_changed {
+            manifest.update_tool(alias, spec_new);
+            pt.subtask_completed();
+        }
+        manifest.save(&manifest_path).await?;
+
+        // 6. Finally, display a nice message to the user
+        let tools_changed = tool_releases
+            .iter()
+            .filter_map(|(alias, _, artifact)| {
+                let spec_old = manifest.get_tool(alias).unwrap();
+                let spec_new = artifact.tool_spec.clone();
+                if spec_old == spec_new {
+                    None
+                } else {
+                    Some((alias.clone(), spec_old, spec_new))
+                }
+            })
+            .collect::<Vec<_>>();
+        let bullet = style("•").dim();
+        let arrow = style("→").dim();
+
+        let updated_tool_lines = tools_changed
+            .iter()
+            .map(|(alias, spec_old, spec_new)| {
+                format!(
+                    "{bullet} {} {} {arrow} {}",
+                    style(alias.to_string()).bold().cyan(),
+                    style(spec_old.version()).yellow(),
+                    style(spec_new.version()).bold().yellow()
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        if tools_changed.is_empty() {
+            pt.finish_with_message(format!(
+                "All tools are already up-to-date! {}",
+                pt.formatted_elapsed(),
+            ));
+        } else {
             pt.finish_with_message(format!(
                 "Updated versions for {} tool{} {}\
                 \n\n{updated_tool_lines}\n\n\
