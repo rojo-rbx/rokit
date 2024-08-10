@@ -12,7 +12,6 @@ dependencies=(
     uname
     tr
     awk
-    grep
 )
 
 for dep in "${dependencies[@]}"; do
@@ -79,11 +78,10 @@ else
 fi
 
 # Check if the release was fetched successfully
-if [ -z "$RELEASE_JSON_DATA" ] || echo "$RELEASE_JSON_DATA" | grep -q "Not Found"; then
+if [ -z "$RELEASE_JSON_DATA" ] || [[ "$RELEASE_JSON_DATA" == *"Not Found"* ]]; then
     echo "ERROR: Latest release was not found. Please check your network connection." >&2
     exit 1
 fi
-
 
 # Try to extract the asset url from the response by searching for a
 # matching asset name, and then picking the "url" that came before it
