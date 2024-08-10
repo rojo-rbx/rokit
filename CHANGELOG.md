@@ -8,15 +8,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Added
+
+- Added a `--check` flag to `rokit update` to check for updates without modifying any tools ([#62])
+
+### Changed
+
+- Removed unnecessary dependencies in the automatic installer script ([#67])
+- Changed the `User-Agent` header that Rokit uses for download tools to be more descriptive, hopefully resolving `403 Forbidden` errors ([#68])
+
+[#62]: https://github.com/rojo-rbx/rokit/pull/62
+[#67]: https://github.com/rojo-rbx/rokit/pull/67
+[#68]: https://github.com/rojo-rbx/rokit/pull/68
+
 ## `0.2.3` - August 9th, 2024
 
 ### Fixed
 
-- Fixed issues with standard I/O streams on Unix systems ([#64])
 - Fixed cross-device link error when running `self-install` on Linux ([#63])
+- Fixed issues with standard I/O streams on Unix systems ([#64])
 
-[#64]: https://github.com/rojo-rbx/rokit/pull/63
 [#63]: https://github.com/rojo-rbx/rokit/pull/63
+[#64]: https://github.com/rojo-rbx/rokit/pull/64
 
 ## `0.2.2` - August 3rd, 2024
 
