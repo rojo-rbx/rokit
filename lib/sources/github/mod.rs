@@ -4,7 +4,7 @@ use serde::de::DeserializeOwned;
 use tracing::{debug, instrument};
 
 use reqwest::{
-    header::{HeaderMap, HeaderName, HeaderValue, ACCEPT, AUTHORIZATION, USER_AGENT},
+    header::{HeaderMap, HeaderName, HeaderValue, ACCEPT, AUTHORIZATION},
     StatusCode,
 };
 
@@ -32,7 +32,6 @@ impl GithubProvider {
         let has_auth = pat.is_some();
         let headers = {
             let mut headers = HeaderMap::new();
-            headers.insert(USER_AGENT, HeaderValue::from_static("rokit"));
             headers.insert(
                 HeaderName::from_static("x-github-api-version"),
                 HeaderValue::from_static("2022-11-28"),
