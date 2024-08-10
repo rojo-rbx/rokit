@@ -260,6 +260,8 @@ impl UpdateSubcommand {
             ));
         }
 
+        // FUTURE: Install the newly updated tools automatically
+
         Ok(())
     }
 }
