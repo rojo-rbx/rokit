@@ -5,16 +5,22 @@ REPOSITORY="rojo-rbx/rokit"
 
 set -eo pipefail
 
-# Make sure we have prerequisites installed: curl + unzip
-if ! command -v curl >/dev/null 2>&1; then
-    echo "ERROR: 'curl' is not installed." >&2
-    exit 1
-fi
+# Make sure we have all the necessary commands available
+dependencies=(
+    curl
+    unzip
+    uname
+    tr
+    awk
+    grep
+)
 
-if ! command -v unzip >/dev/null 2>&1; then
-    echo "ERROR: 'unzip' is not installed." >&2
-    exit 1
-fi
+for dep in "${dependencies[@]}"; do
+    if ! command -v "$dep" >/dev/null 2>&1; then
+        echo "ERROR: '$dep' is not installed or available." >&2
+        exit 1
+    fi
+done
 
 # Warn the user if they are not using a shell we know works (bash, zsh)
 if [ -z "$BASH_VERSION" ] && [ -z "$ZSH_VERSION" ]; then
