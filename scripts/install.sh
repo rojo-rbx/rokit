@@ -103,7 +103,7 @@ fi
 # Download the file using curl and make sure it was successful
 echo "[2 / 3] Downloading '$RELEASE_ASSET_NAME'"
 RELEASE_DOWNLOAD_URL="https://api.github.com/repos/$REPOSITORY/releases/assets/$RELEASE_ASSET_ID"
-ZIP_FILE=$(echo "$RELEASE_DOWNLOAD_URL" | rev | cut -d '/' -f 1 | rev)
+ZIP_FILE="${RELEASE_ASSET_NAME%.*}.zip"
 if [ ! -z "$GITHUB_PAT" ]; then
     curl --proto '=https' --tlsv1.2 -L -o "$ZIP_FILE" -sSf "$RELEASE_DOWNLOAD_URL" \
         -H "X-GitHub-Api-Version: 2022-11-28" -H "Accept: application/octet-stream"  -H "Authorization: token $GITHUB_PAT"
