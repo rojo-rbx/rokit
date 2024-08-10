@@ -21,3 +21,8 @@
 /aftman.toml
 /foreman.toml
 /rokit.toml
+
+# Same goes for any zip files, they are from
+# testing the automatic installer script
+/.zip
+/*.zip
