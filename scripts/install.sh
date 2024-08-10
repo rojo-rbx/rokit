@@ -11,8 +11,6 @@ dependencies=(
     unzip
     uname
     tr
-    awk
-    grep
 )
 
 for dep in "${dependencies[@]}"; do
@@ -79,29 +77,37 @@ else
 fi
 
 # Check if the release was fetched successfully
-if [ -z "$RELEASE_JSON_DATA" ] || echo "$RELEASE_JSON_DATA" | grep -q "Not Found"; then
+if [ -z "$RELEASE_JSON_DATA" ] || [[ "$RELEASE_JSON_DATA" == *"Not Found"* ]]; then
     echo "ERROR: Latest release was not found. Please check your network connection." >&2
     exit 1
 fi
 
-
 # Try to extract the asset url from the response by searching for a
 # matching asset name, and then picking the "url" that came before it
-read RELEASE_ASSET_ID RELEASE_ASSET_NAME <<EOF
-$(echo "$RELEASE_JSON_DATA" | awk -v repo="$REPOSITORY" -v pattern="$FILE_PATTERN" '
-  /"url":/ && $0 ~ "https://api.github.com/repos/" repo "/releases/assets/" {
-    gsub(/.*\/releases\/assets\/|"|,/, "", $0)
-    asset_number=$0
-  }
-  /"name":/ && asset_number && $0 ~ pattern {
-    # Remove quotes and trailing comma for clean output
-    gsub(/"|,/, "", $2)
-    print asset_number, $2
-    exit
-  }
-')
-EOF
-if [ -z "$RELEASE_ASSET_ID" ]; then
+RELEASE_ASSET_ID=""
+RELEASE_ASSET_NAME=""
+while IFS= read -r current_line; do
+    if [[ "$current_line" == *'"url":'* && "$current_line" == *"https://api.github.com/repos/$REPOSITORY/releases/assets/"* ]]; then
+        RELEASE_ASSET_ID="${current_line##*/releases/assets/}"
+        RELEASE_ASSET_ID="${RELEASE_ASSET_ID%%\"*}"
+    elif [[ "$current_line" == *'"name":'* ]]; then
+        current_name="${current_line#*: \"}"
+        current_name="${current_name%%\"*}"
+        if [[ "$current_name" =~ $FILE_PATTERN ]]; then
+            if [ -n "$RELEASE_ASSET_ID" ]; then
+                RELEASE_ASSET_ID="$RELEASE_ASSET_ID"
+                RELEASE_ASSET_NAME="$current_name"
+                break
+            else
+                RELEASE_ASSET_ID=""
+            fi
+        else
+            RELEASE_ASSET_ID=""
+        fi
+    fi
+done <<< "$RELEASE_JSON_DATA"
+
+if [ -z "$RELEASE_ASSET_ID" ] || [ -z "$RELEASE_ASSET_NAME" ]; then
     echo "ERROR: Failed to find asset that matches the pattern \"$FILE_PATTERN\" in the latest release." >&2
     exit 1
 fi
