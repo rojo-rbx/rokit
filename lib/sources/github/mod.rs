@@ -86,7 +86,8 @@ impl GithubProvider {
     /**
         Creates a new authenticated GitHub source instance with a token.
 
-        May be used with either personal access tokens or tokens generated using the GitHub device flow.
+        Note that this does not verify the formatting or validity of the token,
+        use the `verify_authentication` method for checking with the GitHub API.
 
         # Errors
 
@@ -94,12 +95,7 @@ impl GithubProvider {
     */
     pub fn new_authenticated(pat: impl AsRef<str>) -> GithubResult<Self> {
         let pat: String = pat.as_ref().trim().to_string();
-        // https://github.blog/2021-04-05-behind-githubs-new-authentication-token-formats/
-        if pat.starts_with("ghp_") || pat.starts_with("gho_") {
-            Self::new_inner(Some(pat))
-        } else {
-            Err(GithubError::UnrecognizedAccessToken)
-        }
+        Self::new_inner(Some(pat))
     }
 
     /**

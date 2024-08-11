@@ -22,7 +22,10 @@ pub struct AuthenticateSubcommand {
     /// If the token should be removed.
     #[clap(long, default_value = "false")]
     pub remove: bool,
-    /// If verification should be skipped when adding a new token.
+    /// If parsing validation should be skipped when adding a new token.
+    #[clap(long, default_value = "false")]
+    pub skip_parse: bool,
+    /// If live API verification should be skipped when adding a new token.
     #[clap(long, default_value = "false")]
     pub skip_verify: bool,
 }
@@ -77,7 +80,7 @@ impl AuthenticateSubcommand {
             let token = token.trim().to_string();
 
             pt.update_message("Verifying");
-            verify_token_format(self.provider, &token, self.skip_verify).await?;
+            verify_token(self.provider, &token, self.skip_parse, self.skip_verify).await?;
             pt.task_completed();
 
             let had_token = auth.set_token(self.provider, token);
@@ -110,21 +113,49 @@ impl AuthenticateSubcommand {
     }
 }
 
-async fn verify_token_format(
+async fn verify_token(
     provider: ArtifactProvider,
     token: &str,
+    skip_parse: bool,
     skip_verify: bool,
 ) -> Result<()> {
-    // Verify the basic format of the token.
-    match provider {
-        ArtifactProvider::GitHub => {
-            // https://github.blog/2021-04-05-behind-githubs-new-authentication-token-formats/
-            if !token.starts_with("ghp_") && !token.starts_with("gho_") {
-                bail!(
-                    "Invalid GitHub token format.\
-                    \nGitHub tokens must start with 'ghp_' or 'gho_'."
-                )
+    // Verify the formatting of the token, if desired.
+    if !skip_parse {
+        let validated = match provider {
+            ArtifactProvider::GitHub => {
+                is_gh_classic_token(token) || is_gh_fine_grained_token(token)
             }
+        };
+
+        if !validated {
+            let bullet = style("•").dim();
+            let valid_formats = match provider {
+                ArtifactProvider::GitHub => vec![
+                    format!("{bullet} Starting with 'gh' followed by a lowercase letter and an underscore"),
+                    format!("{bullet} Starting with 'github_pat_'"),
+                ],
+            };
+
+            let styled_flag = style("--skip-parse").bold().green();
+            let styled_command = style(format!(
+                "rokit authenticate {provider} --token YOUR_TOKEN_HERE --skip-parse"
+            ))
+            .bold()
+            .green();
+
+            bail!(
+                "Failed to verify the provided {0} token format.\
+                \nPlease ensure the validity of the token, or generate a new token.\
+                \n\
+                \nValid formats for {0} are:\
+                \n{1}\
+                \n\
+                \nIf you are certain the token is valid, you may skip parsing.\
+                \nTo skip parsing, run the command again with the `{styled_flag}` flag.\
+                \nExample usage: {styled_command}",
+                provider.display_name(),
+                valid_formats.join("\n"),
+            )
         }
     }
 
@@ -139,21 +170,35 @@ async fn verify_token_format(
         };
 
         if !verified {
-            let styled_authenticate_command = style(format!(
+            let styled_flag = style("--skip-verify").bold().green();
+            let styled_command = style(format!(
                 "rokit authenticate {provider} --token YOUR_TOKEN_HERE --skip-verify"
             ))
             .bold()
             .green();
             bail!(
-                "Failed to verify the provided {} token using the API.\
+                "Failed to verify the provided {0} token using the API.\
                 \nPlease ensure the validity of the token, or generate a new token.\
-                \n\nIf you are certain the token is valid, you may skip verification.\
-                \nTo skip verification, run the command again with the `--skip-verify` flag.\
-                \nExample usage: {styled_authenticate_command}",
+                \n\
+                \nIf you are certain the token is valid, you may skip verification.\
+                \nTo skip verification, run the command again with the `{styled_flag}` flag.\
+                \nExample usage: {styled_command}",
                 provider.display_name(),
             )
         }
     }
 
     Ok(())
+}
+
+fn is_gh_classic_token(token: &str) -> bool {
+    match token.chars().take(4).collect::<Vec<_>>().as_slice() {
+        ['g', 'h', c, '_'] => c.is_ascii_alphabetic() && c.is_ascii_lowercase(),
+        ['g', 'h', '_', _] => true,
+        _ => false,
+    }
+}
+
+fn is_gh_fine_grained_token(token: &str) -> bool {
+    token.starts_with("github_pat_")
 }

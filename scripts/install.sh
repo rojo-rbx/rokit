@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 PROGRAM_NAME="rokit"
 REPOSITORY="rojo-rbx/rokit"
@@ -56,10 +56,10 @@ if [ ! -z "$1" ]; then
     # Fetch a specific version from given script argument
     VERSION_PATTERN="$1"
     API_URL="https://api.github.com/repos/$REPOSITORY/releases/tags/v$1"
-    echo "\n[1 / 3] Looking for $PROGRAM_NAME release with tag 'v$1'"
+    printf "\n[1 / 3] Looking for $PROGRAM_NAME release with tag 'v$1'\n"
 else
     # Fetch the latest release from the GitHub API
-    echo "\n[1 / 3] Looking for latest $PROGRAM_NAME release"
+    printf "\n[1 / 3] Looking for latest $PROGRAM_NAME release\n"
 fi
 FILE_PATTERN="${PROGRAM_NAME}-${VERSION_PATTERN}-${OS}-${ARCH}.zip"
 

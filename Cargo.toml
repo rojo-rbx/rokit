@@ -1,6 +1,6 @@
 [package]
 name = "rokit"
-version = "0.2.1"
+version = "0.2.3"
 edition = "2021"
 license = "MIT"
 repository = "https://github.com/rojo-rbx/rokit"
@@ -58,7 +58,6 @@ zip = "2.1"
 
 async-once-cell = "0.5"
 async-signal = "0.2"
-command-group = { version = "5.0", features = ["with-tokio"] }
 futures = "0.3"
 reqwest = { version = "0.12", default-features = false, features = [
     "rustls-tls",
@@ -99,6 +98,7 @@ tracing-subscriber = { optional = true, version = "0.3", features = [
 ] }
 
 [target.'cfg(windows)'.dependencies]
+command-group = { version = "5.0", features = ["with-tokio"] }
 winapi = { version = "0.3", features = ["processthreadsapi", "wincon"] }
 winreg = "0.52"
 

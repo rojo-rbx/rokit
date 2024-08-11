@@ -191,8 +191,8 @@ impl ToolStorage {
         // so look for and try to remove existing links that do not have the extension
         if should_check_exe_extensions() {
             for link_path in &mut link_paths {
-                if !has_exe_extension(&link_path) {
-                    remove_file(&link_path).await?;
+                if !has_exe_extension(link_path.as_path()) {
+                    remove_file(link_path.as_path()).await?;
                     *link_path = append_exe_extension(&link_path);
                 }
             }
@@ -203,10 +203,16 @@ impl ToolStorage {
         let was_rokit_updated = if existing_rokit_binary == rokit_contents {
             false
         } else {
-            // NOTE: If the currently running Rokit binary is being updated,
-            // we need to move it to a temporary location first to avoid issues
-            // with the OS killing the current executable when its overwritten.
-            if rokit_link_existed {
+            if cfg!(target_os = "linux") && rokit_link_existed {
+                // On Linux, it's safe to remove the running binary.
+                // Moving to a temporary file can cause an error on some Linux systems
+                // due to /tmp being located on a different partition.
+                trace!(?rokit_path, "removing existing Rokit binary");
+                remove_file(&rokit_path).await?;
+            } else if rokit_link_existed {
+                // NOTE: If the currently running Rokit binary is being updated,
+                // we need to move it to a temporary location first to avoid issues
+                // with the OS killing the current executable when its overwritten.
                 let temp_file = tempfile::tempfile()?;
                 #[allow(unused_mut)]
                 let mut temp_path = temp_file.path()?;
