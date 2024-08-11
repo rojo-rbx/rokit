@@ -74,6 +74,7 @@ impl Artifact {
                 let tar = decompress_gzip(&contents).await?;
                 extract_tar_file(&tar, &file_name).await
             }
+            ArtifactFormat::Pe | ArtifactFormat::Elf => Ok(Some(contents.clone())),
         };
 
         // Make sure we got back the file we need ...

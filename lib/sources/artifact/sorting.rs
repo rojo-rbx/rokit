@@ -161,6 +161,8 @@ mod tests {
         test_some_mentions("selene-light-0.27.1-linux.zip", "selene");
         // Valid - but multiple words
         test_no_mentions("sentry-cli-linux-i686-2.32.1", "sentry-cli");
+        test_no_mentions("sentry-cli-Windows-i686.exe", "sentry-cli");
+        test_no_mentions("sentry-cli-Linux-i686", "sentry-cli");
         test_no_mentions("selene-light-0.27.1-linux.zip", "selene-light");
     }
 }

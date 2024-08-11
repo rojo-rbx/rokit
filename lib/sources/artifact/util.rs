@@ -1,6 +1,6 @@
 use std::path::Path;
 
-const ALLOWED_EXTENSION_NAMES: [&str; 4] = ["zip", "tar", "gz", "tgz"];
+const ALLOWED_EXTENSION_NAMES: [&str; 6] = ["zip", "tar", "gz", "tgz", "exe", ""];
 const ALLOWED_EXTENSION_COUNT: usize = 2;
 
 pub(super) fn split_filename_and_extensions(name: &str) -> (&str, Vec<&str>) {
@@ -9,23 +9,34 @@ pub(super) fn split_filename_and_extensions(name: &str) -> (&str, Vec<&str>) {
 
     // Reverse-pop extensions off the path until we reach the
     // base name - we will then need to reverse afterwards, too
-    while let Some(ext) = path.extension() {
-        let ext = ext.to_str().expect("input was str");
-        let stem = path.file_stem().expect("had an extension");
+    loop {
+        if let Some(ext) = path.extension() {
+            let ext = ext.to_str().expect("input was str");
+            println!("Ext: {ext}");
+            let stem = path.file_stem().expect("had an extension");
 
-        if !ALLOWED_EXTENSION_NAMES
-            .iter()
-            .any(|e| e.eq_ignore_ascii_case(ext))
-        {
+            if !ALLOWED_EXTENSION_NAMES
+                .iter()
+                .any(|e| e.eq_ignore_ascii_case(ext))
+            {
+                break;
+            }
+
+            exts.push(ext);
+            path = Path::new(stem);
+
+            if exts.len() >= ALLOWED_EXTENSION_COUNT {
+                break;
+            }
+        } else {
+            // Push an empty string if there are no more extensions in the path
+            exts.push("");
             break;
         }
+    }
 
-        exts.push(ext);
-        path = Path::new(stem);
-
-        if exts.len() >= ALLOWED_EXTENSION_COUNT {
-            break;
-        }
+    if exts.len() > 1 && exts.contains(&"") {
+        exts.pop();
     }
 
     exts.reverse();

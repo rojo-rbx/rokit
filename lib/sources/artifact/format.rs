@@ -10,6 +10,8 @@ pub enum ArtifactFormat {
     Zip,
     Tar,
     TarGz,
+    Pe,
+    Elf,
 }
 
 impl ArtifactFormat {
@@ -19,6 +21,8 @@ impl ArtifactFormat {
             Self::Zip => "zip",
             Self::Tar => "tar",
             Self::TarGz => "tar.gz",
+            Self::Pe => "exe",
+            Self::Elf => "",
         }
     }
 
@@ -33,6 +37,8 @@ impl ArtifactFormat {
             {
                 Some(Self::TarGz)
             }
+            [.., ext] if ext.eq_ignore_ascii_case("exe") => Some(Self::Pe),
+            [""] => Some(Self::Elf),
             _ => None,
         }
     }
@@ -53,6 +59,8 @@ impl FromStr for ArtifactFormat {
             "zip" => Ok(Self::Zip),
             "tar" => Ok(Self::Tar),
             "tar.gz" | "tgz" => Ok(Self::TarGz),
+            "exe" => Ok(Self::Pe),
+            "bin" => Ok(Self::Elf),
             _ => Err(format!("unknown artifact format '{l}'")),
         }
     }
@@ -94,8 +102,8 @@ mod tests {
 
     #[test]
     fn format_from_extensions_invalid() {
-        assert_eq!(format_from_str("file-name"), None);
-        assert_eq!(format_from_str("some/file.exe"), None);
+        assert_eq!(format_from_str("file-name.txt"), None);
+        assert_eq!(format_from_str("some/file.mp4"), None);
         assert_eq!(format_from_str("really.long.file.name"), None);
     }
 
@@ -117,6 +125,14 @@ mod tests {
             format_from_str("sentry-cli-linux-i686-2.32.1.tgz"),
             Some(ArtifactFormat::TarGz)
         );
+        assert_eq!(
+            format_from_str("sentry-cli-Linux-x86_64"),
+            Some(ArtifactFormat::Elf)
+        );
+        assert_eq!(
+            format_from_str("sentry-cli-Windows-x86_64.exe"),
+            Some(ArtifactFormat::Pe)
+        );
     }
 
     #[test]
@@ -130,5 +146,8 @@ mod tests {
         assert_eq!(format_from_str("file.tar.gz"), Some(ArtifactFormat::TarGz));
         assert_eq!(format_from_str("file.TAR.GZ"), Some(ArtifactFormat::TarGz));
         assert_eq!(format_from_str("file.Tar.Gz"), Some(ArtifactFormat::TarGz));
+        assert_eq!(format_from_str("file.exe"), Some(ArtifactFormat::Pe));
+        assert_eq!(format_from_str("file.EXE"), Some(ArtifactFormat::Pe));
+        assert_eq!(format_from_str("file"), Some(ArtifactFormat::Elf));
     }
 }
