@@ -23,7 +23,7 @@ Follow the instructions for your platform below - when installed, Rokit will gui
 Run the automated installer script in your terminal:
 
 ```sh
-curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/rojo-rbx/rokit/main/scripts/install.sh | bash
+curl -sSf https://raw.githubusercontent.com/rojo-rbx/rokit/main/scripts/install.sh | bash
 ```
 
 ### Windows
