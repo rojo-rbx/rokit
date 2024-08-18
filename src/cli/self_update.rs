@@ -1,6 +1,15 @@
+use std::io::{stdout, BufWriter};
+
 use anyhow::{bail, Context, Result};
 use clap::Parser;
-use console::style;
+use console::{style, Style};
+use dialoguer::{theme::ColorfulTheme, Confirm};
+use pulldown_cmark::{Options, Parser as MarkdownParser};
+use pulldown_cmark_mdcat::{
+    resources::FileResourceHandler, Environment, Settings, TerminalProgram, TerminalSize, Theme,
+};
+use syntect::parsing::SyntaxSet;
+
 use semver::Version;
 
 use rokit::{storage::Home, tool::ToolId};
@@ -34,11 +43,17 @@ impl SelfUpdateSubcommand {
         pt.task_completed();
         pt.update_message("Fetching");
 
-        let artifacts = source.get_latest_release(&tool_id).await?;
+        let release_artifact = source.get_latest_release(&tool_id).await?;
 
         // Skip updating if we are already on the latest version
         let version_current = env!("CARGO_PKG_VERSION").parse::<Version>().unwrap();
-        let version_latest = artifacts.first().unwrap().tool_spec.version().clone();
+        let version_latest = release_artifact
+            .artifacts
+            .first()
+            .unwrap()
+            .tool_spec
+            .version()
+            .clone();
         if version_current >= version_latest && !self.force {
             let msg = format!(
                 "Rokit is already up-to-date! {}\n\n\
@@ -55,7 +70,7 @@ impl SelfUpdateSubcommand {
         pt.task_completed();
         pt.update_message("Downloading");
 
-        let artifact = find_most_compatible_artifact(&artifacts, &tool_id)
+        let artifact = find_most_compatible_artifact(&release_artifact.artifacts, &tool_id)
             .context("No compatible Rokit artifact was found (WAT???)")?;
         let artifact_contents = source
             .download_artifact_contents(&artifact)
@@ -76,10 +91,10 @@ impl SelfUpdateSubcommand {
 
         let storage = home.tool_storage();
         storage.replace_rokit_contents(binary_contents).await;
-        storage
-            .recreate_all_links()
-            .await
-            .context("Failed to create new tool links")?;
+        // storage
+        //     .recreate_all_links()
+        //     .await
+        //     .context("Failed to create new tool links")?;
 
         // Everything went well, yay!
         let msg = format!(
@@ -90,6 +105,46 @@ impl SelfUpdateSubcommand {
             style(&version_current).bold().magenta(),
         );
         pt.finish_with_message(msg);
+
+        // If there is a changelog, and the user wants to see it, show it
+        if let Some(changelog) = release_artifact.changelog {
+            let to_show_changelog = Confirm::with_theme(&ColorfulTheme {
+                active_item_prefix: style("📋 ".to_string()),
+                prompt_style: Style::new(),
+                ..Default::default()
+            })
+            .with_prompt("View changelogs for this update?")
+            .interact_opt()?
+            .unwrap_or_default();
+
+            if to_show_changelog {
+                println!();
+                pulldown_cmark_mdcat::push_tty(
+                    &Settings {
+                        terminal_capabilities: TerminalProgram::detect().capabilities(),
+                        terminal_size: TerminalSize::detect()
+                            .context("Failed to detect terminal size")?,
+                        syntax_set: &SyntaxSet::load_defaults_newlines(),
+                        theme: Theme::default(),
+                    },
+                    &Environment::for_local_directory(&tempfile::tempdir()?.path())?,
+                    &FileResourceHandler::new(104_857_600), // TODO: Maybe make this be a DispatchingResourceHandler?
+                    &mut BufWriter::new(stdout()),
+                    MarkdownParser::new_ext(
+                        format!(
+                            "# Changelog - {} v{}\n{}",
+                            tool_id.name(),
+                            version_current,
+                            changelog
+                        )
+                        .as_str(),
+                        Options::ENABLE_FOOTNOTES
+                            | Options::ENABLE_TABLES
+                            | Options::ENABLE_STRIKETHROUGH,
+                    ),
+                )?;
+            }
+        }
 
         Ok(())
     }

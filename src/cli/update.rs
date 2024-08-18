@@ -144,7 +144,7 @@ impl UpdateSubcommand {
                     }
                 };
 
-                let artifact = find_most_compatible_artifact(&artifacts, &id)?;
+                let artifact = find_most_compatible_artifact(&artifacts.artifacts, &id)?;
                 pt.subtask_completed();
 
                 Ok::<_, anyhow::Error>((alias, id, artifact))
