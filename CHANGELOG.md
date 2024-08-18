@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added option to display Rokit's changelog in the terminal when running `rokit self-update` ([#56])
 - Added a `--check` flag to `rokit update` to check for updates without modifying any tools ([#62])
 
 ### Changed
@@ -19,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed unnecessary dependencies in the automatic installer script ([#67])
 - Changed the `User-Agent` header that Rokit uses for download tools to be more descriptive, hopefully resolving `403 Forbidden` errors ([#68])
 
+[#56]: https://github.com/rojo-rbx/rokit/pull/56
 [#62]: https://github.com/rojo-rbx/rokit/pull/62
 [#67]: https://github.com/rojo-rbx/rokit/pull/67
 [#68]: https://github.com/rojo-rbx/rokit/pull/68
