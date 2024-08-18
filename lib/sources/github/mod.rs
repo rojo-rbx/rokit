@@ -10,14 +10,14 @@ use reqwest::{
 
 use crate::tool::{ToolId, ToolSpec};
 
-use super::{client::create_client, source::ReleaseArtifact, Artifact, ArtifactProvider};
+use super::{client::create_client, Artifact, ArtifactProvider, Release};
 
 const BASE_URL: &str = "https://api.github.com";
 
 pub mod models;
 mod result;
 
-use self::models::Release;
+use self::models::GithubRelease;
 
 pub use self::result::{GithubError, GithubResult};
 
@@ -127,7 +127,7 @@ impl GithubProvider {
         Fetches the latest release for a given tool.
     */
     #[instrument(skip(self), fields(%tool_id), level = "debug")]
-    pub async fn get_latest_release(&self, tool_id: &ToolId) -> GithubResult<ReleaseArtifact> {
+    pub async fn get_latest_release(&self, tool_id: &ToolId) -> GithubResult<Release> {
         debug!(id = %tool_id, "fetching latest release for tool");
 
         let url = format!(
@@ -136,7 +136,7 @@ impl GithubProvider {
             repo = tool_id.name(),
         );
 
-        let release: Release = match self.get_json(&url).await {
+        let release: GithubRelease = match self.get_json(&url).await {
             Err(e) if is_404(&e) => {
                 return Err(GithubError::LatestReleaseNotFound(tool_id.clone().into()));
             }
@@ -151,9 +151,9 @@ impl GithubProvider {
             .map_err(|e| GithubError::Other(e.to_string()))?;
 
         let tool_spec: ToolSpec = (tool_id.clone(), version).into();
-        Ok(ReleaseArtifact {
-            artifacts: artifacts_from_release(&release.clone(), &tool_spec),
-            changelog: release.changelog,
+        Ok(Release {
+            changelog: release.changelog.clone(),
+            artifacts: artifacts_from_release(&release, &tool_spec),
         })
     }
 
@@ -161,10 +161,7 @@ impl GithubProvider {
         Fetches a specific release for a given tool.
     */
     #[instrument(skip(self), fields(%tool_spec), level = "debug")]
-    pub async fn get_specific_release(
-        &self,
-        tool_spec: &ToolSpec,
-    ) -> GithubResult<ReleaseArtifact> {
+    pub async fn get_specific_release(&self, tool_spec: &ToolSpec) -> GithubResult<Release> {
         debug!(spec = %tool_spec, "fetching release for tool");
 
         let url_with_prefix = format!(
@@ -180,7 +177,7 @@ impl GithubProvider {
             tag = tool_spec.version(),
         );
 
-        let release: Release = match self.get_json(&url_with_prefix).await {
+        let release: GithubRelease = match self.get_json(&url_with_prefix).await {
             Err(e) if is_404(&e) => match self.get_json(&url_without_prefix).await {
                 Err(e) if is_404(&e) => {
                     return Err(GithubError::ReleaseNotFound(tool_spec.clone().into()));
@@ -192,9 +189,9 @@ impl GithubProvider {
             Ok(r) => r,
         };
 
-        Ok(ReleaseArtifact {
-            artifacts: artifacts_from_release(&release.clone(), tool_spec),
-            changelog: release.changelog,
+        Ok(Release {
+            changelog: release.changelog.clone(),
+            artifacts: artifacts_from_release(&release, tool_spec),
         })
     }
 
@@ -241,7 +238,7 @@ fn is_unauthenticated(err: &GithubError) -> bool {
     false
 }
 
-fn artifacts_from_release(release: &Release, spec: &ToolSpec) -> Vec<Artifact> {
+fn artifacts_from_release(release: &GithubRelease, spec: &ToolSpec) -> Vec<Artifact> {
     release
         .assets
         .iter()

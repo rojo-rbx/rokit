@@ -43,11 +43,11 @@ impl SelfUpdateSubcommand {
         pt.task_completed();
         pt.update_message("Fetching");
 
-        let release_artifact = source.get_latest_release(&tool_id).await?;
+        let release = source.get_latest_release(&tool_id).await?;
 
         // Skip updating if we are already on the latest version
         let version_current = env!("CARGO_PKG_VERSION").parse::<Version>().unwrap();
-        let version_latest = release_artifact
+        let version_latest = release
             .artifacts
             .first()
             .unwrap()
@@ -70,7 +70,7 @@ impl SelfUpdateSubcommand {
         pt.task_completed();
         pt.update_message("Downloading");
 
-        let artifact = find_most_compatible_artifact(&release_artifact.artifacts, &tool_id)
+        let artifact = find_most_compatible_artifact(&release.artifacts, &tool_id)
             .context("No compatible Rokit artifact was found (WAT???)")?;
         let artifact_contents = source
             .download_artifact_contents(&artifact)
@@ -107,7 +107,7 @@ impl SelfUpdateSubcommand {
         pt.finish_with_message(msg);
 
         // If there is a changelog, and the user wants to see it, show it
-        if let Some(changelog) = release_artifact.changelog {
+        if let Some(changelog) = release.changelog {
             let to_show_changelog = Confirm::with_theme(&ColorfulTheme {
                 active_item_prefix: style("📋 ".to_string()),
                 prompt_style: Style::new(),

@@ -10,7 +10,7 @@ use crate::{
 use super::{
     decompression::decompress_gzip,
     extraction::{extract_tar_file, extract_zip_file},
-    github::models::Asset,
+    github::models::GithubAsset,
     ExtractError,
 };
 
@@ -26,6 +26,16 @@ pub use self::format::ArtifactFormat;
 pub use self::provider::ArtifactProvider;
 
 /**
+    A release found by Rokit, containing a list
+    of artifacts, and optionally a changelog.
+*/
+#[derive(Debug, Clone)]
+pub struct Release {
+    pub changelog: Option<String>,
+    pub artifacts: Vec<Artifact>,
+}
+
+/**
     An artifact found by Rokit, to be downloaded and installed.
 */
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -39,7 +49,7 @@ pub struct Artifact {
 }
 
 impl Artifact {
-    pub(crate) fn from_github_release_asset(asset: &Asset, spec: &ToolSpec) -> Self {
+    pub(crate) fn from_github_release_asset(asset: &GithubAsset, spec: &ToolSpec) -> Self {
         let (name, extensions) = split_filename_and_extensions(&asset.name);
         let format = ArtifactFormat::from_extensions(extensions);
         Self {

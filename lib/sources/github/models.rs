@@ -2,8 +2,8 @@ use serde::Deserialize;
 use url::Url;
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct Release {
-    pub assets: Vec<Asset>,
+pub struct GithubRelease {
+    pub assets: Vec<GithubAsset>,
     pub tag_name: String,
     pub prerelease: bool,
     #[serde(rename = "body")]
@@ -11,7 +11,7 @@ pub struct Release {
 }
 
 #[derive(Debug, Clone, Deserialize)]
-pub struct Asset {
+pub struct GithubAsset {
     pub id: u64,
     pub url: Url,
     pub name: String,

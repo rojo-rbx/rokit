@@ -5,7 +5,7 @@ use crate::{
     tool::{ToolId, ToolSpec},
 };
 
-use super::{github::GithubProvider, Artifact, ArtifactProvider};
+use super::{github::GithubProvider, Artifact, ArtifactProvider, Release};
 
 /**
     A source for artifacts.
@@ -15,12 +15,6 @@ use super::{github::GithubProvider, Artifact, ArtifactProvider};
 #[derive(Debug, Clone)]
 pub struct ArtifactSource {
     github: GithubProvider,
-}
-
-#[derive(Debug, Clone)]
-pub struct ReleaseArtifact {
-    pub changelog: Option<String>,
-    pub artifacts: Vec<Artifact>,
 }
 
 impl ArtifactSource {
@@ -63,7 +57,7 @@ impl ArtifactSource {
 
         - If the latest release could not be fetched.
     */
-    pub async fn get_latest_release(&self, id: &ToolId) -> RokitResult<ReleaseArtifact> {
+    pub async fn get_latest_release(&self, id: &ToolId) -> RokitResult<Release> {
         Ok(match id.provider() {
             ArtifactProvider::GitHub => self.github.get_latest_release(id).await?,
         })
@@ -76,7 +70,7 @@ impl ArtifactSource {
 
         - If the specific release could not be fetched.
     */
-    pub async fn get_specific_release(&self, spec: &ToolSpec) -> RokitResult<ReleaseArtifact> {
+    pub async fn get_specific_release(&self, spec: &ToolSpec) -> RokitResult<Release> {
         Ok(match spec.provider() {
             ArtifactProvider::GitHub => self.github.get_specific_release(spec).await?,
         })
