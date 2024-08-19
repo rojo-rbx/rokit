@@ -5,6 +5,7 @@ use tracing::level_filters::LevelFilter;
 
 use rokit::storage::Home;
 use rokit::system::ProcessParent;
+use uninstall::UninstallSubcommand;
 
 use crate::util::init_tracing;
 
@@ -17,6 +18,7 @@ mod self_install;
 mod self_update;
 mod system_info;
 mod trust;
+mod uninstall;
 mod update;
 
 use self::add::AddSubcommand;
@@ -122,6 +124,7 @@ pub enum Subcommand {
     SelfUpdate(SelfUpdateSubcommand),
     SystemInfo(SystemInfoSubcommand),
     Trust(TrustSubcommand),
+    Uninstall(UninstallSubcommand),
     Update(UpdateSubcommand),
 }
 
@@ -137,6 +140,7 @@ impl Subcommand {
             Self::SelfUpdate(cmd) => cmd.run(home).await,
             Self::SystemInfo(cmd) => cmd.run(home).await,
             Self::Trust(cmd) => cmd.run(home).await,
+            Self::Uninstall(cmd) => cmd.run(home).await,
             Self::Update(cmd) => cmd.run(home).await,
         }
     }

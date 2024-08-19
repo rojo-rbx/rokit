@@ -133,6 +133,25 @@ impl RokitManifest {
     }
 
     /**
+        Remove a tool from the manifest.
+
+        If the tool doesn't exist, this will return `false` and do nothing.
+    */
+    pub fn remove_tool(&mut self, alias: &ToolAlias) -> bool {
+        let doc = self.document.as_table_mut();
+        if !doc.contains_table("tools") {
+            return false;
+        }
+        let tools = doc["tools"].as_table_mut().unwrap();
+        if tools.contains_value(alias.name()) {
+            tools.remove(alias.name());
+            true
+        } else {
+            false
+        }
+    }
+
+    /**
         Updates a tool in the manifest with a new tool specification.
 
         If the tool doesn't exist, this will return `false` and do nothing.

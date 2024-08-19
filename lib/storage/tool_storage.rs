@@ -50,7 +50,8 @@ impl ToolStorage {
         (tool_dir, tool_file)
     }
 
-    fn alias_path(&self, alias: &ToolAlias) -> PathBuf {
+    #[must_use]
+    pub fn alias_path(&self, alias: &ToolAlias) -> PathBuf {
         let alias_file_name = format!("{}{EXE_SUFFIX}", alias.name.uncased_str());
         self.aliases_dir.join(alias_file_name)
     }
