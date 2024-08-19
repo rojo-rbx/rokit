@@ -39,8 +39,8 @@ impl From<ToolId> for ToolAliasOrId {
 }
 
 impl From<ToolAliasOrId> for ToolAlias {
-    fn from(id_or_spec: ToolAliasOrId) -> Self {
-        let name = match id_or_spec {
+    fn from(alias_or_id: ToolAliasOrId) -> Self {
+        let name = match alias_or_id {
             ToolAliasOrId::Alias(alias) => alias.name().to_string(),
             ToolAliasOrId::Id(id) => id.name().to_string(),
         };
