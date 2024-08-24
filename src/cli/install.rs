@@ -126,11 +126,16 @@ impl InstallSubcommand {
 
         // 5. Finally, display a nice message to the user
         let s = if installed_specs.len() == 1 { "" } else { "s" };
+        let is_windows = cfg!(windows);
         pt.finish_with_message(format!(
             "Installed and created link{s} for {} tool{s} {}",
             style(installed_specs.len()).bold().magenta(),
             pt.formatted_elapsed(),
         ));
+
+        if is_windows {
+            pt.finish_with_message("Please restart your PC to apply PATH changes");
+        }
 
         Ok(())
     }
