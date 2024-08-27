@@ -91,10 +91,10 @@ impl SelfUpdateSubcommand {
 
         let storage = home.tool_storage();
         storage.replace_rokit_contents(binary_contents).await;
-        // storage
-        //     .recreate_all_links()
-        //     .await
-        //     .context("Failed to create new tool links")?;
+        storage
+            .recreate_all_links()
+            .await
+            .context("Failed to create new tool links")?;
 
         // Everything went well, yay!
         let msg = format!(
