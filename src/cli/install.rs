@@ -132,11 +132,6 @@ impl InstallSubcommand {
             pt.formatted_elapsed(),
         ));
 
-        let is_windows = cfg!(windows);
-        if is_windows {
-            pt.finish_with_message("Please restart your PC to apply PATH changes");
-        }
-
         Ok(())
     }
 }

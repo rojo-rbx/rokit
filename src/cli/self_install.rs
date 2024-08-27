@@ -41,15 +41,22 @@ impl SelfInstallSubcommand {
             .unwrap_or(false);
         let path_contains_rokit = exists_in_path(home);
 
-        // Prompt the user to restart their terminal if:
+        // Prompt the user to restart their terminal OR computer if:
         // - PATH was changed
         // - PATH does not currently contain Rokit, and adding to PATH did not error
-        let should_restart_terminal = path_was_changed || (!path_errored && !path_contains_rokit);
-        let should_restart_message = if should_restart_terminal {
+        let should_restart = path_was_changed || (!path_errored && !path_contains_rokit);
+        let should_restart_message = if should_restart {
             format!(
                 "\n\nExecutables for Rokit and tools have been added to {}.\
-                \nPlease restart your terminal for the changes to take effect.",
-                style("$PATH").bold()
+                \nPlease restart your {} for the changes to take effect.",
+                style("$PATH").bold(),
+                if cfg!(windows) {
+                    // NOTE: Users do not _actually_ need to restart their computer, what's
+                    // really needed is to restart the console host - but this can be tricky.
+                    "computer"
+                } else {
+                    "terminal"
+                }
             )
         } else {
             String::new()
@@ -64,7 +71,7 @@ impl SelfInstallSubcommand {
         };
 
         let help_command = style("rokit --help").bold().green();
-        let help_message = if should_restart_terminal {
+        let help_message = if should_restart {
             format!("\n\nThen, run `{help_command}` to get started using Rokit.")
         } else {
             format!("\n\nRun `{help_command}` to get started using Rokit.")
