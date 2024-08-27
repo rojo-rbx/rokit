@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Changed
+
+- Changed instructions in `self-install` command on Windows to tell the user to restart their _computer_ instead of their _terminal_ ([#71])
+
+[#71]: https://github.com/rojo-rbx/rokit/pull/71
+
 ### Fixed
 
 - Fixed a regression in the `self-update` command that prevented tool links from being updated
