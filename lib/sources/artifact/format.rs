@@ -10,6 +10,7 @@ pub enum ArtifactFormat {
     Zip,
     Tar,
     TarGz,
+    Gz,
 }
 
 impl ArtifactFormat {
@@ -19,6 +20,7 @@ impl ArtifactFormat {
             Self::Zip => "zip",
             Self::Tar => "tar",
             Self::TarGz => "tar.gz",
+            Self::Gz => "gz",
         }
     }
 
@@ -33,6 +35,7 @@ impl ArtifactFormat {
             {
                 Some(Self::TarGz)
             }
+            [.., ext] if ext.eq_ignore_ascii_case("gz") => Some(Self::Gz),
             _ => None,
         }
     }
@@ -78,6 +81,8 @@ mod tests {
         assert_eq!(format_from_str("file.zip"), Some(ArtifactFormat::Zip));
         assert_eq!(format_from_str("file.tar"), Some(ArtifactFormat::Tar));
         assert_eq!(format_from_str("file.tar.gz"), Some(ArtifactFormat::TarGz));
+        assert_eq!(format_from_str("file.tgz"), Some(ArtifactFormat::TarGz));
+        assert_eq!(format_from_str("file.gz"), Some(ArtifactFormat::Gz));
         assert_eq!(
             format_from_str("file.with.many.extensions.tar.gz.zip"),
             Some(ArtifactFormat::Zip)
@@ -117,6 +122,10 @@ mod tests {
             format_from_str("sentry-cli-linux-i686-2.32.1.tgz"),
             Some(ArtifactFormat::TarGz)
         );
+        assert_eq!(
+            format_from_str("lefthook_1.7.14_Windows_x86_64.gz"),
+            Some(ArtifactFormat::Gz)
+        );
     }
 
     #[test]
@@ -130,5 +139,11 @@ mod tests {
         assert_eq!(format_from_str("file.tar.gz"), Some(ArtifactFormat::TarGz));
         assert_eq!(format_from_str("file.TAR.GZ"), Some(ArtifactFormat::TarGz));
         assert_eq!(format_from_str("file.Tar.Gz"), Some(ArtifactFormat::TarGz));
+        assert_eq!(format_from_str("file.tgz"), Some(ArtifactFormat::TarGz));
+        assert_eq!(format_from_str("file.TGZ"), Some(ArtifactFormat::TarGz));
+        assert_eq!(format_from_str("file.Tgz"), Some(ArtifactFormat::TarGz));
+        assert_eq!(format_from_str("file.gz"), Some(ArtifactFormat::Gz));
+        assert_eq!(format_from_str("file.GZ"), Some(ArtifactFormat::Gz));
+        assert_eq!(format_from_str("file.Gz"), Some(ArtifactFormat::Gz));
     }
 }
