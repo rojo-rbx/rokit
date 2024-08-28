@@ -13,8 +13,8 @@ use crate::util::CliProgressTracker;
 pub struct RemoveSubcommand {
     /// The alias of the tool to remove.
     pub alias: ToolAlias,
-    /// Remove this tool globally instead of adding
-    /// it to the nearest manifest file.
+    /// Remove this tool globally instead of removing
+    /// it from the nearest manifest file.
     #[clap(long)]
     pub global: bool,
 }
