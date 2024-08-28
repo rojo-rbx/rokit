@@ -12,8 +12,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Sort artifacts by known format ([#76])
+- Changed tool downloading to prefer compressed artifacts over uncompressed ones for quicker downloads ([#76])
 
+### Fixed
+
+- Fixed Rokit not being recognized as in PATH for `system-info` and `self-install` commands, unnecessarily prompting the user to restart ([#74])
+- Fixed tools such as `lefthook`, with compatible and incompatible artifacts within the same release, not installing correctly ([#76])
+
+[#74]: https://github.com/rojo-rbx/rokit/pull/74
 [#76]: https://github.com/rojo-rbx/rokit/pull/76
 
 ## `0.2.5` - August 28th, 2024
