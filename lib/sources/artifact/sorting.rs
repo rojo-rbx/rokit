@@ -76,13 +76,11 @@ fn word_is_not_arch_or_os_or_version_or_numeric(word: impl AsRef<str>) -> bool {
 }
 
 pub(super) fn sort_preferred_formats(artifact_a: &Artifact, artifact_b: &Artifact) -> Ordering {
-    let a_is_known = artifact_a.format.is_some();
-    let b_is_known = artifact_b.format.is_some();
-
-    match (a_is_known, b_is_known) {
-        (true, false) => Ordering::Less,
-        (false, true) => Ordering::Greater,
-        _ => Ordering::Equal,
+    match (artifact_a.format, artifact_b.format) {
+        (None, None) => std::cmp::Ordering::Equal,
+        (None, _) => std::cmp::Ordering::Greater,
+        (_, None) => std::cmp::Ordering::Less,
+        (Some(format_a), Some(format_b)) => format_a.cmp(&format_b),
     }
 }
 
@@ -210,9 +208,9 @@ mod tests {
         assert_eq!(
             artifact_names_sorted,
             vec![
-                "tool-v1.0.0-x86_64-linux.zip",
-                "tool-v1.0.0-x86_64-linux.tar",
                 "tool-v1.0.0-x86_64-linux.tar.gz",
+                "tool-v1.0.0-x86_64-linux.tar",
+                "tool-v1.0.0-x86_64-linux.zip",
                 "tool-v1.0.0-x86_64-linux.gz",
                 "tool-v1.0.0-x86_64-linux",
                 "tool-v1.0.0-x86_64-linux.elf",
