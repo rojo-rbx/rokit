@@ -8,7 +8,7 @@ use rokit::{
 
 use crate::util::CliProgressTracker;
 
-/// Adds a new tool to Rokit and installs it.
+/// Removes a tool from Rokit.
 #[derive(Debug, Parser)]
 pub struct RemoveSubcommand {
     /// The alias of the tool to remove.
