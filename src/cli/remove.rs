@@ -60,11 +60,8 @@ impl RemoveSubcommand {
         if tool_cache.is_installed(&spec) {
             pt.update_message("Uninstalling");
             tool_storage.remove_tool_link(&self.alias).await?;
-            pt.task_completed();
-        } else {
-            pt.task_completed();
-            pt.task_completed();
         }
+        pt.task_completed();
 
         // 3. Finally, display a nice message to the user
         pt.finish_with_message(format!(
