@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
+### Added
+
+- Added support for artifacts compressed as '.gz' ([#73])
+
+[#73]: https://github.com/rojo-rbx/rokit/pull/73
+
 ### Changed
 
 - Changed instructions in `self-install` command on Windows to tell the user to restart their _computer_ instead of their _terminal_ ([#71])

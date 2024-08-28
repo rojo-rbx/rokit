@@ -84,6 +84,7 @@ impl Artifact {
                 let tar = decompress_gzip(&contents).await?;
                 extract_tar_file(&tar, &file_name).await
             }
+            ArtifactFormat::Gz => decompress_gzip(&contents).await.map(Some),
         };
 
         // Make sure we got back the file we need ...
