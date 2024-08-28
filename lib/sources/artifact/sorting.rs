@@ -75,8 +75,21 @@ fn word_is_not_arch_or_os_or_version_or_numeric(word: impl AsRef<str>) -> bool {
         && !word.chars().all(char::is_numeric)
 }
 
+pub(super) fn sort_prefered_formats(artifact_a: &Artifact, artifact_b: &Artifact) -> Ordering {
+    let a_is_known = artifact_a.format.is_some();
+    let b_is_known = artifact_b.format.is_some();
+
+    match (a_is_known, b_is_known) {
+        (true, false) => Ordering::Less,
+        (false, true) => Ordering::Greater,
+        _ => Ordering::Equal,
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use crate::sources::{ArtifactFormat, ArtifactProvider};
+
     use super::*;
 
     fn new_id(author: &str, name: &str) -> ToolId {
@@ -162,5 +175,48 @@ mod tests {
         // Valid - but multiple words
         test_no_mentions("sentry-cli-linux-i686-2.32.1", "sentry-cli");
         test_no_mentions("selene-light-0.27.1-linux.zip", "selene-light");
+    }
+
+    #[test]
+    fn test_prefers_known_format() {
+        let artifact_names = vec![
+            "tool-v1.0.0-x86_64-linux",
+            "tool-v1.0.0-x86_64-linux.elf",
+            "tool-v1.0.0-x86_64-linux.zip",
+            "tool-v1.0.0-x86_64-linux.tar",
+            "tool-v1.0.0-x86_64-linux.tar.gz",
+            "tool-v1.0.0-x86_64-linux.gz",
+        ];
+
+        let mut artifacts = artifact_names
+            .into_iter()
+            .map(|name| Artifact {
+                provider: ArtifactProvider::GitHub,
+                format: ArtifactFormat::from_path_or_url(name),
+                id: Some("id".to_string()),
+                url: Some("https://github.com".parse().unwrap()),
+                name: Some(name.to_string()),
+                tool_spec: new_id("author", name).into_spec(Version::parse("1.0.0").unwrap()),
+            })
+            .collect::<Vec<_>>();
+
+        artifacts.sort_by(sort_prefered_formats);
+
+        let artifact_names_sorted = artifacts
+            .iter()
+            .map(|artifact| artifact.name.as_deref().unwrap())
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            artifact_names_sorted,
+            vec![
+                "tool-v1.0.0-x86_64-linux.zip",
+                "tool-v1.0.0-x86_64-linux.tar",
+                "tool-v1.0.0-x86_64-linux.tar.gz",
+                "tool-v1.0.0-x86_64-linux.gz",
+                "tool-v1.0.0-x86_64-linux",
+                "tool-v1.0.0-x86_64-linux.elf",
+            ]
+        );
     }
 }
