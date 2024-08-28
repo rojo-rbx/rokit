@@ -133,7 +133,7 @@ impl RokitManifest {
     }
 
     /**
-        Removes a tool to the manifest.
+        Removes a tool from the manifest.
 
         If the tool does not exist, this will return `false` and do nothing.
     */
