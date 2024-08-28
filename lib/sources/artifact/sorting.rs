@@ -75,7 +75,7 @@ fn word_is_not_arch_or_os_or_version_or_numeric(word: impl AsRef<str>) -> bool {
         && !word.chars().all(char::is_numeric)
 }
 
-pub(super) fn sort_prefered_formats(artifact_a: &Artifact, artifact_b: &Artifact) -> Ordering {
+pub(super) fn sort_preferred_formats(artifact_a: &Artifact, artifact_b: &Artifact) -> Ordering {
     let a_is_known = artifact_a.format.is_some();
     let b_is_known = artifact_b.format.is_some();
 
@@ -200,7 +200,7 @@ mod tests {
             })
             .collect::<Vec<_>>();
 
-        artifacts.sort_by(sort_prefered_formats);
+        artifacts.sort_by(sort_preferred_formats);
 
         let artifact_names_sorted = artifacts
             .iter()

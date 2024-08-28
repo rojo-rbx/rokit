@@ -20,7 +20,7 @@ mod sorting;
 mod util;
 
 use self::sorting::sort_preferred_artifact;
-use self::sorting::sort_prefered_formats;
+use self::sorting::sort_preferred_formats;
 use self::util::split_filename_and_extensions;
 
 pub use self::format::ArtifactFormat;
@@ -181,7 +181,7 @@ impl Artifact {
             current_desc
                 .sort_by_preferred_compat(desc_a, desc_b)
                 .then_with(|| sort_preferred_artifact(artifact_a, artifact_b))
-                .then_with(|| sort_prefered_formats(artifact_a, artifact_b))
+                .then_with(|| sort_preferred_formats(artifact_a, artifact_b))
         });
 
         compatible_artifacts
