@@ -75,8 +75,19 @@ fn word_is_not_arch_or_os_or_version_or_numeric(word: impl AsRef<str>) -> bool {
         && !word.chars().all(char::is_numeric)
 }
 
+pub(super) fn sort_preferred_formats(artifact_a: &Artifact, artifact_b: &Artifact) -> Ordering {
+    match (artifact_a.format, artifact_b.format) {
+        (None, None) => std::cmp::Ordering::Equal,
+        (None, _) => std::cmp::Ordering::Greater,
+        (_, None) => std::cmp::Ordering::Less,
+        (Some(format_a), Some(format_b)) => format_a.cmp(&format_b),
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use crate::sources::{ArtifactFormat, ArtifactProvider};
+
     use super::*;
 
     fn new_id(author: &str, name: &str) -> ToolId {
@@ -162,5 +173,48 @@ mod tests {
         // Valid - but multiple words
         test_no_mentions("sentry-cli-linux-i686-2.32.1", "sentry-cli");
         test_no_mentions("selene-light-0.27.1-linux.zip", "selene-light");
+    }
+
+    #[test]
+    fn test_prefers_known_format() {
+        let artifact_names = vec![
+            "tool-v1.0.0-x86_64-linux",
+            "tool-v1.0.0-x86_64-linux.elf",
+            "tool-v1.0.0-x86_64-linux.zip",
+            "tool-v1.0.0-x86_64-linux.tar",
+            "tool-v1.0.0-x86_64-linux.tar.gz",
+            "tool-v1.0.0-x86_64-linux.gz",
+        ];
+
+        let mut artifacts = artifact_names
+            .into_iter()
+            .map(|name| Artifact {
+                provider: ArtifactProvider::GitHub,
+                format: ArtifactFormat::from_path_or_url(name),
+                id: Some("id".to_string()),
+                url: Some("https://github.com".parse().unwrap()),
+                name: Some(name.to_string()),
+                tool_spec: new_id("author", name).into_spec(Version::parse("1.0.0").unwrap()),
+            })
+            .collect::<Vec<_>>();
+
+        artifacts.sort_by(sort_preferred_formats);
+
+        let artifact_names_sorted = artifacts
+            .iter()
+            .map(|artifact| artifact.name.as_deref().unwrap())
+            .collect::<Vec<_>>();
+
+        assert_eq!(
+            artifact_names_sorted,
+            vec![
+                "tool-v1.0.0-x86_64-linux.tar.gz",
+                "tool-v1.0.0-x86_64-linux.tar",
+                "tool-v1.0.0-x86_64-linux.zip",
+                "tool-v1.0.0-x86_64-linux.gz",
+                "tool-v1.0.0-x86_64-linux",
+                "tool-v1.0.0-x86_64-linux.elf",
+            ]
+        );
     }
 }

@@ -5,11 +5,11 @@ use super::util::split_filename_and_extensions;
 /**
     An artifact format supported by Rokit.
 */
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum ArtifactFormat {
-    Zip,
-    Tar,
     TarGz,
+    Tar,
+    Zip,
     Gz,
 }
 
@@ -145,5 +145,36 @@ mod tests {
         assert_eq!(format_from_str("file.gz"), Some(ArtifactFormat::Gz));
         assert_eq!(format_from_str("file.GZ"), Some(ArtifactFormat::Gz));
         assert_eq!(format_from_str("file.Gz"), Some(ArtifactFormat::Gz));
+    }
+
+    #[test]
+    fn test_ordering() {
+        let artifact_names = [
+            "tool-v1.0.0-x86_64-linux.zip",
+            "tool-v1.0.0-x86_64-linux.tar",
+            "tool-v1.0.0-x86_64-linux.tar.gz",
+            "tool-v1.0.0-x86_64-linux.gz",
+            "tool-v1.0.0-x86_64-linux",
+            "tool-v1.0.0-x86_64-linux.elf",
+        ];
+
+        let mut artifact_formats: Vec<Option<ArtifactFormat>> = artifact_names
+            .iter()
+            .map(|name| format_from_str(name))
+            .collect();
+
+        artifact_formats.sort();
+
+        assert_eq!(
+            artifact_formats,
+            vec![
+                None,
+                None,
+                Some(ArtifactFormat::TarGz),
+                Some(ArtifactFormat::Tar),
+                Some(ArtifactFormat::Zip),
+                Some(ArtifactFormat::Gz),
+            ]
+        );
     }
 }
