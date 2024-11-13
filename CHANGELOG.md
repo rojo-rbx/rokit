@@ -8,7 +8,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## `1.0.0` - November 13th, 2024
+
+Given that Rokit is already used in production by many Roblox developers, and many months have passed with no new major issues, it is time to release version `1.0.0`.
+
+This comes with a couple guarantees:
+
+- We will not be making any breaking changes to Rokit in the foreseeable future, and if we do, we will release a new major version.
+- Rokit's tool storage & tool artifact selection algorithms are stable, and safe to rely on in production environments.
+- New features and subcommands may still be added, as long as they do not break existing functionality.
+
+As always, run `rokit self-update` to update to the latest version of Rokit! 🚀
 
 ### Changed
 
