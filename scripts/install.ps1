@@ -1,73 +1,58 @@
+$PROGRAM_NAME = "rokit"
+$REPOSITORY = "rojo-rbx/rokit"
+
+$originalPath = Get-Location
+
 Set-Location "$env:temp"
 
-$LatestReleaseUri = "https://github.com/rojo-rbx/rokit/releases/latest/"
-
-# Function to get the (redirected) versioned URL from the latest release endpoint
-# Courtesy of https://www.reddit.com/r/PowerShell/comments/5d516e/comment/da20wf0/
-Function Get-RedirectedUrl {
-	Param (
-		[Parameter(Mandatory = $true)]
-		[String]$Uri
+# Function to get release info from GitHub API
+Function Get-ReleaseInfo {
+	param (
+		[string]$ApiUrl
 	)
-
+    
+	$headers = @{
+		'X-GitHub-Api-Version' = '2022-11-28'
+	}
+    
+	if ($env:GITHUB_PAT) {
+		Write-Host "NOTE: Using provided GITHUB_PAT for authentication"
+		$headers['Authorization'] = "token $env:GITHUB_PAT"
+	}
+    
 	try {
-		$request = [System.Net.WebRequest]::Create($Uri)
-		$request.AllowAutoRedirect = $false
-		$response = $request.GetResponse()
-
-		If (($response.StatusCode -eq "Found") -or ($response.StatusCode -eq "MovedPermanently")) {
-			$RedirectUrl = $response.GetResponseHeader("Location")
-		}
-
-		$response.Close()
-		if ($RedirectUrl) { return(Write-Output $RedirectUrl) }
-		Else { 
-			Write-Error "No redirect URL found at $Uri"
-			return $null
-		}
+		$response = Invoke-RestMethod -Uri $ApiUrl -Headers $headers -ErrorAction Stop
+		return $response
 	}
 	catch {
-		Write-Error "Failed to get redirected URL: $_"
-		return $null
+		throw "Failed to fetch release info: $_"
 	}
 }
 
 try {
-	Write-Host "Detecting latest version..." -ForegroundColor Cyan
-	$LatestTaggedReleaseUri = Get-RedirectedUrl -Uri $LatestReleaseUri
+	Write-Host "`n[1 / 3] Looking for latest $PROGRAM_NAME release"
     
-	if (-not $LatestTaggedReleaseUri) {
-		throw "Failed to detect latest version. Could not get redirect from $LatestReleaseUri"
-	}
-
-	# Extract version tag from the redirect URL (preserving the v prefix for download URL)
-	$VersionTagMatch = $LatestTaggedReleaseUri | Select-String -Pattern '\/tag\/(v?.+)$'
-	if (-not $VersionTagMatch.Matches) {
-		throw "Could not parse version tag from URL: $LatestTaggedReleaseUri"
-	}
+	$apiUrl = "https://api.github.com/repos/$REPOSITORY/releases/latest"
+	$releaseInfo = Get-ReleaseInfo -ApiUrl $apiUrl
     
-	$VersionTag = $VersionTagMatch.Matches.Groups[1].Value
-	$NumericVersion = $VersionTag -replace '^v', ''
-
-	Write-Host "Latest version detected: $NumericVersion (tag: $VersionTag)" -ForegroundColor Green
-
-	# Construct the download URL - keep the v prefix if it exists in the tag
-	$DownloadUrl = "https://github.com/rojo-rbx/rokit/releases/download/$VersionTag/rokit-$NumericVersion-windows-x86_64.zip"
-	Write-Host "Downloading from: $DownloadUrl" -ForegroundColor Cyan
+	$versionTag = $releaseInfo.tag_name
+	$numericVersion = $versionTag -replace '^v', ''
+    
+	# Construct the download URL
+	$downloadUrl = "https://github.com/$REPOSITORY/releases/download/$versionTag/$PROGRAM_NAME-$numericVersion-windows-x86_64.zip"
+	Write-Host "[2 / 3] Downloading '$PROGRAM_NAME-$numericVersion-windows-x86_64.zip'"
 
 	# Grab the latest release asset
 	try {
-		Invoke-WebRequest $DownloadUrl -OutFile rokit.zip -ErrorAction Stop
-		Write-Host "Download successful" -ForegroundColor Green
+		Invoke-WebRequest $downloadUrl -OutFile rokit.zip -ErrorAction Stop
 	}
 	catch {
-		throw "Failed to download from $DownloadUrl`: $_"
+		throw "Failed to download from $downloadUrl`: $_"
 	}
 
 	# Extract the archive
 	try {
 		Expand-Archive -Path rokit.zip -Force -ErrorAction Stop
-		Write-Host "Extraction successful" -ForegroundColor Green
 	}
 	catch {
 		throw "Failed to extract rokit.zip: $_"
@@ -76,9 +61,8 @@ try {
 	# Run self-install
 	try {
 		if (Test-Path ".\rokit\rokit.exe") {
-			Write-Host "Installing rokit..." -ForegroundColor Cyan
+			Write-Host "[3 / 3] Running $PROGRAM_NAME installation`n"
 			Start-Process -FilePath ".\rokit\rokit.exe" -ArgumentList "self-install" -Wait -NoNewWindow
-			Write-Host "Installation successful" -ForegroundColor Green
 		}
 		else {
 			throw "rokit.exe not found in the extracted directory"
@@ -88,22 +72,20 @@ try {
 		throw "Failed to run self-install: $_"
 	}
 
-	# Prevent "rokit.exe" is in use error
-	Start-Sleep -Seconds 1
-
 	# Cleanup
 	try {
 		Remove-Item rokit.zip -ErrorAction SilentlyContinue
 		Remove-Item -Recurse -Path .\rokit -ErrorAction SilentlyContinue
-		Write-Host "Cleanup completed" -ForegroundColor Green
 	}
 	catch {
 		Write-Warning "Cleanup failed: $_"
 	}
-
-	Write-Host "Rokit installation completed successfully!" -ForegroundColor Green
 }
 catch {
 	Write-Error "Installation failed: $_"
 	exit 1
+}
+finally {
+	# Return to original directory
+	Set-Location -Path $originalPath
 }
