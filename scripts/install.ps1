@@ -16,7 +16,6 @@ Function Get-ReleaseInfo {
 	}
     
 	if ($env:GITHUB_PAT) {
-		Write-Host "NOTE: Using provided GITHUB_PAT for authentication"
 		$headers['Authorization'] = "token $env:GITHUB_PAT"
 	}
     
@@ -30,6 +29,10 @@ Function Get-ReleaseInfo {
 }
 
 try {
+	if ($env:GITHUB_PAT) {
+		Write-Host "NOTE: Using provided GITHUB_PAT for authentication"
+	}
+ 
 	Write-Host "`n[1 / 3] Looking for latest $PROGRAM_NAME release"
     
 	$apiUrl = "https://api.github.com/repos/$REPOSITORY/releases/latest"
