@@ -37,21 +37,21 @@ strip = true
 lto = true
 
 [dependencies]
-dashmap = { version = "6.0", features = ["serde"] }
-dirs = "5.0"
+dashmap = { version = "6.1", features = ["serde"] }
+dirs = "6.0"
 dunce = "1.0"
-filepath = "0.1"
-flate2 = "1.0"
+filepath = "0.2"
+flate2 = "1.1"
 goblin = "0.9"
-postcard = { version = "1.0", features = ["alloc"] }
+postcard = { version = "1.1", features = ["alloc"] }
 semver = { version = "1.0", features = ["serde"] }
 tar = "0.4"
-tempfile = "3.3"
+tempfile = "3.19"
 thiserror = "2.0"
 unindent = "0.2"
 url = { version = "2.5", features = ["serde"] }
 which = "7.0"
-zip = "2.1"
+zip = "2.6"
 
 # Async / runtime dependencies
 
@@ -69,14 +69,14 @@ reqwest = { version = "0.12", default-features = false, features = [
 reqwest-middleware = "0.4"
 reqwest-retry = "0.7"
 reqwest-tracing = "0.5"
-tokio = { version = "1.36", features = ["full"] }
+tokio = { version = "1.44", features = ["full"] }
 tracing = "0.1"
 
 # Serde / file format dependencies
 
 serde = { version = "1.0", features = ["derive", "rc"] }
 serde_json = "1.0"
-serde_with = { version = "3.7", features = ["macros"] }
+serde_with = { version = "3.12", features = ["macros"] }
 toml_edit = "0.22"
 toml = "0.8"
 
@@ -99,7 +99,7 @@ tracing-subscriber = { optional = true, version = "0.3", features = [
 [target.'cfg(windows)'.dependencies]
 command-group = { version = "5.0", features = ["with-tokio"] }
 winapi = { version = "0.3", features = ["processthreadsapi", "wincon"] }
-winreg = "0.52"
+winreg = "0.55"
 
 [lints.clippy]
 all = { level = "deny", priority = -3 }
