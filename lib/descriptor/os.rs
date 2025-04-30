@@ -74,7 +74,7 @@ impl OS {
             })
         }) {
             return Some(os);
-        };
+        }
 
         None
     }

@@ -84,7 +84,7 @@ impl Arch {
             })
         }) {
             return Some(arch);
-        };
+        }
 
         /*
             HACK: If nothing else matched, but the search string contains "universal",

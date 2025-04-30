@@ -29,7 +29,7 @@ impl Shell {
     pub fn env_file_should_create_if_nonexistent(self) -> bool {
         // Create a new shell env file for the user if we are
         // confident that this is the shell that they are using
-        var("SHELL").map_or(false, |current_shell| {
+        var("SHELL").is_ok_and(|current_shell| {
             // Detect /bin/sh, /bin/bash, /bin/zsh, etc
             current_shell.ends_with(&format!("/{}", self.name()))
         })

@@ -1,9 +1,9 @@
 use std::{
     collections::{BTreeMap, BTreeSet},
     str::FromStr,
+    sync::LazyLock,
 };
 
-use once_cell::sync::Lazy;
 use rokit::tool::ToolId;
 
 const KNOWN_TOOL_AUTHORS_AND_IDS: [(&str, &[&str]); 8] = [
@@ -20,7 +20,7 @@ const KNOWN_TOOL_AUTHORS_AND_IDS: [(&str, &[&str]); 8] = [
     ("UpliftGames", &["wally"]),
 ];
 
-static KNOWN_TOOLS: Lazy<BTreeMap<String, ToolId>> = Lazy::new(|| {
+static KNOWN_TOOLS: LazyLock<BTreeMap<String, ToolId>> = LazyLock::new(|| {
     let mut set = BTreeSet::new();
     let mut map = BTreeMap::new();
 

@@ -42,7 +42,5 @@ pub async fn add_to_path(home: &Home) -> RokitResult<bool> {
 #[must_use]
 pub fn exists_in_path(_home: &Home) -> bool {
     let pattern = format!(".rokit{MAIN_SEPARATOR_STR}bin");
-    var_os("PATH").map_or(false, |path| {
-        split_paths(&path).any(|item| item.ends_with(&pattern))
-    })
+    var_os("PATH").is_some_and(|path| split_paths(&path).any(|item| item.ends_with(&pattern)))
 }

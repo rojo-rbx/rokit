@@ -1,16 +1,16 @@
 use std::{
     env::{self, consts::EXE_SUFFIX},
     path::PathBuf,
+    sync::OnceLock,
 };
 
 use async_once_cell::OnceCell as AsyncOnceCell;
-use once_cell::sync::OnceCell;
 use tokio::{fs::read, task::spawn_blocking};
 
 static CURRENT_DIR: AsyncOnceCell<PathBuf> = AsyncOnceCell::new();
 static CURRENT_EXE: AsyncOnceCell<PathBuf> = AsyncOnceCell::new();
 static CURRENT_CONTENTS: AsyncOnceCell<Vec<u8>> = AsyncOnceCell::new();
-static CURRENT_EXE_NAME: OnceCell<String> = OnceCell::new();
+static CURRENT_EXE_NAME: OnceLock<String> = OnceLock::new();
 
 pub async fn current_dir() -> PathBuf {
     CURRENT_DIR

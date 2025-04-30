@@ -220,14 +220,14 @@ impl FromStr for RokitManifest {
                     \nThe tool will be ignored and may not be available.\
                     \nError: {e}",
                 );
-            };
+            }
             let Some(spec_str) = value.as_str() else {
                 warn!(
                     "A tool spec with alias '{}' could not be parsed!\
                     \nThe tool will be ignored and may not be available.\
                     \nExpected: String\
                     \nActual: {}",
-                    keys.into_iter().last().unwrap(),
+                    keys.into_iter().next_back().unwrap(),
                     value.type_name()
                 );
                 continue;
@@ -237,9 +237,9 @@ impl FromStr for RokitManifest {
                     "A tool spec with alias '{}' could not be parsed!\
                     \nThe tool will be ignored and may not be available.\
                     \nError: {e}",
-                    keys.into_iter().last().unwrap(),
+                    keys.into_iter().next_back().unwrap(),
                 );
-            };
+            }
         }
 
         Ok(Self { document })
