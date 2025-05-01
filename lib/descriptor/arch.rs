@@ -47,13 +47,13 @@ impl Arch {
         Get the architecture of the current host system.
     */
     #[must_use]
-    pub fn current_system() -> Self {
-        match CURRENT_ARCH {
-            "aarch64" => Self::Arm64,
-            "x86_64" => Self::X64,
-            "x86" => Self::X86,
-            "arm" => Self::Arm32,
-            _ => panic!("Unsupported architecture: {CURRENT_ARCH}"),
+    pub const fn current_system() -> Self {
+        match CURRENT_ARCH.as_bytes() {
+            b"aarch64" => Self::Arm64,
+            b"x86_64" => Self::X64,
+            b"x86" => Self::X86,
+            b"arm" => Self::Arm32,
+            _ => panic!("Unsupported architecture"),
         }
     }
 
@@ -118,7 +118,7 @@ impl Arch {
         Get the architecture as a string, such as "x64" or "arm64".
     */
     #[must_use]
-    pub fn as_str(&self) -> &'static str {
+    pub const fn as_str(&self) -> &'static str {
         match self {
             Self::Arm64 => "arm64",
             Self::X64 => "x64",
