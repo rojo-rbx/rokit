@@ -1,6 +1,7 @@
 #![allow(clippy::struct_excessive_bools)]
 
 use std::{
+    collections::BTreeMap,
     env::consts::{EXE_EXTENSION, EXE_SUFFIX},
     io::{self, Read},
     path::{Path, PathBuf, MAIN_SEPARATOR_STR},
@@ -11,7 +12,11 @@ use thiserror::Error;
 use tokio::{task::spawn_blocking, time::Instant};
 use zip::ZipArchive;
 
-use crate::{descriptor::OS, result::RokitResult, sources::ArtifactFormat};
+use crate::{
+    descriptor::{Descriptor, OS},
+    result::RokitResult,
+    sources::ArtifactFormat,
+};
 
 #[derive(Debug, Error)]
 pub enum ExtractError {
@@ -61,6 +66,7 @@ struct Candidate {
     matched_file_inexact: bool, // Case-insensitive filename match
     has_exec_perms: bool,       // Has executable permissions (UNIX only)
     has_exec_suffix: bool,      // Has an executable suffix (e.g. `.exe`)
+    has_descriptor: bool,       // Has executable contents (any platform)
 }
 
 impl Candidate {
@@ -70,11 +76,13 @@ impl Candidate {
             + u32::from(self.matched_file_inexact)
             + u32::from(self.has_exec_perms)
             + u32::from(self.has_exec_suffix)
+            + u32::from(self.has_descriptor)
     }
 
     fn find_best(
         entry_paths: impl AsRef<[(PathBuf, Option<u32>)]>,
         desired_file_path: impl AsRef<Path>,
+        mut read_file_contents: impl FnMut(&Path) -> Option<Vec<u8>>,
     ) -> Option<Self> {
         let entry_paths = entry_paths.as_ref();
         let desired_file_path = desired_file_path.as_ref();
@@ -97,6 +105,9 @@ impl Candidate {
 
                 let has_exec_perms = perms.is_some_and(|perms| (perms & 0o111) != 0);
                 let has_exec_suffix = path.extension().is_some_and(|ext| ext == EXE_EXTENSION);
+                let has_descriptor = read_file_contents(path)
+                    .and_then(Descriptor::detect_from_executable)
+                    .is_some();
 
                 Some(Self {
                     path: path.clone(),
@@ -105,6 +116,7 @@ impl Candidate {
                     matched_file_inexact,
                     has_exec_perms,
                     has_exec_suffix,
+                    has_descriptor,
                 })
             })
             .filter(|c| c.priority() > 0) // Filter out candidates with no matches at all
@@ -140,43 +152,51 @@ pub async fn extract_zip_file(
     // Reading a zip file is a potentially expensive operation, so
     // spawn it as a blocking task and use the tokio thread pool.
     spawn_blocking(move || {
-        let mut found = None;
-        let mut reader = io::Cursor::new(&zip_contents);
-        let mut zip = ZipArchive::new(&mut reader)?;
+        let mut zip_cursor = io::Cursor::new(&zip_contents);
+        let mut zip_reader = ZipArchive::new(&mut zip_cursor)?;
 
-        // Gather paths and their permissions,
-        // avoiding reading the entire zip file
-        let entry_paths = zip
+        // Gather simple path + permissions pairs to find candidates from
+        let entry_paths = zip_reader
             .file_names()
-            .map(|name| {
-                // NOTE: We don't need to sanitize the files names here
-                // since we only use them for matching *within the zip file*
-                (PathBuf::from(name), None::<u32>)
-            })
+            .map(|name| (PathBuf::from(name), None::<u32>))
             .collect::<Vec<_>>();
 
+        // Lazily cache any files that we read, to ensure that we do not
+        // try to read a file entry which has already been read to its end
+        let mut read_file_cache = BTreeMap::<_, Vec<u8>>::new();
+        let mut read_file_contents = |path: &Path| {
+            if let Some(existing) = read_file_cache.get(path) {
+                Ok(existing.clone())
+            } else if let Ok(mut entry) = zip_reader.by_name(path.to_str().unwrap()) {
+                let mut bytes = Vec::new();
+                entry.read_to_end(&mut bytes)?;
+                read_file_cache.insert(path.to_path_buf(), bytes.clone());
+                Ok(bytes)
+            } else {
+                Err(io::Error::new(
+                    io::ErrorKind::NotFound,
+                    format!("File not found: {}", path.display()),
+                ))
+            }
+        };
+
         // Find the best candidate to extract, if any
-        let best = Candidate::find_best(entry_paths, &desired_file_path);
-        if let Some(candidate) = best {
-            if let Some(path_str) = candidate.path.to_str() {
-                if let Ok(mut entry) = zip.by_name(path_str) {
-                    let mut bytes = Vec::new();
-                    entry.read_to_end(&mut bytes)?;
-                    found = Some(bytes);
-                }
+        let best = Candidate::find_best(entry_paths, &desired_file_path, |path| {
+            read_file_contents(path).ok()
+        });
+        let (path, found) = match best {
+            None => (None, None),
+            Some(candidate) => {
+                let contents = read_file_contents(&candidate.path)?;
+                (Some(candidate.path), Some(contents))
             }
-            if found.is_none() {
-                tracing::warn!(
-                    path = ?candidate.path,
-                    "found candidate path, but failed to extract file"
-                );
-            }
-        }
+        };
 
         tracing::debug!(
             num_kilobytes,
             elapsed = ?start.elapsed(),
-            found = found.is_some(),
+            found_any = found.is_some(),
+            found_path = path.map(|path| path.display().to_string()),
             "extracted zip file"
         );
         Ok(found)
@@ -203,19 +223,11 @@ pub async fn extract_tar_file(
     // Reading a tar file is a potentially expensive operation, so
     // spawn it as a blocking task and use the tokio thread pool.
     spawn_blocking(move || {
-        let mut found = None;
-
-        /*
-            Gather paths and their permissions - note that we
-            need to read the tar file twice to be able to use
-            our find_best_candidate matching implementation...
-
-            We can however use the `entries_with_seek` method
-            to avoid reading actual file contents into memory.
-        */
-        let mut entry_cursor = io::Cursor::new(&tar_contents);
-        let mut entry_reader = TarArchive::new(&mut entry_cursor);
-        let entry_paths = entry_reader
+        // Gather paths and references to their respective entries,
+        // without reading actual file contents into memory just yet
+        let mut tar_cursor = io::Cursor::new(&tar_contents);
+        let mut tar_reader = TarArchive::new(&mut tar_cursor);
+        let mut tar_files = tar_reader
             .entries_with_seek()?
             .filter_map(|entry| {
                 let entry = entry.ok()?;
@@ -223,38 +235,55 @@ pub async fn extract_tar_file(
                     return None;
                 }
                 let path = entry.path().ok()?;
+                Some((path.to_path_buf(), entry))
+            })
+            .collect::<BTreeMap<PathBuf, _>>();
+
+        // Map to simple path + permissions pairs to find candidates from
+        let entry_paths = tar_files
+            .iter()
+            .map(|(path, entry)| {
                 let perms = entry.header().mode().ok();
-                Some((path.to_path_buf(), perms))
+                (path.clone(), perms)
             })
             .collect::<Vec<_>>();
 
+        // Lazily cache any files that we read, to ensure that we do not
+        // try to read a file entry which has already been read to its end
+        let mut read_file_cache = BTreeMap::<_, Vec<u8>>::new();
+        let mut read_file_contents = |path: &Path| {
+            if let Some(existing) = read_file_cache.get(path) {
+                Ok(existing.clone())
+            } else if let Some(entry) = tar_files.get_mut(path) {
+                let mut bytes = Vec::new();
+                entry.read_to_end(&mut bytes)?;
+                read_file_cache.insert(path.to_path_buf(), bytes.clone());
+                Ok(bytes)
+            } else {
+                Err(io::Error::new(
+                    io::ErrorKind::NotFound,
+                    format!("File not found: {}", path.display()),
+                ))
+            }
+        };
+
         // Find the best candidate to extract, if any
-        let best = Candidate::find_best(entry_paths, &desired_file_path);
-        if let Some(candidate) = best {
-            let contents_cursor = io::Cursor::new(&tar_contents);
-            let mut contents_reader = TarArchive::new(contents_cursor);
-            for entry in contents_reader.entries_with_seek()? {
-                let mut entry = entry?;
-                let entry_path = entry.path()?;
-                if entry_path == candidate.path.as_path() {
-                    let mut bytes = Vec::new();
-                    entry.read_to_end(&mut bytes)?;
-                    found = Some(bytes);
-                    break;
-                }
+        let best = Candidate::find_best(entry_paths, &desired_file_path, |path| {
+            read_file_contents(path).ok()
+        });
+        let (path, found) = match best {
+            None => (None, None),
+            Some(candidate) => {
+                let contents = read_file_contents(&candidate.path)?;
+                (Some(candidate.path), Some(contents))
             }
-            if found.is_none() {
-                tracing::warn!(
-                    path = ?candidate.path,
-                    "found candidate path, but failed to extract file"
-                );
-            }
-        }
+        };
 
         tracing::debug!(
             num_kilobytes,
             elapsed = ?start.elapsed(),
-            found = found.is_some(),
+            found_any = found.is_some(),
+            found_path = path.map(|path| path.display().to_string()),
             "extracted tar file"
         );
         Ok(found)
