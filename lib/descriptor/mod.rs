@@ -38,7 +38,7 @@ impl Descriptor {
         Get the description for the current host system.
     */
     #[must_use]
-    pub fn current_system() -> Self {
+    pub const fn current_system() -> Self {
         Self {
             os: OS::current_system(),
             arch: Some(Arch::current_system()),
@@ -85,7 +85,7 @@ impl Descriptor {
         Get the operating system of this description.
     */
     #[must_use]
-    pub fn os(&self) -> OS {
+    pub const fn os(&self) -> OS {
         self.os
     }
 
@@ -93,7 +93,7 @@ impl Descriptor {
         Get the architecture of this description.
     */
     #[must_use]
-    pub fn arch(&self) -> Option<Arch> {
+    pub const fn arch(&self) -> Option<Arch> {
         self.arch
     }
 
@@ -101,7 +101,7 @@ impl Descriptor {
         Get the preferred toolchain of this description.
     */
     #[must_use]
-    pub fn toolchain(&self) -> Option<Toolchain> {
+    pub const fn toolchain(&self) -> Option<Toolchain> {
         self.toolchain
     }
 
