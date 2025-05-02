@@ -22,7 +22,15 @@ impl Toolchain {
     */
     #[must_use]
     pub const fn current_system() -> Option<Self> {
-        None // TODO: Implement detection of the host toolchain
+        if cfg!(target_env = "msvc") {
+            Some(Self::Msvc)
+        } else if cfg!(target_env = "gnu") {
+            Some(Self::Gnu)
+        } else if cfg!(target_env = "musl") {
+            Some(Self::Musl)
+        } else {
+            None
+        }
     }
 
     /**
