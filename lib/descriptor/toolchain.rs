@@ -21,8 +21,16 @@ impl Toolchain {
         Get the toolchain of the current host system.
     */
     #[must_use]
-    pub fn current_system() -> Option<Self> {
-        None // TODO: Implement detection of the host toolchain
+    pub const fn current_system() -> Option<Self> {
+        if cfg!(target_env = "msvc") {
+            Some(Self::Msvc)
+        } else if cfg!(target_env = "gnu") {
+            Some(Self::Gnu)
+        } else if cfg!(target_env = "musl") {
+            Some(Self::Musl)
+        } else {
+            None
+        }
     }
 
     /**
@@ -44,7 +52,7 @@ impl Toolchain {
         Get the name of the toolchain as a string.
     */
     #[must_use]
-    pub fn as_str(self) -> &'static str {
+    pub const fn as_str(self) -> &'static str {
         match self {
             Self::Msvc => "msvc",
             Self::Gnu => "gnu",

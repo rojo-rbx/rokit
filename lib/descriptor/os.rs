@@ -38,12 +38,12 @@ impl OS {
         Get the operating system of the current host system.
     */
     #[must_use]
-    pub fn current_system() -> Self {
-        match CURRENT_OS {
-            "windows" => Self::Windows,
-            "macos" => Self::MacOS,
-            "linux" => Self::Linux,
-            _ => panic!("Unsupported OS: {CURRENT_OS}"),
+    pub const fn current_system() -> Self {
+        match CURRENT_OS.as_bytes() {
+            b"windows" => Self::Windows,
+            b"macos" => Self::MacOS,
+            b"linux" => Self::Linux,
+            _ => panic!("Unsupported OS"),
         }
     }
 
@@ -93,7 +93,7 @@ impl OS {
         Get the name of the operating system as a string.
     */
     #[must_use]
-    pub fn as_str(self) -> &'static str {
+    pub const fn as_str(self) -> &'static str {
         match self {
             Self::Windows => "windows",
             Self::MacOS => "macos",
