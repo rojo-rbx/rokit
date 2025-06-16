@@ -7,6 +7,7 @@ use std::{
 use rokit::tool::ToolId;
 
 const KNOWN_TOOL_AUTHORS_AND_IDS: [(&str, &[&str]); 8] = [
+    ("1axen", &["blink"]),
     ("evaera", &["moonwave"]),
     ("Iron-Stag-Games", &["lync"]),
     (
