@@ -8,6 +8,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## `Unreleased`
+
+### Changed
+
+- Modified the `rokit install` command to check if Rokit is in the user's PATH after installation, and provide appropriate instructions based on the user's operating system and shell ([#92])
+
+[#92]: https://github.com/rojo-rbx/rokit/pull/92
+
 ## `1.0.0` - November 13th, 2024
 
 Given that Rokit is already used in production by many Roblox developers, and many months have passed with no new major issues, it is time to release version `1.0.0`.

@@ -5,7 +5,7 @@ use clap::Parser;
 
 use console::style;
 use futures::{stream::FuturesUnordered, TryStreamExt};
-use rokit::{discovery::discover_all_manifests, storage::Home};
+use rokit::{discovery::discover_all_manifests, storage::Home, system::exists_in_path};
 
 use crate::util::{find_most_compatible_artifact, prompt_for_trust_specs, CliProgressTracker};
 
@@ -131,6 +131,38 @@ impl InstallSubcommand {
             style(installed_specs.len()).bold().magenta(),
             pt.formatted_elapsed(),
         ));
+
+        // 6. Check if PATH was updated and if the user needs to restart their terminal
+        // or source their shell configuration file to make Rokit available
+        if !exists_in_path(home) {
+            let restart_message = "You need to restart your terminal for Rokit to be available.";
+
+            if cfg!(windows) {
+                // Windows-only message (simpler since no source alternatives)
+                pt.finish_with_emoji_and_message("⚠️", restart_message);
+            } else {
+                // Unix systems with alternative source commands
+                let shell_command = if let Ok(shell) = std::env::var("SHELL") {
+                    if shell.ends_with("/zsh") {
+                        "source ~/.zshenv"
+                    } else if shell.ends_with("/bash") {
+                        "source ~/.bashrc"
+                    } else {
+                        "source ~/.profile"
+                    }
+                } else {
+                    "source ~/.profile"
+                };
+
+                pt.finish_with_emoji_and_message(
+                    "⚠️",
+                    format!(
+                        "{restart_message}\n\nAlternatively, run {} in your current terminal.",
+                        style(shell_command).bold().green()
+                    ),
+                );
+            }
+        }
 
         Ok(())
     }
