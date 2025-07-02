@@ -135,13 +135,16 @@ impl InstallSubcommand {
         // 6. Check if PATH was updated and if the user needs to restart their terminal
         // or source their shell configuration file to make Rokit available
         if !exists_in_path(home) {
-            let restart_message = "You need to restart your terminal for Rokit to be available.";
-
             if cfg!(windows) {
-                // Windows-only message (simpler since no source alternatives)
-                pt.finish_with_emoji_and_message("⚠️", restart_message);
+                // Windows users need to restart their PC for PATH changes to take effect
+                pt.finish_with_emoji_and_message(
+                    "⚠️",
+                    "You need to restart your computer for Rokit to be available.",
+                );
             } else {
                 // Unix systems with alternative source commands
+                let restart_message =
+                    "You need to restart your terminal for Rokit to be available.";
                 let shell_command = if let Ok(shell) = std::env::var("SHELL") {
                     if shell.ends_with("/zsh") {
                         "source ~/.zshenv"
