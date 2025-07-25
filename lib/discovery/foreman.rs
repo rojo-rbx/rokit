@@ -3,7 +3,7 @@ use std::{collections::HashMap, str::FromStr};
 use semver::Version;
 use toml_edit::{DocumentMut, InlineTable, Table};
 
-use crate::tool::{ToolAlias, ToolId, ToolSpec};
+use crate::tool::{util::to_xyz_version, ToolAlias, ToolId, ToolSpec};
 
 use super::Manifest;
 
@@ -71,7 +71,8 @@ fn parse_foreman_tool_definition(map: SpecType) -> Option<ToolSpec> {
     let version = map.get("version").and_then(|t| t.as_str()).and_then(|v| {
         // TODO: Support real version requirements instead of just exact/min versions
         let without_prefix = v.trim_start_matches('=').trim_start_matches('^');
-        without_prefix.parse::<Version>().ok()
+        let version_str = to_xyz_version(without_prefix);
+        version_str.parse::<Version>().ok()
     })?;
     // TODO: Support gitlab tool ids
     let github_tool_id = map

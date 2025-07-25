@@ -6,7 +6,7 @@ use thiserror::Error;
 
 use crate::sources::ArtifactProvider;
 
-use super::{util::is_invalid_identifier, ToolId, ToolIdParseError};
+use super::{util::is_invalid_identifier, util::to_xyz_version, ToolId, ToolIdParseError};
 
 /**
     Error type representing the possible errors that can occur when parsing a `ToolSpec`.
@@ -97,7 +97,8 @@ impl FromStr for ToolSpec {
             return Err(ToolSpecParseError::InvalidVersion(after.to_string()));
         }
 
-        let version = match after.parse::<Version>() {
+        let version_str = to_xyz_version(after);
+        let version = match version_str.parse::<Version>() {
             Ok(version) => version,
             Err(e) => {
                 return match after.parse::<VersionReq>() {
