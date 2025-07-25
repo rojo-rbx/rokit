@@ -148,6 +148,7 @@ mod tests {
         // Basic strings should parse ok
         assert!("a/b@0.0.0".parse::<ToolSpec>().is_ok());
         assert!("author/name@1.2.3".parse::<ToolSpec>().is_ok());
+        assert!("author/name@6.9".parse::<ToolSpec>().is_ok());
         assert!("123abc456/78de90@11.22.33".parse::<ToolSpec>().is_ok());
         // The parsed ToolSpec should match the input
         assert_eq!(
@@ -157,6 +158,10 @@ mod tests {
         assert_eq!(
             "author/name@1.2.3".parse::<ToolSpec>().unwrap(),
             new_spec("author", "name", "1.2.3"),
+        );
+        assert_eq!(
+            "author/name@6.9".parse::<ToolSpec>().unwrap(),
+            new_spec("author", "name", "6.9.0"),
         );
         assert_eq!(
             "123abc456/78de90@11.22.33".parse::<ToolSpec>().unwrap(),
