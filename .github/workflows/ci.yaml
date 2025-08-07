@@ -37,10 +37,18 @@ jobs:
           - name: Windows x86_64
             runner-os: windows-latest
             cargo-target: x86_64-pc-windows-msvc
+          
+          - name: Windows aarch64
+            runner-os: windows-11-arm
+            cargo-target: aarch64-pc-windows-msvc
 
           - name: Linux x86_64
             runner-os: ubuntu-latest
             cargo-target: x86_64-unknown-linux-gnu
+
+          - name: Linux aarch64
+            runner-os: ubuntu-24.04-arm
+            cargo-target: aarch64-unknown-linux-gnu
 
           - name: macOS x86_64
             runner-os: macos-13
