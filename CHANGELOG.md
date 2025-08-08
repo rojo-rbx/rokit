@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## `Unreleased`
 
+### Added
+
+- Allow `x.y` versioning scheme in the config file ([#86])
+
 ### Changed
 
 - Modified the `rokit install` command to check if Rokit is in the user's PATH after installation, and provide appropriate instructions based on the user's operating system and shell ([#92])
