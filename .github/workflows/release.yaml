@@ -56,6 +56,11 @@ jobs:
             artifact-name: rokit-${{ needs.init.outputs.version }}-windows-x86_64
             cargo-target: x86_64-pc-windows-msvc
 
+          - name: Windows aarch64
+            runner-os: windows-11-arm
+            artifact-name: rokit-${{ needs.init.outputs.version }}-windows-aarch64
+            cargo-target: aarch64-pc-windows-msvc
+
           - name: Linux x86_64
             runner-os: ubuntu-latest
             artifact-name: rokit-${{ needs.init.outputs.version }}-linux-x86_64
