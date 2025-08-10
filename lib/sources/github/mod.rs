@@ -8,7 +8,7 @@ use reqwest::{
     StatusCode,
 };
 
-use crate::tool::{ToolId, ToolSpec};
+use crate::tool::{util::to_xyz_version, ToolId, ToolSpec};
 
 use super::{client::create_client, Artifact, ArtifactProvider, Release};
 
@@ -144,9 +144,9 @@ impl GithubProvider {
             Ok(r) => r,
         };
 
-        let version = release
-            .tag_name
-            .trim_start_matches('v')
+        let version_str = release.tag_name.trim_start_matches('v');
+        let version_str_xyz = to_xyz_version(version_str);
+        let version = version_str_xyz
             .parse::<Version>()
             .map_err(|e| GithubError::Other(e.to_string()))?;
 
@@ -163,36 +163,44 @@ impl GithubProvider {
     #[instrument(skip(self), fields(%tool_spec), level = "debug")]
     pub async fn get_specific_release(&self, tool_spec: &ToolSpec) -> GithubResult<Release> {
         debug!(spec = %tool_spec, "fetching release for tool");
-
-        let url_with_prefix = format!(
-            "{BASE_URL}/repos/{owner}/{repo}/releases/tags/v{tag}",
-            owner = tool_spec.author(),
-            repo = tool_spec.name(),
-            tag = tool_spec.version(),
-        );
-        let url_without_prefix = format!(
-            "{BASE_URL}/repos/{owner}/{repo}/releases/tags/{tag}",
-            owner = tool_spec.author(),
-            repo = tool_spec.name(),
-            tag = tool_spec.version(),
-        );
-
-        let release: GithubRelease = match self.get_json(&url_with_prefix).await {
-            Err(e) if is_404(&e) => match self.get_json(&url_without_prefix).await {
-                Err(e) if is_404(&e) => {
-                    return Err(GithubError::ReleaseNotFound(tool_spec.clone().into()));
+        let mut tags_to_try = vec![tool_spec.version().to_string()];
+        let version = tool_spec.version();
+        if version.patch == 0 && version.pre.is_empty() && version.build.is_empty() {
+            tags_to_try.push(format!("{}.{}", version.major, version.minor));
+        }
+        for tag in tags_to_try {
+            let url_with_prefix = format!(
+                "{BASE_URL}/repos/{owner}/{repo}/releases/tags/v{tag}",
+                owner = tool_spec.author(),
+                repo = tool_spec.name(),
+            );
+            let url_without_prefix = format!(
+                "{BASE_URL}/repos/{owner}/{repo}/releases/tags/{tag}",
+                owner = tool_spec.author(),
+                repo = tool_spec.name(),
+            );
+            match self.get_json::<GithubRelease>(&url_with_prefix).await {
+                Ok(release) => {
+                    return Ok(Release {
+                        changelog: release.changelog.clone(),
+                        artifacts: artifacts_from_release(&release, tool_spec),
+                    });
                 }
-                Err(e) => return Err(e),
-                Ok(r) => r,
-            },
-            Err(e) => return Err(e),
-            Ok(r) => r,
-        };
-
-        Ok(Release {
-            changelog: release.changelog.clone(),
-            artifacts: artifacts_from_release(&release, tool_spec),
-        })
+                Err(e) if !is_404(&e) => return Err(e),
+                _ => {}
+            }
+            match self.get_json::<GithubRelease>(&url_without_prefix).await {
+                Ok(release) => {
+                    return Ok(Release {
+                        changelog: release.changelog.clone(),
+                        artifacts: artifacts_from_release(&release, tool_spec),
+                    });
+                }
+                Err(e) if !is_404(&e) => return Err(e),
+                _ => {}
+            }
+        }
+        Err(GithubError::ReleaseNotFound(tool_spec.clone().into()))
     }
 
     /**

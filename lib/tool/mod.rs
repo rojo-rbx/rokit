@@ -1,7 +1,7 @@
 mod alias;
 mod id;
-mod spec;
-mod util;
+pub(crate) mod spec;
+pub(crate) mod util;
 
 pub use self::alias::{ToolAlias, ToolAliasParseError};
 pub use self::id::{ToolId, ToolIdParseError};

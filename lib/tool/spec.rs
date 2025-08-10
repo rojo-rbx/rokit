@@ -6,7 +6,7 @@ use thiserror::Error;
 
 use crate::sources::ArtifactProvider;
 
-use super::{util::is_invalid_identifier, ToolId, ToolIdParseError};
+use super::{util::is_invalid_identifier, util::to_xyz_version, ToolId, ToolIdParseError};
 
 /**
     Error type representing the possible errors that can occur when parsing a `ToolSpec`.
@@ -97,7 +97,8 @@ impl FromStr for ToolSpec {
             return Err(ToolSpecParseError::InvalidVersion(after.to_string()));
         }
 
-        let version = match after.parse::<Version>() {
+        let version_str = to_xyz_version(after);
+        let version = match version_str.parse::<Version>() {
             Ok(version) => version,
             Err(e) => {
                 return match after.parse::<VersionReq>() {
@@ -147,6 +148,7 @@ mod tests {
         // Basic strings should parse ok
         assert!("a/b@0.0.0".parse::<ToolSpec>().is_ok());
         assert!("author/name@1.2.3".parse::<ToolSpec>().is_ok());
+        assert!("author/name@6.9".parse::<ToolSpec>().is_ok());
         assert!("123abc456/78de90@11.22.33".parse::<ToolSpec>().is_ok());
         // The parsed ToolSpec should match the input
         assert_eq!(
@@ -156,6 +158,10 @@ mod tests {
         assert_eq!(
             "author/name@1.2.3".parse::<ToolSpec>().unwrap(),
             new_spec("author", "name", "1.2.3"),
+        );
+        assert_eq!(
+            "author/name@6.9".parse::<ToolSpec>().unwrap(),
+            new_spec("author", "name", "6.9.0"),
         );
         assert_eq!(
             "123abc456/78de90@11.22.33".parse::<ToolSpec>().unwrap(),
