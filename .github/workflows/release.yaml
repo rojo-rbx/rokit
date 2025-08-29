@@ -21,11 +21,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Get version from manifest
-        uses: SebRollen/toml-action@v1.2.0
         id: get_version
-        with:
-          file: Cargo.toml
-          field: package.version
+        run: |
+          PACKAGE_VERSION=$(./scripts/get-version.sh)
+          echo "value=${PACKAGE_VERSION}" >> $GITHUB_OUTPUT
 
   dry-run:
     name: Dry-run
@@ -52,7 +51,7 @@ jobs:
       matrix:
         include:
           - name: Windows x86_64
-            runner-os: windows-latest
+            runner-os: windows-2022
             artifact-name: rokit-${{ needs.init.outputs.version }}-windows-x86_64
             cargo-target: x86_64-pc-windows-msvc
 
@@ -62,22 +61,22 @@ jobs:
             cargo-target: aarch64-pc-windows-msvc
 
           - name: Linux x86_64
-            runner-os: ubuntu-latest
+            runner-os: ubuntu-24.04
             artifact-name: rokit-${{ needs.init.outputs.version }}-linux-x86_64
             cargo-target: x86_64-unknown-linux-gnu
 
           - name: Linux aarch64
-            runner-os: ubuntu-latest
+            runner-os: ubuntu-24.04-arm
             artifact-name: rokit-${{ needs.init.outputs.version }}-linux-aarch64
             cargo-target: aarch64-unknown-linux-gnu
 
           - name: macOS x86_64
-            runner-os: macos-13
+            runner-os: macos-15
             artifact-name: rokit-${{ needs.init.outputs.version }}-macos-x86_64
             cargo-target: x86_64-apple-darwin
 
           - name: macOS aarch64
-            runner-os: macos-14
+            runner-os: macos-15
             artifact-name: rokit-${{ needs.init.outputs.version }}-macos-aarch64
             cargo-target: aarch64-apple-darwin
 
@@ -91,13 +90,6 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: ${{ matrix.cargo-target }}
-
-      - name: Install build tooling (aarch64-unknown-linux-gnu)
-        if: matrix.cargo-target == 'aarch64-unknown-linux-gnu'
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y musl-tools clang llvm
-          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 
       - name: Build binary
         run: |
