@@ -8,16 +8,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## `Unreleased`
+## `1.1.0` - August 29th, 2025
+
+It's been almost a year since Rokit `1.0.0` - this maintenance release adds compatibility with more tooling versions and artifacts, and updates Rokit's internal dependencies.
+It's also the first Rokit release with native ARM64 support across all major platforms. Otherwise, nothing has changed. Rokit `1.0.0` and above remain as stable as ever.
+
+To update to this version, run `rokit self-update`. 🚀
 
 ### Added
 
-- Allow `x.y` versioning scheme in the config file ([#86])
+- Added support for GitHub releases that use an `x.y` versioning scheme such as the [Luau CLI](https://github.com/luau-lang/luau/releases) ([#86])
+- Added an extra hint for ensuring PATH is up to date, and that tools are runnable, after `rokit install` ([#92])
 
 ### Changed
 
-- Modified the `rokit install` command to check if Rokit is in the user's PATH after installation, and provide appropriate instructions based on the user's operating system and shell ([#92])
+- Improved artifact extraction for forked tools in specific circumstances ([#82])
+- Clarified messaging for subcommands when running `rokit --help`
 
+[#82]: https://github.com/rojo-rbx/rokit/pull/82
+[#86]: https://github.com/rojo-rbx/rokit/pull/86
 [#92]: https://github.com/rojo-rbx/rokit/pull/92
 
 ## `1.0.0` - November 13th, 2024
