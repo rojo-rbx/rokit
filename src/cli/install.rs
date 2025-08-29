@@ -9,7 +9,7 @@ use rokit::{discovery::discover_all_manifests, storage::Home, system::exists_in_
 
 use crate::util::{find_most_compatible_artifact, prompt_for_trust_specs, CliProgressTracker};
 
-/// Adds a new tool using Rokit and installs it.
+/// Installs all project-specific tools.
 #[derive(Debug, Parser)]
 pub struct InstallSubcommand {
     /// Skip checking if tools have been trusted before.
