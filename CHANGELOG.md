@@ -8,6 +8,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## `1.1.1` - August 31st, 2025
+
+### Changed
+
+- Prebuilt binaries for Rokit now use an older Ubuntu version (22.04) for better GLIBC compatibility
+
 ## `1.1.0` - August 29th, 2025
 
 It's been almost a year since Rokit `1.0.0` - this maintenance release adds compatibility with more tooling versions and artifacts, and updates Rokit's internal dependencies.
