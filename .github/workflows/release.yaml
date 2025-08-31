@@ -61,12 +61,12 @@ jobs:
             cargo-target: aarch64-pc-windows-msvc
 
           - name: Linux x86_64
-            runner-os: ubuntu-24.04
+            runner-os: ubuntu-22.04
             artifact-name: rokit-${{ needs.init.outputs.version }}-linux-x86_64
             cargo-target: x86_64-unknown-linux-gnu
 
           - name: Linux aarch64
-            runner-os: ubuntu-24.04-arm
+            runner-os: ubuntu-22.04-arm
             artifact-name: rokit-${{ needs.init.outputs.version }}-linux-aarch64
             cargo-target: aarch64-unknown-linux-gnu
 

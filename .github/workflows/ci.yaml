@@ -40,11 +40,11 @@ jobs:
             cargo-target: aarch64-pc-windows-msvc
 
           - name: Linux x86_64
-            runner-os: ubuntu-24.04
+            runner-os: ubuntu-22.04
             cargo-target: x86_64-unknown-linux-gnu
 
           - name: Linux aarch64
-            runner-os: ubuntu-24.04-arm
+            runner-os: ubuntu-22.04-arm
             cargo-target: aarch64-unknown-linux-gnu
 
           - name: macOS x86_64
