@@ -97,12 +97,8 @@ mod tests {
             ("sentry-cli-linux-i686-2.32.1", vec!["tgz"])
         );
         assert_eq!(
-            split_filename_and_extensions("tool-1.0.0-linux-x86_64.tar.xz"),
-            ("tool-1.0.0-linux-x86_64", vec!["tar", "xz"])
-        );
-        assert_eq!(
-            split_filename_and_extensions("tool-1.0.0-linux-x86_64.txz"),
-            ("tool-1.0.0-linux-x86_64", vec!["txz"])
+            split_filename_and_extensions("asphalt-x86_64-apple-darwin.tar.xz"),
+            ("asphalt-x86_64-apple-darwin", vec!["tar", "xz"])
         );
     }
 }
