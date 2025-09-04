@@ -43,6 +43,7 @@ dunce = "1.0"
 filepath = "0.2"
 flate2 = "1.1"
 goblin = "0.10"
+lzma-rs = "0.3"
 postcard = { version = "1.1", features = ["alloc"] }
 semver = { version = "1.0", features = ["serde"] }
 tar = "0.4"
