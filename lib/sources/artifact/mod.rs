@@ -8,7 +8,7 @@ use crate::{
 };
 
 use super::{
-    decompression::decompress_gzip,
+    decompression::{decompress_gzip, decompress_xz},
     extraction::{extract_tar_file, extract_zip_file},
     github::models::GithubAsset,
     ExtractError,
@@ -83,6 +83,10 @@ impl Artifact {
             ArtifactFormat::Tar => extract_tar_file(&contents, &file_name).await,
             ArtifactFormat::TarGz => {
                 let tar = decompress_gzip(&contents).await?;
+                extract_tar_file(&tar, &file_name).await
+            }
+            ArtifactFormat::TarXz => {
+                let tar = decompress_xz(&contents).await?;
                 extract_tar_file(&tar, &file_name).await
             }
             ArtifactFormat::Gz => decompress_gzip(&contents).await.map(Some),

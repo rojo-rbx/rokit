@@ -1,6 +1,6 @@
 use std::path::Path;
 
-const ALLOWED_EXTENSION_NAMES: [&str; 4] = ["zip", "tar", "gz", "tgz"];
+const ALLOWED_EXTENSION_NAMES: [&str; 6] = ["zip", "tar", "gz", "tgz", "xz", "txz"];
 const ALLOWED_EXTENSION_COUNT: usize = 2;
 
 pub(super) fn split_filename_and_extensions(name: &str) -> (&str, Vec<&str>) {
@@ -53,6 +53,14 @@ mod tests {
             ("file", vec!["tar", "gz"])
         );
         assert_eq!(
+            split_filename_and_extensions("file.tar.xz"),
+            ("file", vec!["tar", "xz"])
+        );
+        assert_eq!(
+            split_filename_and_extensions("file.txz"),
+            ("file", vec!["txz"])
+        );
+        assert_eq!(
             split_filename_and_extensions("file.with.many.extensions.tar.gz.zip"),
             ("file.with.many.extensions.tar", vec!["gz", "zip"])
         );
@@ -63,6 +71,10 @@ mod tests {
         assert_eq!(
             split_filename_and_extensions("file.with.many.extensions.tar.gz"),
             ("file.with.many.extensions", vec!["tar", "gz"])
+        );
+        assert_eq!(
+            split_filename_and_extensions("file.with.many.extensions.tar.xz"),
+            ("file.with.many.extensions", vec!["tar", "xz"])
         );
     }
 
@@ -83,6 +95,14 @@ mod tests {
         assert_eq!(
             split_filename_and_extensions("sentry-cli-linux-i686-2.32.1.tgz"),
             ("sentry-cli-linux-i686-2.32.1", vec!["tgz"])
+        );
+        assert_eq!(
+            split_filename_and_extensions("tool-1.0.0-linux-x86_64.tar.xz"),
+            ("tool-1.0.0-linux-x86_64", vec!["tar", "xz"])
+        );
+        assert_eq!(
+            split_filename_and_extensions("tool-1.0.0-linux-x86_64.txz"),
+            ("tool-1.0.0-linux-x86_64", vec!["txz"])
         );
     }
 }

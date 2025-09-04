@@ -8,6 +8,7 @@ use super::util::split_filename_and_extensions;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum ArtifactFormat {
     TarGz,
+    TarXz,
     Tar,
     Zip,
     Gz,
@@ -20,6 +21,7 @@ impl ArtifactFormat {
             Self::Zip => "zip",
             Self::Tar => "tar",
             Self::TarGz => "tar.gz",
+            Self::TarXz => "tar.xz",
             Self::Gz => "gz",
         }
     }
@@ -30,10 +32,16 @@ impl ArtifactFormat {
             [.., ext] if ext.eq_ignore_ascii_case("zip") => Some(Self::Zip),
             [.., ext] if ext.eq_ignore_ascii_case("tar") => Some(Self::Tar),
             [.., ext] if ext.eq_ignore_ascii_case("tgz") => Some(Self::TarGz),
+            [.., ext] if ext.eq_ignore_ascii_case("txz") => Some(Self::TarXz),
             [.., ext1, ext2]
                 if ext1.eq_ignore_ascii_case("tar") && ext2.eq_ignore_ascii_case("gz") =>
             {
                 Some(Self::TarGz)
+            }
+            [.., ext1, ext2]
+                if ext1.eq_ignore_ascii_case("tar") && ext2.eq_ignore_ascii_case("xz") =>
+            {
+                Some(Self::TarXz)
             }
             [.., ext] if ext.eq_ignore_ascii_case("gz") => Some(Self::Gz),
             _ => None,
@@ -56,6 +64,7 @@ impl FromStr for ArtifactFormat {
             "zip" => Ok(Self::Zip),
             "tar" => Ok(Self::Tar),
             "tar.gz" | "tgz" => Ok(Self::TarGz),
+            "tar.xz" | "txz" => Ok(Self::TarXz),
             _ => Err(format!("unknown artifact format '{l}'")),
         }
     }
@@ -82,6 +91,8 @@ mod tests {
         assert_eq!(format_from_str("file.tar"), Some(ArtifactFormat::Tar));
         assert_eq!(format_from_str("file.tar.gz"), Some(ArtifactFormat::TarGz));
         assert_eq!(format_from_str("file.tgz"), Some(ArtifactFormat::TarGz));
+        assert_eq!(format_from_str("file.tar.xz"), Some(ArtifactFormat::TarXz));
+        assert_eq!(format_from_str("file.txz"), Some(ArtifactFormat::TarXz));
         assert_eq!(format_from_str("file.gz"), Some(ArtifactFormat::Gz));
         assert_eq!(
             format_from_str("file.with.many.extensions.tar.gz.zip"),
@@ -94,6 +105,10 @@ mod tests {
         assert_eq!(
             format_from_str("file.with.many.extensions.tar.gz"),
             Some(ArtifactFormat::TarGz)
+        );
+        assert_eq!(
+            format_from_str("file.with.many.extensions.tar.xz"),
+            Some(ArtifactFormat::TarXz)
         );
     }
 
@@ -145,6 +160,12 @@ mod tests {
         assert_eq!(format_from_str("file.gz"), Some(ArtifactFormat::Gz));
         assert_eq!(format_from_str("file.GZ"), Some(ArtifactFormat::Gz));
         assert_eq!(format_from_str("file.Gz"), Some(ArtifactFormat::Gz));
+        assert_eq!(format_from_str("file.tar.xz"), Some(ArtifactFormat::TarXz));
+        assert_eq!(format_from_str("file.TAR.XZ"), Some(ArtifactFormat::TarXz));
+        assert_eq!(format_from_str("file.Tar.Xz"), Some(ArtifactFormat::TarXz));
+        assert_eq!(format_from_str("file.txz"), Some(ArtifactFormat::TarXz));
+        assert_eq!(format_from_str("file.TXZ"), Some(ArtifactFormat::TarXz));
+        assert_eq!(format_from_str("file.Txz"), Some(ArtifactFormat::TarXz));
     }
 
     #[test]
@@ -153,6 +174,7 @@ mod tests {
             "tool-v1.0.0-x86_64-linux.zip",
             "tool-v1.0.0-x86_64-linux.tar",
             "tool-v1.0.0-x86_64-linux.tar.gz",
+            "tool-v1.0.0-x86_64-linux.tar.xz",
             "tool-v1.0.0-x86_64-linux.gz",
             "tool-v1.0.0-x86_64-linux",
             "tool-v1.0.0-x86_64-linux.elf",
@@ -171,6 +193,7 @@ mod tests {
                 None,
                 None,
                 Some(ArtifactFormat::TarGz),
+                Some(ArtifactFormat::TarXz),
                 Some(ArtifactFormat::Tar),
                 Some(ArtifactFormat::Zip),
                 Some(ArtifactFormat::Gz),
