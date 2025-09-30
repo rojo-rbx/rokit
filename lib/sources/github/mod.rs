@@ -1,3 +1,5 @@
+#![allow(clippy::missing_errors_doc)]
+
 use reqwest_middleware::ClientWithMiddleware;
 use semver::Version;
 use serde::de::DeserializeOwned;

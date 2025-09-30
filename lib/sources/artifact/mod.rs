@@ -1,3 +1,5 @@
+#![allow(clippy::missing_errors_doc)]
+
 use tracing::instrument;
 use url::Url;
 
