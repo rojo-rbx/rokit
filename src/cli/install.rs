@@ -4,10 +4,10 @@ use anyhow::{Context, Result};
 use clap::Parser;
 
 use console::style;
-use futures::{stream::FuturesUnordered, TryStreamExt};
+use futures::{TryStreamExt, stream::FuturesUnordered};
 use rokit::{discovery::discover_all_manifests, storage::Home, system::exists_in_path};
 
-use crate::util::{find_most_compatible_artifact, prompt_for_trust_specs, CliProgressTracker};
+use crate::util::{CliProgressTracker, find_most_compatible_artifact, prompt_for_trust_specs};
 
 /// Installs all project-specific tools.
 #[derive(Debug, Parser)]

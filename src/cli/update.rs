@@ -1,12 +1,12 @@
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use clap::Parser;
 use console::style;
-use futures::{stream::FuturesUnordered, TryStreamExt};
+use futures::{TryStreamExt, stream::FuturesUnordered};
 
 use rokit::{discovery::discover_all_manifests, manifests::RokitManifest, storage::Home};
 
 use crate::util::{
-    find_most_compatible_artifact, CliProgressTracker, ToolAliasOrIdOrSpec, ToolIdOrSpec,
+    CliProgressTracker, ToolAliasOrIdOrSpec, ToolIdOrSpec, find_most_compatible_artifact,
 };
 
 /// Updates all tools, or specific tools, to the latest version.

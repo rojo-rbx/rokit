@@ -1,6 +1,6 @@
 use std::{env::args, process::exit, str::FromStr};
 
-use anyhow::{bail, Error, Result};
+use anyhow::{Error, Result, bail};
 use tracing::level_filters::LevelFilter;
 
 use rokit::{

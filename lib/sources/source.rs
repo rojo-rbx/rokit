@@ -5,7 +5,7 @@ use crate::{
     tool::{ToolId, ToolSpec},
 };
 
-use super::{github::GithubProvider, Artifact, ArtifactProvider, Release};
+use super::{Artifact, ArtifactProvider, Release, github::GithubProvider};
 
 /**
     A source for artifacts.

@@ -1,10 +1,10 @@
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use clap::Parser;
 
 use console::style;
 use rokit::{
     manifests::AuthManifest,
-    sources::{github::GithubProvider, ArtifactProvider},
+    sources::{ArtifactProvider, github::GithubProvider},
     storage::Home,
 };
 
@@ -131,7 +131,9 @@ async fn verify_token(
             let bullet = style("•").dim();
             let valid_formats = match provider {
                 ArtifactProvider::GitHub => vec![
-                    format!("{bullet} Starting with 'gh' followed by a lowercase letter and an underscore"),
+                    format!(
+                        "{bullet} Starting with 'gh' followed by a lowercase letter and an underscore"
+                    ),
                     format!("{bullet} Starting with 'github_pat_'"),
                 ],
             };

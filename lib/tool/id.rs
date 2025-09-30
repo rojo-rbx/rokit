@@ -6,7 +6,7 @@ use thiserror::Error;
 
 use crate::{sources::ArtifactProvider, util::str::CaseInsensitiveString};
 
-use super::{util::is_invalid_identifier, ToolAlias, ToolSpec};
+use super::{ToolAlias, ToolSpec, util::is_invalid_identifier};
 
 /**
     Error type representing the possible errors that can occur when parsing a `ToolId`.

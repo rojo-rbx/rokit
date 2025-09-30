@@ -10,10 +10,10 @@ use crate::{
 };
 
 use super::{
+    ExtractError,
     decompression::{decompress_gzip, decompress_xz},
     extraction::{extract_tar_file, extract_zip_file},
     github::models::GithubAsset,
-    ExtractError,
 };
 
 mod format;

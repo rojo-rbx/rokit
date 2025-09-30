@@ -8,7 +8,7 @@ use tokio::task::JoinError;
 use toml_edit::TomlError;
 use zip::result::ZipError;
 
-use crate::sources::{github::GithubError, ExtractError};
+use crate::sources::{ExtractError, github::GithubError};
 
 #[derive(Debug, Error)]
 pub enum RokitError {

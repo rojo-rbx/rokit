@@ -4,7 +4,7 @@ use std::{
     cmp::Reverse,
     env::consts::{EXE_EXTENSION, EXE_SUFFIX},
     io::{self, Read},
-    path::{Path, PathBuf, MAIN_SEPARATOR_STR},
+    path::{MAIN_SEPARATOR_STR, Path, PathBuf},
 };
 
 use tar::Archive as TarArchive;

@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use futures::{stream::FuturesUnordered, StreamExt};
+use futures::{StreamExt, stream::FuturesUnordered};
 use tokio::{
     fs::{read_to_string, write},
     io::ErrorKind,

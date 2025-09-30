@@ -1,4 +1,4 @@
-use reqwest::{header::InvalidHeaderValue, Error as ReqwestError};
+use reqwest::{Error as ReqwestError, header::InvalidHeaderValue};
 use thiserror::Error;
 
 use crate::tool::{ToolId, ToolSpec};

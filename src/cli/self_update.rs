@@ -1,12 +1,12 @@
-use std::io::{stdout, BufWriter};
+use std::io::{BufWriter, stdout};
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use clap::Parser;
-use console::{style, Style};
-use dialoguer::{theme::ColorfulTheme, Confirm};
+use console::{Style, style};
+use dialoguer::{Confirm, theme::ColorfulTheme};
 use pulldown_cmark::{Options, Parser as MarkdownParser};
 use pulldown_cmark_mdcat::{
-    resources::FileResourceHandler, Environment, Settings, TerminalProgram, TerminalSize, Theme,
+    Environment, Settings, TerminalProgram, TerminalSize, Theme, resources::FileResourceHandler,
 };
 use syntect::parsing::SyntaxSet;
 
@@ -14,7 +14,7 @@ use semver::Version;
 
 use rokit::{storage::Home, tool::ToolId};
 
-use crate::util::{find_most_compatible_artifact, CliProgressTracker};
+use crate::util::{CliProgressTracker, find_most_compatible_artifact};
 
 /// Updates Rokit to the latest version.
 #[derive(Debug, Parser)]

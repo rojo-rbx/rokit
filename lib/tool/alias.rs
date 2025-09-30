@@ -5,7 +5,7 @@ use thiserror::Error;
 
 use crate::util::str::CaseInsensitiveString;
 
-use super::{util::is_invalid_identifier, ToolId};
+use super::{ToolId, util::is_invalid_identifier};
 
 /**
     Error type representing the possible errors that can occur when parsing a `ToolAlias`.

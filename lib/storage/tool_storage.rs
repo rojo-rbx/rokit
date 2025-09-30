@@ -5,7 +5,7 @@ use std::{
 };
 
 use filepath::FilePath;
-use futures::{stream::FuturesUnordered, TryStreamExt};
+use futures::{TryStreamExt, stream::FuturesUnordered};
 use tokio::{
     fs::{create_dir_all, read, read_dir, remove_file, rename},
     sync::Mutex as AsyncMutex,

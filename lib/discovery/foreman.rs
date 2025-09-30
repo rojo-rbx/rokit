@@ -3,7 +3,7 @@ use std::{collections::HashMap, str::FromStr};
 use semver::Version;
 use toml_edit::{DocumentMut, InlineTable, Table};
 
-use crate::tool::{util::to_xyz_version, ToolAlias, ToolId, ToolSpec};
+use crate::tool::{ToolAlias, ToolId, ToolSpec, util::to_xyz_version};
 
 use super::Manifest;
 

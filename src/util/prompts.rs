@@ -1,10 +1,10 @@
 use std::{
     collections::BTreeSet,
-    io::{stderr, IsTerminal},
+    io::{IsTerminal, stderr},
 };
 
-use anyhow::{bail, Context, Result};
-use console::{style, Style};
+use anyhow::{Context, Result, bail};
+use console::{Style, style};
 use dialoguer::theme::ColorfulTheme;
 use rokit::tool::{ToolId, ToolSpec};
 use tokio::task::spawn_blocking;

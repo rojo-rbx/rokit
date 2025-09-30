@@ -1,4 +1,4 @@
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use clap::Parser;
 use console::style;
 
@@ -10,7 +10,7 @@ use rokit::{
 };
 
 use crate::util::{
-    find_most_compatible_artifact, prompt_for_trust, CliProgressTracker, ToolIdOrSpec,
+    CliProgressTracker, ToolIdOrSpec, find_most_compatible_artifact, prompt_for_trust,
 };
 
 /// Adds a new tool to Rokit and installs it.

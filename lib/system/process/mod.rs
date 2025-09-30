@@ -1,6 +1,6 @@
 #![allow(clippy::unused_async)]
 
-use std::io::{stderr, stdout, IsTerminal};
+use std::io::{IsTerminal, stderr, stdout};
 
 #[cfg(unix)]
 mod unix;

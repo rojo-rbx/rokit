@@ -1,12 +1,12 @@
 use std::time::Duration;
 
 use reqwest::{
-    header::{HeaderMap, USER_AGENT},
     Client, Error,
+    header::{HeaderMap, USER_AGENT},
 };
 
 use reqwest_middleware::{ClientBuilder, ClientWithMiddleware};
-use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
+use reqwest_retry::{RetryTransientMiddleware, policies::ExponentialBackoff};
 use reqwest_tracing::TracingMiddleware;
 
 /*

@@ -5,8 +5,8 @@ use std::{
     collections::BTreeSet,
     path::{Path, PathBuf},
     sync::{
-        atomic::{AtomicBool, Ordering},
         Arc,
+        atomic::{AtomicBool, Ordering},
     },
 };
 
@@ -236,7 +236,7 @@ async fn save_impl(path: PathBuf, cache: &ToolCache) -> RokitResult<()> {
     // Same as in our load implementation, see notes there.
     let result = spawn_blocking(move || {
         use std::{
-            fs::{create_dir_all, File},
+            fs::{File, create_dir_all},
             io::{BufWriter, Error},
         };
         create_dir_all(path.parent().unwrap())?;

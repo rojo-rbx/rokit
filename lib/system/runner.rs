@@ -8,7 +8,7 @@ use async_signal::{Signal, Signals};
 use futures::StreamExt;
 use tokio::{
     process::Command,
-    task::{spawn, JoinHandle},
+    task::{JoinHandle, spawn},
 };
 
 /*
