@@ -1,7 +1,7 @@
 use std::io::Read;
 
 use flate2::read::GzDecoder;
-use lzma_rs::xz_decompress;
+use lzma_rust2::XzReader;
 use tokio::{task::spawn_blocking, time::Instant};
 
 use crate::result::RokitResult;
@@ -33,10 +33,12 @@ pub async fn decompress_xz(xz_contents: impl AsRef<[u8]>) -> RokitResult<Vec<u8>
     let num_kilobytes = xz_contents.len() / 1024;
     let start = Instant::now();
 
-    // using spawn_blocking for the same reason as gzip
+    // Decompressing lzma is a potentially expensive operation, so
+    // spawn it as a blocking task and use the tokio thread pool.
     spawn_blocking(move || {
+        let mut reader = XzReader::new(xz_contents.as_slice(), false);
         let mut contents = Vec::new();
-        xz_decompress(&mut xz_contents.as_slice(), &mut contents)?;
+        reader.read_to_end(&mut contents)?;
 
         tracing::trace!(
             num_kilobytes,

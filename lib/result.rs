@@ -1,7 +1,6 @@
 use std::io::Error as IoError;
 use std::path::PathBuf;
 
-use lzma_rs::error::Error as LzmaError;
 use postcard::Error as PostcardError;
 use serde_json::Error as JsonError;
 use thiserror::Error;
@@ -33,8 +32,6 @@ pub enum RokitError {
     Postcard(Box<PostcardError>),
     #[error("Zip file error: {0}")]
     Zip(Box<ZipError>),
-    #[error("LZMA error: {0}")]
-    Lzma(Box<LzmaError>),
     #[error("GitHub error: {0}")]
     GitHub(Box<GithubError>),
 }
@@ -82,12 +79,6 @@ impl From<PostcardError> for RokitError {
 impl From<ZipError> for RokitError {
     fn from(err: ZipError) -> Self {
         RokitError::Zip(err.into())
-    }
-}
-
-impl From<LzmaError> for RokitError {
-    fn from(err: LzmaError) -> Self {
-        RokitError::Lzma(err.into())
     }
 }
 
