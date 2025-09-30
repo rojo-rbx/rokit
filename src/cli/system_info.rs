@@ -1,13 +1,13 @@
 use std::{
     collections::HashMap,
     fmt::Write,
-    path::{Path, MAIN_SEPARATOR_STR},
+    path::{MAIN_SEPARATOR_STR, Path},
 };
 
 use anyhow::Result;
 use clap::Parser;
 use console::style;
-use futures::{stream::FuturesOrdered, TryStreamExt};
+use futures::{TryStreamExt, stream::FuturesOrdered};
 use tokio::{fs::read, task::spawn_blocking};
 
 use rokit::{
@@ -173,10 +173,10 @@ impl SystemInfoSubcommand {
 
 fn display_path(path: impl AsRef<Path>) -> String {
     let path = path.as_ref();
-    if let Some(user_home) = dirs::home_dir() {
-        if let Ok(path) = path.strip_prefix(user_home) {
-            return format!("~/{}", dunce::simplified(path).display());
-        }
+    if let Some(user_home) = dirs::home_dir()
+        && let Ok(path) = path.strip_prefix(user_home)
+    {
+        return format!("~/{}", dunce::simplified(path).display());
     }
     dunce::simplified(path).display().to_string()
 }

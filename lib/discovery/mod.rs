@@ -4,7 +4,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use futures::{stream::FuturesOrdered, StreamExt};
+use futures::{StreamExt, stream::FuturesOrdered};
 use tokio::fs::read_to_string;
 
 use crate::{
@@ -73,25 +73,23 @@ fn search_paths(cwd: &Path, rokit_only: bool, skip_home: bool) -> Vec<(ManifestK
     }
 
     // Gather paths from program-specific home directories, if desired
-    if !skip_home {
-        if let Some(home) = dirs::home_dir() {
+    if !skip_home && let Some(home) = dirs::home_dir() {
+        ordered_paths.push((
+            ManifestKind::Rokit,
+            home.join(RokitManifest::home_dir())
+                .join(RokitManifest::manifest_file_name()),
+        ));
+        if !rokit_only {
             ordered_paths.push((
-                ManifestKind::Rokit,
-                home.join(RokitManifest::home_dir())
-                    .join(RokitManifest::manifest_file_name()),
+                ManifestKind::Aftman,
+                home.join(AftmanManifest::home_dir())
+                    .join(AftmanManifest::manifest_file_name()),
             ));
-            if !rokit_only {
-                ordered_paths.push((
-                    ManifestKind::Aftman,
-                    home.join(AftmanManifest::home_dir())
-                        .join(AftmanManifest::manifest_file_name()),
-                ));
-                ordered_paths.push((
-                    ManifestKind::Foreman,
-                    home.join(ForemanManifest::home_dir())
-                        .join(ForemanManifest::manifest_file_name()),
-                ));
-            }
+            ordered_paths.push((
+                ManifestKind::Foreman,
+                home.join(ForemanManifest::home_dir())
+                    .join(ForemanManifest::manifest_file_name()),
+            ));
         }
     }
 

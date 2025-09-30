@@ -1,7 +1,7 @@
 [package]
 name = "rokit"
 version = "1.1.1"
-edition = "2021"
+edition = "2024"
 license = "MIT"
 repository = "https://github.com/rojo-rbx/rokit"
 description = "Next-generation toolchain manager for Roblox projects"

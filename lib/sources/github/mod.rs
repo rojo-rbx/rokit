@@ -6,13 +6,13 @@ use serde::de::DeserializeOwned;
 use tracing::{debug, instrument};
 
 use reqwest::{
-    header::{HeaderMap, HeaderName, HeaderValue, ACCEPT, AUTHORIZATION},
     StatusCode,
+    header::{ACCEPT, AUTHORIZATION, HeaderMap, HeaderName, HeaderValue},
 };
 
-use crate::tool::{util::to_xyz_version, ToolId, ToolSpec};
+use crate::tool::{ToolId, ToolSpec, util::to_xyz_version};
 
-use super::{client::create_client, Artifact, ArtifactProvider, Release};
+use super::{Artifact, ArtifactProvider, Release, client::create_client};
 
 const BASE_URL: &str = "https://api.github.com";
 
@@ -231,19 +231,19 @@ impl GithubProvider {
 }
 
 fn is_404(err: &GithubError) -> bool {
-    if let GithubError::Reqwest(reqwest_err) = err {
-        if let Some(status) = reqwest_err.status() {
-            return status == StatusCode::NOT_FOUND;
-        }
+    if let GithubError::Reqwest(reqwest_err) = err
+        && let Some(status) = reqwest_err.status()
+    {
+        return status == StatusCode::NOT_FOUND;
     }
     false
 }
 
 fn is_unauthenticated(err: &GithubError) -> bool {
-    if let GithubError::Reqwest(reqwest_err) = err {
-        if let Some(status) = reqwest_err.status() {
-            return matches!(status, StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN);
-        }
+    if let GithubError::Reqwest(reqwest_err) = err
+        && let Some(status) = reqwest_err.status()
+    {
+        return matches!(status, StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN);
     }
     false
 }
