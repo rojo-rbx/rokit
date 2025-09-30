@@ -223,42 +223,38 @@ pub async fn extract_tar_file(
     // Reading a tar file is a potentially expensive operation, so
     // spawn it as a blocking task and use the tokio thread pool.
     spawn_blocking(move || {
-        // Gather paths and references to their respective entries,
-        // without reading actual file contents into memory just yet
+        // Read all file entries and their contents immediately
         let mut tar_cursor = io::Cursor::new(&tar_contents);
         let mut tar_reader = TarArchive::new(&mut tar_cursor);
-        let mut tar_files = tar_reader
-            .entries_with_seek()?
-            .filter_map(|entry| {
-                let entry = entry.ok()?;
-                if entry.header().entry_type().is_dir() {
-                    return None;
-                }
-                let path = entry.path().ok()?;
-                Some((path.to_path_buf(), entry))
-            })
-            .collect::<BTreeMap<PathBuf, _>>();
+        let mut file_map = BTreeMap::<PathBuf, (Option<u32>, Vec<u8>)>::new();
+        for entry_result in tar_reader.entries_with_seek()? {
+            let mut entry = match entry_result {
+                Ok(e) => e,
+                Err(_) => continue,
+            };
+            if entry.header().entry_type().is_dir() {
+                continue;
+            }
+            let path = match entry.path() {
+                Ok(p) => p.to_path_buf(),
+                Err(_) => continue,
+            };
+            let perms = entry.header().mode().ok();
+            let mut bytes = Vec::new();
+            let _ = entry.read_to_end(&mut bytes);
+            file_map.insert(path, (perms, bytes));
+        }
 
         // Map to simple path + permissions pairs to find candidates from
-        let entry_paths = tar_files
+        let entry_paths = file_map
             .iter()
-            .map(|(path, entry)| {
-                let perms = entry.header().mode().ok();
-                (path.clone(), perms)
-            })
+            .map(|(path, (perms, _))| (path.clone(), *perms))
             .collect::<Vec<_>>();
 
-        // Lazily cache any files that we read, to ensure that we do not
-        // try to read a file entry which has already been read to its end
-        let mut read_file_cache = BTreeMap::<_, Vec<u8>>::new();
-        let mut read_file_contents = |path: &Path| {
-            if let Some(existing) = read_file_cache.get(path) {
-                Ok(existing.clone())
-            } else if let Some(entry) = tar_files.get_mut(path) {
-                let mut bytes = Vec::new();
-                entry.read_to_end(&mut bytes)?;
-                read_file_cache.insert(path.to_path_buf(), bytes.clone());
-                Ok(bytes)
+        // Now just look up file contents in the map
+        let read_file_contents = |path: &Path| {
+            if let Some((_, bytes)) = file_map.get(path) {
+                Ok(bytes.clone())
             } else {
                 Err(io::Error::new(
                     io::ErrorKind::NotFound,
