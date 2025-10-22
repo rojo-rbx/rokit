@@ -17,7 +17,7 @@ pub fn parse_executable(binary_contents: impl AsRef<[u8]>) -> Option<(OS, Arch)>
     // it's the most likely to be correct, for most use cases.
     let start = Instant::now();
 
-    #[cfg(target_os = "linux")]
+    #[cfg(any(target_os = "linux", target_os = "android"))]
     let opt = {
         parse_elf(binary_contents)
             .or_else(|| parse_mach(binary_contents))
