@@ -215,18 +215,6 @@ impl UpdateSubcommand {
         manifest.save(&manifest_path).await?;
 
         // 6. Finally, display a nice message to the user
-        let tools_changed = tool_releases
-            .iter()
-            .filter_map(|(alias, _, artifact)| {
-                let spec_old = manifest.get_tool(alias).unwrap();
-                let spec_new = artifact.tool_spec.clone();
-                if spec_old == spec_new {
-                    None
-                } else {
-                    Some((alias.clone(), spec_old, spec_new))
-                }
-            })
-            .collect::<Vec<_>>();
         let bullet = style("•").dim();
         let arrow = style("→").dim();
 
