@@ -2,6 +2,7 @@ use std::{collections::HashMap, str::FromStr};
 
 use semver::Version;
 use toml_edit::{DocumentMut, InlineTable, Table};
+use tracing::warn;
 
 use crate::tool::{ToolAlias, ToolId, ToolSpec, util::to_xyz_version};
 
@@ -32,6 +33,13 @@ impl Manifest for ForemanManifest {
     {
         toml_edit::DocumentMut::from_str(contents)
             .map(|document| Self { document })
+            .inspect_err(|e| {
+                warn!(
+                    "A Foreman manifest could not be parsed!\
+                    \nThe manifest will be ignored and its tools may not be available.\
+                    \nError: {e}",
+                );
+            })
             .ok()
     }
 
@@ -39,23 +47,32 @@ impl Manifest for ForemanManifest {
         let mut tools = HashMap::new();
         if let Some(map) = self.document.get("tools").and_then(|t| t.as_table()) {
             for (alias, tool_def) in map {
-                let tool_alias = alias.parse::<ToolAlias>().ok();
-
-                let tool_spec = if tool_def.is_inline_table() {
-                    tool_def
-                        .as_inline_table()
-                        .cloned()
-                        .and_then(|map| parse_foreman_tool_definition(SpecType::InlineTable(map)))
-                } else {
-                    tool_def
-                        .as_table()
-                        .cloned()
-                        .and_then(|map| parse_foreman_tool_definition(SpecType::Table(map)))
+                let Ok(tool_alias) = alias.parse::<ToolAlias>().inspect_err(|e| {
+                    warn!(
+                        "A Foreman tool alias could not be parsed!\
+                        \nThe tool will be ignored and may not be available.\
+                        \nAlias: {alias}\
+                        \nError: {e}",
+                    );
+                }) else {
+                    continue;
                 };
 
-                if let (Some(alias), Some(spec)) = (tool_alias, tool_spec) {
-                    tools.insert(alias, spec);
-                }
+                let Some(spec) = tool_def
+                    .as_inline_table()
+                    .cloned()
+                    .map(SpecType::InlineTable)
+                    .or_else(|| tool_def.as_table().cloned().map(SpecType::Table))
+                    .and_then(parse_foreman_tool_definition)
+                else {
+                    warn!(
+                        "A Foreman tool spec with alias '{tool_alias}' could not be parsed!\
+                        \nThe tool will be ignored and may not be available.",
+                    );
+                    continue;
+                };
+
+                tools.insert(tool_alias, spec);
             }
         }
         tools
