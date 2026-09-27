@@ -14,7 +14,7 @@ const KNOWN_TOOL_AUTHORS_AND_IDS: [(&str, &[&str]); 8] = [
         &["luau-lsp", "StyLua", "wally-package-types"],
     ),
     ("Kampfkarren", &["selene"]),
-    ("luau-lang", &["luau"]),
+    ("luau-lang", &["luau", "lute"]),
     ("lune-org", &["lune"]),
     ("rojo-rbx", &["remodel", "rojo", "tarmac"]),
     ("UpliftGames", &["wally"]),
