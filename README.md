@@ -20,11 +20,24 @@ Follow the instructions for your platform below - when installed, Rokit will gui
 
 ### macOS & Linux
 
+#### Option 1
+
 Run the automated installer script in your terminal:
 
 ```sh
 curl -sSf https://raw.githubusercontent.com/rojo-rbx/rokit/main/scripts/install.sh | bash
 ```
+
+#### Option 2
+
+Install using [Homebrew][homebrew]:
+
+```sh
+brew install rokit
+```
+
+<sup>\* After installing with Homebrew, run `rokit self-install` to finish the installation.
+</sup>
 
 ### Windows
 
@@ -114,6 +127,7 @@ Rokit also acknowledges that developers will not migrate from any of the existin
 </details>
 
 [rustup]: https://rustup.rs
+[homebrew]: https://brew.sh
 [foreman]: https://github.com/Roblox/foreman
 [aftman]: https://github.com/LPGhatguy/aftman
 [latest-release]: https://github.com/rojo-rbx/rokit/releases/latest
