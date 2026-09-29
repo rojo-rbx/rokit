@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use serde::Deserialize;
+use tracing::warn;
 
 use crate::tool::{ToolAlias, ToolSpec};
 
@@ -32,7 +33,15 @@ impl Manifest for AftmanManifest {
     where
         Self: Sized,
     {
-        toml::from_str(contents).ok()
+        toml::from_str(contents)
+            .inspect_err(|e| {
+                warn!(
+                    "An Aftman manifest could not be parsed!\
+                    \nThe manifest will be ignored and its tools may not be available.\
+                    \nError: {e}",
+                );
+            })
+            .ok()
     }
 
     fn into_tools(self) -> HashMap<ToolAlias, ToolSpec> {
