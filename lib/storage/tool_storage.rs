@@ -138,6 +138,22 @@ impl ToolStorage {
     }
 
     /**
+        Removes a link for a given tool.
+
+        # Errors
+
+        - If the link could not be removed.
+    */
+    pub async fn remove_tool_link(&self, alias: &ToolAlias) -> RokitResult<()> {
+        let path = self.alias_path(alias);
+        if path_exists(&path).await {
+            remove_file(&path).await?;
+        }
+
+        Ok(())
+    }
+
+    /**
         Reads all currently known link paths for tool aliases in the binary directory.
 
         This *does not* include the link / main executable for Rokit itself.

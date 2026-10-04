@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
 use clap::{ArgAction, CommandFactory, Parser};
+use remove::RemoveSubcommand;
 use tokio::time::Instant;
 use tracing::level_filters::LevelFilter;
 
@@ -13,6 +14,7 @@ mod authenticate;
 mod init;
 mod install;
 mod list;
+mod remove;
 mod self_install;
 mod self_update;
 mod system_info;
@@ -123,6 +125,7 @@ pub enum Subcommand {
     SystemInfo(SystemInfoSubcommand),
     Trust(TrustSubcommand),
     Update(UpdateSubcommand),
+    Remove(RemoveSubcommand),
 }
 
 impl Subcommand {
@@ -138,6 +141,7 @@ impl Subcommand {
             Self::SystemInfo(cmd) => cmd.run(home).await,
             Self::Trust(cmd) => cmd.run(home).await,
             Self::Update(cmd) => cmd.run(home).await,
+            Self::Remove(cmd) => cmd.run(home).await,
         }
     }
 }
