@@ -1,6 +1,6 @@
 use std::{env::args, process::exit, str::FromStr};
 
-use anyhow::{Error, Result, bail};
+use anyhow::{Context, Error, Result, bail};
 use tracing::level_filters::LevelFilter;
 
 use rokit::{
@@ -46,7 +46,20 @@ impl Runner {
         let program_args = args().skip(1).collect::<Vec<_>>();
         let program_path = match spec {
             // TODO: Prompt for trust and install tool if not already installed
-            Some(spec) => home.tool_storage().tool_path(&spec),
+            Some(spec) => {
+                let is_installed = home
+                    .tool_storage()
+                    .tool_exists(&spec)
+                    .await
+                    .with_context(|| format!("Failed to check if {spec} is installed"))?;
+                if !is_installed {
+                    bail!(
+                        "Tool '{alias}' ({spec}) is not installed.\
+                        \nInstall it using 'rokit install' before running it."
+                    );
+                }
+                home.tool_storage().tool_path(&spec)
+            }
             // FUTURE: Maybe we should add some kind of "fall-through" setting in
             // Rokit manifests instead of always falling through to non-rokit tools?
             None => match discover_non_rokit_tool(&home, &alias).await {

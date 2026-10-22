@@ -102,7 +102,13 @@ impl AddSubcommand {
         manifest.save(manifest_path).await?;
 
         // 5. Download and install the tool
-        if !tool_cache.is_installed(&spec) || self.force {
+        if self.force
+            || !tool_cache.is_installed(&spec)
+            || !tool_storage
+                .tool_exists(&spec)
+                .await
+                .with_context(|| format!("Failed to check if {spec} is installed"))?
+        {
             let contents = source
                 .download_artifact_contents(&artifact)
                 .await

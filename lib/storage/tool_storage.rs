@@ -7,7 +7,7 @@ use std::{
 use filepath::FilePath;
 use futures::{TryStreamExt, stream::FuturesUnordered};
 use tokio::{
-    fs::{create_dir_all, read, read_dir, remove_file, rename},
+    fs::{create_dir_all, read, read_dir, remove_file, rename, try_exists},
     sync::Mutex as AsyncMutex,
 };
 use tracing::{debug, trace};
@@ -77,6 +77,18 @@ impl ToolStorage {
     #[must_use]
     pub fn tool_path(&self, spec: &ToolSpec) -> PathBuf {
         self.tool_paths(spec).1
+    }
+
+    /**
+        Checks if the binary for the given tool exists.
+
+        # Errors
+
+        - If it could not be determined whether the binary exists,
+          for example because a parent directory is not accessible.
+    */
+    pub async fn tool_exists(&self, spec: &ToolSpec) -> RokitResult<bool> {
+        Ok(try_exists(self.tool_path(spec)).await?)
     }
 
     /**
@@ -330,4 +342,46 @@ async fn skip_or_write_link_with_meta(
     write_executable_file(link_path, link_contents).await?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn new_spec() -> ToolSpec {
+        "rojo-rbx/rojo@7.4.4".parse().unwrap()
+    }
+
+    #[tokio::test]
+    async fn tool_exists_checks_the_binary() {
+        let home = tempfile::tempdir().unwrap();
+        let storage = ToolStorage::load(home.path()).await.unwrap();
+        let spec = new_spec();
+
+        assert!(!storage.tool_exists(&spec).await.unwrap());
+
+        storage
+            .replace_tool_contents(&spec, b"binary")
+            .await
+            .unwrap();
+        assert!(storage.tool_exists(&spec).await.unwrap());
+
+        remove_file(storage.tool_path(&spec)).await.unwrap();
+        assert!(!storage.tool_exists(&spec).await.unwrap());
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn tool_exists_errors_when_the_binary_can_not_be_checked() {
+        // A link to itself can not be resolved, which is different from a missing binary
+        let home = tempfile::tempdir().unwrap();
+        let storage = ToolStorage::load(home.path()).await.unwrap();
+        let spec = new_spec();
+
+        let path = storage.tool_path(&spec);
+        create_dir_all(path.parent().unwrap()).await.unwrap();
+        tokio::fs::symlink(&path, &path).await.unwrap();
+
+        assert!(storage.tool_exists(&spec).await.is_err());
+    }
 }
