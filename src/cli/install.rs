@@ -74,7 +74,15 @@ impl InstallSubcommand {
         let installed_specs = tool_specs
             .into_iter()
             .map(|tool_spec| async {
-                if tool_cache.is_installed(&tool_spec) && !force {
+                // NOTE: The binary may have been removed after it was
+                // installed, in which case we need to install it again
+                if !force
+                    && tool_cache.is_installed(&tool_spec)
+                    && tool_storage
+                        .tool_exists(&tool_spec)
+                        .await
+                        .with_context(|| format!("Failed to check if {tool_spec} is installed"))?
+                {
                     pt.task_completed();
                     // HACK: Force the async closure to take ownership
                     // of tool_spec by returning it from the closure
