@@ -162,7 +162,7 @@ impl UpdateSubcommand {
                 if spec_old == spec_new {
                     None
                 } else {
-                    Some((alias.clone(), spec_old, spec_new))
+                    Some((alias.clone(), spec_old, spec_new, artifact))
                 }
             })
             .collect::<Vec<_>>();
@@ -172,7 +172,7 @@ impl UpdateSubcommand {
 
             let updated_tool_lines = tools_changed
                 .iter()
-                .map(|(alias, spec_old, spec_new)| {
+                .map(|(alias, spec_old, spec_new, _)| {
                     format!(
                         "{bullet} {} {} {arrow} {}",
                         style(alias.to_string()).bold().cyan(),
@@ -205,22 +205,55 @@ impl UpdateSubcommand {
             return Ok(());
         }
 
-        // 5. Modify the manifest with the desired new tools, save
+        // 5. Install the new versions of all trusted tools
+        pt.update_message("Installing");
+
+        let tool_cache = home.tool_cache();
+        let tool_storage = home.tool_storage();
+
+        let (trusted_artifacts, untrusted_artifacts) = tools_changed
+            .iter()
+            .map(|(_, _, _, artifact)| *artifact)
+            .partition::<Vec<_>, _>(|artifact| tool_cache.is_trusted(artifact.tool_spec.id()));
+        trusted_artifacts
+            .into_iter()
+            .map(|artifact| async {
+                let spec = &artifact.tool_spec;
+                if !tool_cache.is_installed(spec) {
+                    let contents = source
+                        .download_artifact_contents(artifact)
+                        .await
+                        .with_context(|| format!("Failed to download contents for {spec}"))?;
+                    let extracted = artifact
+                        .extract_contents(contents)
+                        .await
+                        .with_context(|| format!("Failed to extract contents for {spec}"))?;
+                    tool_storage.replace_tool_contents(spec, extracted).await?;
+                    let _ = tool_cache.add_installed(spec.clone());
+                }
+                pt.subtask_completed();
+                anyhow::Ok(())
+            })
+            .collect::<FuturesUnordered<_>>()
+            .try_collect::<Vec<_>>()
+            .await?;
+
+        // 6. Modify the manifest with the desired new tools, save
         pt.update_message("Modifying");
 
-        for (alias, _, spec_new) in &tools_changed {
+        for (alias, _, spec_new, _) in &tools_changed {
             manifest.update_tool(alias, spec_new);
             pt.subtask_completed();
         }
         manifest.save(&manifest_path).await?;
 
-        // 6. Finally, display a nice message to the user
+        // 7. Finally, display a nice message to the user
         let bullet = style("•").dim();
         let arrow = style("→").dim();
 
         let updated_tool_lines = tools_changed
             .iter()
-            .map(|(alias, spec_old, spec_new)| {
+            .map(|(alias, spec_old, spec_new, _)| {
                 format!(
                     "{bullet} {} {} {arrow} {}",
                     style(alias.to_string()).bold().cyan(),
@@ -236,6 +269,14 @@ impl UpdateSubcommand {
                 "All tools are already up-to-date! {}",
                 pt.formatted_elapsed(),
             ));
+        } else if untrusted_artifacts.is_empty() {
+            pt.finish_with_message(format!(
+                "Updated versions for {} tool{} {}\
+                \n\n{updated_tool_lines}",
+                style(tools_changed.len()).bold().magenta(),
+                if tools_changed.len() == 1 { "" } else { "s" },
+                pt.formatted_elapsed(),
+            ));
         } else {
             pt.finish_with_message(format!(
                 "Updated versions for {} tool{} {}\
@@ -247,8 +288,6 @@ impl UpdateSubcommand {
                 style("rokit install").bold().green(),
             ));
         }
-
-        // FUTURE: Install the newly updated tools automatically
 
         Ok(())
     }
