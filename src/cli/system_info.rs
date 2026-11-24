@@ -1,7 +1,7 @@
 use std::{
     collections::HashMap,
     fmt::Write,
-    path::{MAIN_SEPARATOR_STR, Path},
+    path::{MAIN_SEPARATOR_STR, Path, absolute},
 };
 
 use anyhow::Result;
@@ -64,11 +64,12 @@ impl SystemInfoSubcommand {
 
         // Paths
 
+        let rokit_dir = absolute(home.path())?;
         writeln!(s, "Paths:")?;
         writeln!(
             s,
             "  {bullet} Rokit dir   {arrow} {}",
-            style(display_path(home.path()))
+            style(dunce::simplified(&rokit_dir).display())
         )?;
         writeln!(
             s,
