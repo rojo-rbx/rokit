@@ -64,7 +64,11 @@ impl SystemInfoSubcommand {
 
         // Paths
 
-        let rokit_dir = absolute(home.path())?;
+        let rokit_dir = if home.path().as_os_str().is_empty() {
+            current_dir().await
+        } else {
+            absolute(home.path())?
+        };
         writeln!(s, "Paths:")?;
         writeln!(
             s,
